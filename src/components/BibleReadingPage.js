@@ -160,7 +160,6 @@ const TestamentSelector = styled.div`
     position: relative;
     display: flex;
     gap: 40px;
-    margin-bottom: 40px;
     padding-bottom: 10px;
     border-bottom: 1px solid #e0e0e0;
     width: 300px;
