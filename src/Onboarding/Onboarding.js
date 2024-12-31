@@ -215,8 +215,10 @@ const handleKakaoLogin = () => {
     const REST_API_KEY = process.env.REACT_APP_KAKAO_REST_API_KEY;
     const REDIRECT_URI = process.env.REACT_APP_KAKAO_REDIRECT_URI;
 
-    console.log('REST_API_KEY:', REST_API_KEY);
-    console.log('REDIRECT_URI:', REDIRECT_URI);
+    if (!REST_API_KEY || !REDIRECT_URI) {
+        console.error('Required environment variables are missing');
+        return;
+    }
 
     const kakaoURL = `https://kauth.kakao.com/oauth/authorize?client_id=${REST_API_KEY}&redirect_uri=${REDIRECT_URI}&response_type=code`;
     window.location.href = kakaoURL;

@@ -1,19 +1,17 @@
 import React from 'react';
 import styled from 'styled-components';
-
-const Container = styled.div`
-    height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-`;
+import MainNavbar from '../components/MainNavbar';
 
 const MainPage = () => {
     return (
         <Container>
-            <h1>메인 페이지</h1>
+            <MainNavbar />
         </Container>
     );
 };
+
+const Container = styled.div`
+    display: flex;
+`;
 
 export default MainPage;

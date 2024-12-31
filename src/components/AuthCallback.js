@@ -1,93 +1,61 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getKakaoToken, getKakaoUserInfo, verifyUser, createUser } from '../services/APIService';
 
 const AuthCallback = () => {
     const navigate = useNavigate();
 
-    const getKakaoUserInfo = async (access_token) => {
-        try {
-            const response = await fetch('https://kapi.kakao.com/v2/user/me', {
-                method: 'GET',
-                headers: {
-                    Authorization: `Bearer ${access_token}`,
-                },
-            });
-            const data = await response.json();
-            console.log('Kakao User Info:', data);
-            return data;
-        } catch (error) {
-            console.error('Error fetching user info:', error);
-            return null;
-        }
-    };
-
-    const getKakaoToken = async (code) => {
-        try {
-            const response = await fetch('https://kauth.kakao.com/oauth/token', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8',
-                },
-                body: new URLSearchParams({
-                    grant_type: 'authorization_code',
-                    client_id: process.env.REACT_APP_KAKAO_REST_API_KEY,
-                    redirect_uri: process.env.REACT_APP_KAKAO_REDIRECT_URI,
-                    code: code,
-                }),
-            });
-            const data = await response.json();
-            console.log('Kakao Token:', data);
-            return data;
-        } catch (error) {
-            console.error('Error getting token:', error);
-            return null;
-        }
-    };
-
     useEffect(() => {
-        if (localStorage.getItem('isLoggedIn') === 'true') {
-            console.log('Already logged in, skipping auth check');
-            return;
-        }
-
-        const code = new URL(window.location.href).searchParams.get('code');
-        console.log('Authorization Code:', code);
-
-        if (code) {
-            const processLogin = async () => {
-                try {
-                    // 1. 액세스 토큰 받기
-                    const tokenData = await getKakaoToken(code);
-                    if (!tokenData || !tokenData.access_token) {
-                        throw new Error('Failed to get access token');
-                    }
-
-                    // 2. 사용자 정보 가져오기
-                    const userInfo = await getKakaoUserInfo(tokenData.access_token);
-                    if (userInfo) {
-                        console.log('Kakao UID:', userInfo.id);
-                        localStorage.setItem('kakaoUID', userInfo.id);
-                    }
-
-                    localStorage.setItem('isLoggedIn', 'true');
-                    console.log('Login successful');
-                    navigate('/', { replace: true });
-                } catch (error) {
-                    console.error('Login process failed:', error);
-                    localStorage.removeItem('isLoggedIn');
-                    navigate('/onboarding', { replace: true });
+        const processLogin = async () => {
+            try {
+                const code = new URL(window.location.href).searchParams.get('code');
+                console.log('1. 인증 코드 받음:', code);
+                if (!code) {
+                    throw new Error('No authorization code found');
                 }
-            };
 
-            processLogin();
-        } else if (!localStorage.getItem('isLoggedIn')) {
-            console.log('No authorization code found and not logged in');
-            localStorage.removeItem('isLoggedIn');
-            navigate('/onboarding', { replace: true });
-        }
+                // 1. 카카오 토큰 받기
+                const tokenData = await getKakaoToken(code);
+                console.log('2. 카카오 토큰 받음:', tokenData);
+                if (!tokenData || !tokenData.access_token) {
+                    throw new Error('Failed to get access token');
+                }
+
+                // 2. 카카오 사용자 정보 가져오기
+                const userInfo = await getKakaoUserInfo(tokenData.access_token);
+                console.log('3. 카카오 사용자 정보:', userInfo);
+                if (!userInfo || !userInfo.id) {
+                    throw new Error('Failed to get user info');
+                }
+
+                // 3. 사용자 확인
+                const verifyResult = await verifyUser(userInfo.id);
+                console.log('4. 사용자 확인 결과:', verifyResult);
+
+                if (!verifyResult.response_object.exists) {
+                    // 4. 새 사용자 등록
+                    const newUser = await createUser(userInfo.id);
+                    console.log('5. 새 사용자 등록:', newUser);
+                }
+
+                // 5. 로그인 상태 저장
+                localStorage.setItem('isLoggedIn', 'true');
+                localStorage.setItem('kakaoUID', userInfo.id);
+                console.log('6. 로그인 상태 저장 완료');
+
+                navigate('/', { replace: true });
+            } catch (error) {
+                console.error('Login process failed:', error);
+                localStorage.removeItem('isLoggedIn');
+                localStorage.removeItem('kakaoUID');
+                navigate('/onboarding', { replace: true });
+            }
+        };
+
+        processLogin();
     }, [navigate]);
 
-    return <div>Processing login...</div>;
+    return <div>로그인 처리중...</div>;
 };
 
 export default AuthCallback;
