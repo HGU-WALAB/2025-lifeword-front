@@ -3,11 +3,10 @@ import styled from 'styled-components';
 import { Book, Zap, Search, Bookmark, LogOut } from 'lucide-react';
 import LogoWhite from '../assets/LogoWhite.png';
 
-const MainNavbar = () => {
+const MainNavbar = ({ onPageChange, currentPage }) => {
     const handleLogout = () => {
         localStorage.removeItem('isLoggedIn');
         localStorage.removeItem('kakaoUID');
-
         window.location.reload();
     };
 
@@ -17,19 +16,19 @@ const MainNavbar = () => {
                 <Logo src={LogoWhite} alt="BIBLY" />
             </LogoWrapper>
             <MenuContainer>
-                <MenuItem>
+                <MenuItem onClick={() => onPageChange('bible')} active={currentPage === 'bible'}>
                     <Book size={24} />
                     <span>전체 성경 읽기</span>
                 </MenuItem>
-                <MenuItem>
+                <MenuItem onClick={() => onPageChange('quick')} active={currentPage === 'quick'}>
                     <Zap size={24} />
                     <span>빠른 성경 읽기</span>
                 </MenuItem>
-                <MenuItem>
+                <MenuItem onClick={() => onPageChange('search')} active={currentPage === 'search'}>
                     <Search size={24} />
                     <span>상세 검색</span>
                 </MenuItem>
-                <MenuItem>
+                <MenuItem onClick={() => onPageChange('bookmark')} active={currentPage === 'bookmark'}>
                     <Bookmark size={24} />
                     <span>북마크</span>
                 </MenuItem>
@@ -79,9 +78,9 @@ const MenuItem = styled.button`
     gap: 12px;
     padding: 12px 16px;
     width: 100%;
-    color: #9ca3af;
+    color: ${(props) => (props.active ? '#ffffff' : '#9ca3af')};
     border: none;
-    background: none;
+    background: ${(props) => (props.active ? '#2d2d2d' : 'none')};
     border-radius: 8px;
     cursor: pointer;
     transition: all 0.2s ease;
