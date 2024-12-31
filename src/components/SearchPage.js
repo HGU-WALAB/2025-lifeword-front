@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import styled from 'styled-components';
 import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { searchBibles } from '../services/APIService';
+import VerseContextMenu from './VerseContextMenu';
 
 const ITEMS_PER_PAGE = 20;
 
@@ -126,14 +127,7 @@ const SearchPage = () => {
                 {loading ? (
                     <LoadingText>검색 중...</LoadingText>
                 ) : (
-                    currentResults.map((result) => (
-                        <ResultItem key={result.idx}>
-                            <ResultHeader>
-                                {result.long_label} {result.chapter}장 {result.paragraph}절
-                            </ResultHeader>
-                            <ResultContent>{result.sentence}</ResultContent>
-                        </ResultItem>
-                    ))
+                    currentResults.map((result) => <ResultItem key={result.idx} result={result} />)
                 )}
             </ResultsContainer>
 
@@ -279,11 +273,26 @@ const ResultsContainer = styled.div`
     padding-right: 16px;
 `;
 
-const ResultItem = styled.div`
+const ResultItem = ({ result }) => {
+    const resultRef = useRef(null);
+
+    return (
+        <ResultItemContainer ref={resultRef}>
+            <ResultHeader>
+                {result.long_label} {result.chapter}장 {result.paragraph}절
+            </ResultHeader>
+            <ResultContent>{result.sentence}</ResultContent>
+            <VerseContextMenu targetRef={resultRef} verse={result} />
+        </ResultItemContainer>
+    );
+};
+
+const ResultItemContainer = styled.div`
     background-color: white;
     padding: 20px;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
 `;
 
 const ResultHeader = styled.div`

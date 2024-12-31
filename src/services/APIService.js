@@ -54,12 +54,14 @@ export const getBookmarks = async (kakaoUid) => {
     }
 };
 
-export const deleteBookmark = async (kakaoUid, verseId) => {
+export const deleteBookmark = async (kakaoUID, verseId) => {
     try {
-        const response = await fetch(`${BASE_URL}/bookmarks/${verseId}?kakaoUid=${kakaoUid}`, {
+        const response = await fetch(`${BASE_URL}/bookmarks/${verseId}?kakaoUid=${kakaoUID}`, {
             method: 'DELETE',
         });
-        return await response.json();
+
+        const data = await response.json();
+        return data;
     } catch (error) {
         console.error('Error deleting bookmark:', error);
         throw error;

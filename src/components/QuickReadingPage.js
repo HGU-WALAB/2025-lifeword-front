@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { getBooks, getBibles } from '../services/APIService';
+import VerseContextMenu from './VerseContextMenu';
 
 const QuickReadingPage = () => {
     const [testament, setTestament] = useState('구');
@@ -117,10 +118,7 @@ const QuickReadingPage = () => {
                             {currentBook?.long_label} {currentChapter}장
                         </ChapterTitle>
                         {verses.map((verse) => (
-                            <VerseItem key={verse.idx}>
-                                <VerseNumber>{verse.paragraph}</VerseNumber>
-                                <VerseSentence>{verse.sentence}</VerseSentence>
-                            </VerseItem>
+                            <VerseItem key={verse.idx} verse={verse} />
                         ))}
                     </ChapterSection>
                 )}
@@ -153,6 +151,18 @@ const QuickReadingPage = () => {
                 </NavigationButton>
             </NavigationContainer>
         </Container>
+    );
+};
+
+const VerseItem = ({ verse }) => {
+    const verseRef = useRef(null);
+
+    return (
+        <VerseItemContainer ref={verseRef}>
+            <VerseNumber>{verse.paragraph}</VerseNumber>
+            <VerseSentence>{verse.sentence}</VerseSentence>
+            <VerseContextMenu targetRef={verseRef} verse={verse} />
+        </VerseItemContainer>
     );
 };
 
@@ -303,10 +313,11 @@ const ChapterTitle = styled.h2`
     border-bottom: 2px solid #4f3296;
 `;
 
-const VerseItem = styled.div`
+const VerseItemContainer = styled.div`
     display: flex;
     gap: 16px;
     margin-bottom: 16px;
+    cursor: pointer;
 `;
 
 const VerseNumber = styled.span`
