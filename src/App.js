@@ -23,7 +23,7 @@ function App() {
     console.log('App - Initial login status:', isLoggedIn);
 
     return (
-        <Router>
+        <Router basename="/eax9952">
             <ParallaxProvider>
                 <Routes>
                     <Route
