@@ -7,10 +7,7 @@ import VerseContextMenu from './VerseContextMenu';
 const ITEMS_PER_PAGE = 20;
 
 const SearchPage = () => {
-    const [searchMode, setSearchMode] = useState('verse');
-    const [keyword1, setKeyword1] = useState('');
-    const [keyword2, setKeyword2] = useState('');
-    const [operator, setOperator] = useState('AND');
+    const [keyword, setKeyword] = useState('');
     const [searchResults, setSearchResults] = useState([]);
     const [loading, setLoading] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
@@ -19,18 +16,17 @@ const SearchPage = () => {
         e.preventDefault();
         setLoading(true);
         try {
-            const response = await searchBibles(
-                searchMode,
-                keyword1,
-                searchMode === 'verse' ? keyword2 : null,
-                searchMode === 'verse' ? operator : null
-            );
+            const response = await searchBibles(keyword);
             if (response.success) {
                 setSearchResults(response.response_object);
                 setCurrentPage(1);
+            } else {
+                alert(response.message);
+                setSearchResults([]);
             }
         } catch (error) {
             console.error('Search error:', error);
+            alert('검색 중 오류가 발생했습니다.');
         } finally {
             setLoading(false);
         }
@@ -72,49 +68,13 @@ const SearchPage = () => {
         <Container>
             <SearchContainer>
                 <SearchForm onSubmit={handleSearch}>
-                    <SearchModeSelect
-                        value={searchMode}
-                        onChange={(e) => {
-                            setSearchMode(e.target.value);
-                            setKeyword2('');
-                            setOperator('AND');
-                        }}
-                    >
-                        <option value="verse">구절 검색 모드</option>
-                        <option value="reference">장절 검색 모드</option>
-                        <option value="word">단어 검색 모드</option>
-                    </SearchModeSelect>
-
                     <SearchInputGroup>
                         <SearchInput
                             type="text"
-                            value={keyword1}
-                            onChange={(e) => setKeyword1(e.target.value)}
-                            placeholder={
-                                searchMode === 'verse'
-                                    ? '첫 번째 검색어를 입력하세요'
-                                    : searchMode === 'reference'
-                                    ? '예: 창 1:1 또는 창세기 1장 1절'
-                                    : '검색할 단어를 입력하세요'
-                            }
+                            value={keyword}
+                            onChange={(e) => setKeyword(e.target.value)}
+                            placeholder="성경 구절을 검색하세요 (예: 창 1:1, 창세기 1장, 사랑)"
                         />
-
-                        {searchMode === 'verse' && (
-                            <>
-                                <OperatorSelect value={operator} onChange={(e) => setOperator(e.target.value)}>
-                                    <option value="AND">그리고</option>
-                                    <option value="OR">또는</option>
-                                </OperatorSelect>
-
-                                <SearchInput
-                                    type="text"
-                                    value={keyword2}
-                                    onChange={(e) => setKeyword2(e.target.value)}
-                                    placeholder="두 번째 검색어를 입력하세요"
-                                />
-                            </>
-                        )}
-
                         <SearchButton type="submit" disabled={loading}>
                             <Search size={20} />
                             찾기
@@ -126,8 +86,10 @@ const SearchPage = () => {
             <ResultsContainer>
                 {loading ? (
                     <LoadingText>검색 중...</LoadingText>
-                ) : (
+                ) : searchResults.length > 0 ? (
                     currentResults.map((result) => <ResultItem key={result.idx} result={result} />)
+                ) : (
+                    <EmptyText>검색 결과가 없습니다.</EmptyText>
                 )}
             </ResultsContainer>
 
@@ -196,27 +158,6 @@ const SearchInputGroup = styled.div`
     align-items: center;
 `;
 
-const SearchModeSelect = styled.select`
-    width: 200px;
-    padding: 12px 16px;
-    border: 2px solid #4f3296;
-    border-radius: 25px;
-    background-color: white;
-    color: #4f3296;
-    font-size: 14px;
-    cursor: pointer;
-    appearance: none;
-    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234F3296' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-    background-repeat: no-repeat;
-    background-position: right 12px center;
-    background-size: 16px;
-
-    &:focus {
-        outline: none;
-        border-color: #3a2570;
-    }
-`;
-
 const SearchInput = styled.input`
     flex: 1;
     padding: 12px 20px;
@@ -233,10 +174,6 @@ const SearchInput = styled.input`
     &::placeholder {
         color: #999;
     }
-`;
-
-const OperatorSelect = styled(SearchModeSelect)`
-    width: 120px;
 `;
 
 const SearchButton = styled.button`
@@ -370,6 +307,12 @@ const PageButton = styled.button`
 `;
 
 const LoadingText = styled.div`
+    text-align: center;
+    padding: 20px;
+    color: #666666;
+`;
+
+const EmptyText = styled.div`
     text-align: center;
     padding: 20px;
     color: #666666;

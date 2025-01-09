@@ -5,6 +5,8 @@ import BibleReadingPage from '../components/BibleReadingPage';
 import QuickReadingPage from '../components/QuickReadingPage';
 import SearchPage from '../components/SearchPage';
 import BookmarkPage from '../components/BookmarkPage';
+import SermonListPage from '../components/SermonListPage';
+import AddSermonPage from '../components/AddSermonPage';
 
 const MainPage = () => {
     const [currentPage, setCurrentPage] = useState('bible');
@@ -19,6 +21,10 @@ const MainPage = () => {
                 return <SearchPage />;
             case 'bookmark':
                 return <BookmarkPage />;
+            case 'sermon-list':
+                return <SermonListPage />;
+            case 'add-sermon':
+                return <AddSermonPage />;
             default:
                 return <BibleReadingPage />;
         }

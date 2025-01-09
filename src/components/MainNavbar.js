@@ -1,6 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
-import { Book, Zap, Search, Bookmark, LogOut } from 'lucide-react';
+import { Book, Zap, Search, Bookmark, LogOut, PlusCircle, BookOpen } from 'lucide-react';
 import LogoWhite from '../assets/LogoWhite.png';
 
 const MainNavbar = ({ onPageChange, currentPage }) => {
@@ -31,6 +31,14 @@ const MainNavbar = ({ onPageChange, currentPage }) => {
                 <MenuItem onClick={() => onPageChange('bookmark')} active={currentPage === 'bookmark'}>
                     <Bookmark size={24} />
                     <span>북마크</span>
+                </MenuItem>
+                <MenuItem onClick={() => onPageChange('sermon-list')} active={currentPage === 'sermon-list'}>
+                    <BookOpen size={24} />
+                    <span>설교 찾기</span>
+                </MenuItem>
+                <MenuItem onClick={() => onPageChange('add-sermon')} active={currentPage === 'add-sermon'}>
+                    <PlusCircle size={24} />
+                    <span>설교 추가하기</span>
                 </MenuItem>
             </MenuContainer>
             <LogoutButton onClick={handleLogout}>

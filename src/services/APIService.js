@@ -1,4 +1,4 @@
-const BASE_URL = 'http://walab.handong.edu:8080/eax9952_1/api/v1';
+const BASE_URL = 'http://walab.handong.edu:8080/naimkim_1/api/v1';
 
 // User 관련 API
 export const verifyUser = async (kakaoUid) => {
@@ -93,13 +93,9 @@ export const getBibles = async (testament, book, chapter) => {
     }
 };
 
-export const searchBibles = async (mode, keyword1, keyword2 = null, operator = null) => {
+export const searchBibles = async (keyword) => {
     try {
-        let url = `${BASE_URL}/bibles/search?mode=${mode}&keyword1=${encodeURIComponent(keyword1)}`;
-        if (keyword2) url += `&keyword2=${encodeURIComponent(keyword2)}`;
-        if (operator) url += `&operator=${operator}`;
-
-        const response = await fetch(url);
+        const response = await fetch(`${BASE_URL}/bibles/search?keyword1=${encodeURIComponent(keyword)}`);
         return await response.json();
     } catch (error) {
         console.error('Error searching bibles:', error);
@@ -176,6 +172,43 @@ export const getGoogleUserInfo = async (access_token) => {
         return await response.json();
     } catch (error) {
         console.error('Error getting Google user info:', error);
+        throw error;
+    }
+};
+
+// 설교 관련 API
+export const createSermon = async (sermonData) => {
+    try {
+        const response = await fetch(`${BASE_URL}/sermons`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(sermonData),
+        });
+        return await response.json();
+    } catch (error) {
+        console.error('Error creating sermon:', error);
+        throw error;
+    }
+};
+
+export const getSermons = async () => {
+    try {
+        const response = await fetch(`${BASE_URL}/sermons`);
+        return await response.json();
+    } catch (error) {
+        console.error('Error getting sermons:', error);
+        throw error;
+    }
+};
+
+export const getSermonById = async (id) => {
+    try {
+        const response = await fetch(`${BASE_URL}/sermons/${id}`);
+        return await response.json();
+    } catch (error) {
+        console.error('Error getting sermon:', error);
         throw error;
     }
 };
