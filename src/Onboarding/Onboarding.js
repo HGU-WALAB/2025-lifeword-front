@@ -66,7 +66,14 @@ const Onboarding = () => {
                                     ) : section.isLoginSection ? (
                                         <>
                                             <Title>{section.title}</Title>
-                                            <LoginButton onClick={handleKakaoLogin}>카카오로 시작하기</LoginButton>
+                                            <LoginButtons>
+                                                <KakaoLoginButton onClick={handleKakaoLogin}>
+                                                    카카오로 시작하기
+                                                </KakaoLoginButton>
+                                                <GoogleLoginButton onClick={handleGoogleLogin}>
+                                                    구글로 시작하기
+                                                </GoogleLoginButton>
+                                            </LoginButtons>
                                         </>
                                     ) : (
                                         <>
@@ -192,8 +199,21 @@ const MultiLineTitle = styled(Title)`
     line-height: 1.3;
 `;
 
-const LoginButton = styled.button`
+const LoginButtons = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
     margin-top: 2rem;
+    opacity: 0;
+    transform: translateY(30px);
+    animation: slideUp 0.8s ease 0.4s forwards;
+    width: 300px;
+    margin-left: auto;
+    margin-right: auto;
+`;
+
+const KakaoLoginButton = styled.button`
+    width: 100%;
     padding: 1rem 2rem;
     font-size: 1.8rem;
     background-color: #fee500;
@@ -202,13 +222,16 @@ const LoginButton = styled.button`
     border-radius: 12px;
     cursor: pointer;
     transition: transform 0.2s ease;
-    opacity: 0;
-    transform: translateY(30px);
-    animation: slideUp 0.8s ease 0.4s forwards;
 
     &:hover {
         transform: translateY(-2px);
     }
+`;
+
+const GoogleLoginButton = styled(KakaoLoginButton)`
+    background-color: #ffffff;
+    color: #000000;
+    border: 1px solid #dddddd;
 `;
 
 const handleKakaoLogin = () => {
@@ -222,6 +245,26 @@ const handleKakaoLogin = () => {
 
     const kakaoURL = `https://kauth.kakao.com/oauth/authorize?client_id=${REST_API_KEY}&redirect_uri=${REDIRECT_URI}&response_type=code`;
     window.location.href = kakaoURL;
+};
+
+const handleGoogleLogin = () => {
+    const CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID;
+    const REDIRECT_URI = process.env.REACT_APP_GOOGLE_REDIRECT_URI;
+
+    console.log('Environment Variables:', {
+        CLIENT_ID,
+        REDIRECT_URI,
+        allEnv: process.env, // 모든 환경 변수 확인
+    });
+
+    if (!CLIENT_ID || !REDIRECT_URI) {
+        console.error('Required environment variables are missing');
+        return;
+    }
+
+    const googleURL = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=email profile&access_type=offline`;
+    console.log('Google Login URL:', googleURL);
+    window.location.href = googleURL;
 };
 
 const sections = [

@@ -142,3 +142,40 @@ export const getKakaoUserInfo = async (access_token) => {
         throw error;
     }
 };
+
+// 구글 로그인 관련
+export const getGoogleToken = async (code) => {
+    try {
+        const response = await fetch('https://oauth2.googleapis.com/token', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+                code,
+                client_id: process.env.REACT_APP_GOOGLE_CLIENT_ID,
+                client_secret: process.env.REACT_APP_GOOGLE_CLIENT_SECRET,
+                redirect_uri: process.env.REACT_APP_GOOGLE_REDIRECT_URI,
+                grant_type: 'authorization_code',
+            }),
+        });
+        return await response.json();
+    } catch (error) {
+        console.error('Error getting Google token:', error);
+        throw error;
+    }
+};
+
+export const getGoogleUserInfo = async (access_token) => {
+    try {
+        const response = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+            headers: {
+                Authorization: `Bearer ${access_token}`,
+            },
+        });
+        return await response.json();
+    } catch (error) {
+        console.error('Error getting Google user info:', error);
+        throw error;
+    }
+};
