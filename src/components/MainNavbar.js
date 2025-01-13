@@ -16,10 +16,6 @@ const MainNavbar = ({ onPageChange, currentPage }) => {
                 <Logo src={LogoWhite} alt="BIBLY" />
             </LogoWrapper>
             <MenuContainer>
-                <MenuItem onClick={() => onPageChange('bible')} active={currentPage === 'bible'}>
-                    <Book size={24} />
-                    <span>전체 성경 읽기</span>
-                </MenuItem>
                 <MenuItem onClick={() => onPageChange('quick')} active={currentPage === 'quick'}>
                     <Zap size={24} />
                     <span>빠른 성경 읽기</span>

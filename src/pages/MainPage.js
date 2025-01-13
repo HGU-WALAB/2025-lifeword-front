@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import MainNavbar from '../components/MainNavbar';
-import BibleReadingPage from '../components/BibleReadingPage';
 import QuickReadingPage from '../components/QuickReadingPage';
 import SearchPage from '../components/SearchPage';
 import BookmarkPage from '../components/BookmarkPage';
@@ -13,8 +12,6 @@ const MainPage = () => {
 
     const renderPage = () => {
         switch (currentPage) {
-            case 'bible':
-                return <BibleReadingPage />;
             case 'quick':
                 return <QuickReadingPage />;
             case 'search':
@@ -26,7 +23,7 @@ const MainPage = () => {
             case 'add-sermon':
                 return <AddSermonPage />;
             default:
-                return <BibleReadingPage />;
+                return <QuickReadingPage />;
         }
     };
 
