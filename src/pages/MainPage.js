@@ -8,7 +8,7 @@ import SermonListPage from '../components/SermonListPage';
 import AddSermonPage from '../components/AddSermonPage';
 
 const MainPage = () => {
-    const [currentPage, setCurrentPage] = useState('bible');
+    const [currentPage, setCurrentPage] = useState('quick');
 
     const renderPage = () => {
         switch (currentPage) {

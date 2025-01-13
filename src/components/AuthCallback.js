@@ -4,7 +4,7 @@ import {
     getKakaoToken,
     getKakaoUserInfo,
     verifyUser,
-    createUser,
+    // createUser,
     getGoogleToken,
     getGoogleUserInfo,
 } from '../services/APIService';
@@ -52,8 +52,14 @@ const AuthCallback = () => {
                 const verifyResult = await verifyUser(userId);
 
                 if (!verifyResult.response_object.exists) {
-                    console.log('5. 새 사용자 등록');
-                    await createUser(userId);
+                    navigate('/signup', {
+                        state: {
+                            userId: userId,
+                            userEmail: userEmail,
+                        },
+                        replace: true,
+                    });
+                    return;
                 }
 
                 localStorage.setItem('isLoggedIn', 'true');
