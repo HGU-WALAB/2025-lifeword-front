@@ -6,95 +6,65 @@ import LogoWhite from '../assets/LogoWhite.png';
 
 const Onboarding = () => {
     return (
-        <div style={{ height: '300vh' }}>
+        <div style={{ height: '100vh' }}>
             <OnboardingGlobalStyles />
             <FixedLogo src={LogoWhite} alt="BIBLY" />
-            {sections.map((section, index) => (
-                <ParallaxBanner
-                    key={index}
-                    layers={[
-                        {
-                            image: section.background,
-                            speed: -40,
-                            scale: [1.4, 1, 'easeOutCubic'],
-                            shouldAlwaysCompleteAnimation: true,
-                            expanded: false,
-                        },
-                        {
-                            speed: -25,
-                            opacity: [0.5, 1],
-                            expanded: true,
-                            children: (
-                                <div
-                                    style={{
-                                        position: 'absolute',
-                                        inset: 0,
-                                        background: section.gradient,
-                                        backgroundSize: '300% 300%',
-                                        animation: 'gradient 8s alternate infinite',
-                                    }}
-                                />
-                            ),
-                        },
-                        {
-                            speed: -15,
-                            children: (
-                                <>
-                                    {section.shapes.map((shape, i) => (
-                                        <FloatingShape
-                                            key={i}
-                                            style={{
-                                                ...shape,
-                                                animationDelay: shape.delay,
-                                            }}
-                                        />
-                                    ))}
-                                </>
-                            ),
-                        },
-                        {
-                            speed: 20,
-                            scale: [0.8, 1],
-                            opacity: [0.5, 1],
-                            children: (
-                                <Content>
-                                    {section.isBrandSection ? (
-                                        <>
-                                            <Title>{section.title}</Title>
-                                            <BrandName>{section.description}</BrandName>
-                                        </>
-                                    ) : section.isLoginSection ? (
-                                        <>
-                                            <Title>{section.title}</Title>
-                                            <LoginButtons>
-                                                <KakaoLoginButton onClick={handleKakaoLogin}>
-                                                    카카오로 시작하기
-                                                </KakaoLoginButton>
-                                                <GoogleLoginButton onClick={handleGoogleLogin}>
-                                                    구글로 시작하기
-                                                </GoogleLoginButton>
-                                            </LoginButtons>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <MultiLineTitle>{section.title}</MultiLineTitle>
-                                            <Description>{section.description}</Description>
-                                        </>
-                                    )}
-                                </Content>
-                            ),
-                        },
-                    ]}
-                    style={{
-                        height: '100vh',
-                        position: 'absolute',
-                        top: `${index * 100}vh`,
-                        left: 0,
-                        width: '100%',
-                        zIndex: sections.length - index,
-                    }}
-                />
-            ))}
+            <ParallaxBanner
+                layers={[
+                    {
+                        image: 'https://source.unsplash.com/random/1920x1080?business',
+                        speed: -40,
+                        scale: [1.4, 1, 'easeOutCubic'],
+                        shouldAlwaysCompleteAnimation: true,
+                        expanded: false,
+                    },
+                    {
+                        speed: -25,
+                        opacity: [0.5, 1],
+                        expanded: true,
+                        children: (
+                            <div
+                                style={{
+                                    position: 'absolute',
+                                    inset: 0,
+                                    background:
+                                        'linear-gradient(90deg, rgba(184,6,218,0.8), rgba(249,137,226,0.8), rgba(30,129,235,0.8))',
+                                    backgroundSize: '300% 300%',
+                                    animation: 'gradient 8s alternate infinite',
+                                }}
+                            />
+                        ),
+                    },
+                    {
+                        speed: -15,
+                        children: (
+                            <>
+                                <FloatingShape style={{ top: '25%', left: '20%', animationDelay: '0.5s' }} />
+                                <FloatingShape style={{ top: '55%', right: '20%', animationDelay: '2.5s' }} />
+                            </>
+                        ),
+                    },
+                    {
+                        speed: 20,
+                        scale: [0.8, 1],
+                        opacity: [0.5, 1],
+                        children: (
+                            <Content>
+                                <MultiLineTitle>하나님의 말씀을 더 가까이, BIBLY</MultiLineTitle>
+                                <Description>지금 바로 시작해보세요!</Description>
+                                <LoginButtons>
+                                    <KakaoLoginButton onClick={handleKakaoLogin}>카카오로 시작하기</KakaoLoginButton>
+                                    <GoogleLoginButton onClick={handleGoogleLogin}>구글로 시작하기</GoogleLoginButton>
+                                </LoginButtons>
+                            </Content>
+                        ),
+                    },
+                ]}
+                style={{
+                    height: '100vh',
+                    width: '100%',
+                }}
+            />
         </div>
     );
 };
@@ -266,37 +236,3 @@ const handleGoogleLogin = () => {
     console.log('Google Login URL:', googleURL);
     window.location.href = googleURL;
 };
-
-const sections = [
-    {
-        title: '하나님의 말씀을 더 가까이,',
-        description: 'BIBLY',
-        isBrandSection: true,
-        gradient: 'linear-gradient(90deg, rgba(249,137,226,0.8), rgba(30,129,235,0.8), rgba(184,6,218,0.8))',
-        background: 'https://source.unsplash.com/random/1920x1080?nature',
-        shapes: [
-            { top: '20%', left: '10%', delay: '0s' },
-            { top: '60%', right: '15%', delay: '2s' },
-        ],
-    },
-    {
-        title: '원하는 구절을 다양한 방법으로 찾아보세요',
-        description: '주제별, 키워드별, 장절별 검색 지원 및 북마크 저장',
-        gradient: 'linear-gradient(90deg, rgba(30,129,235,0.8), rgba(184,6,218,0.8), rgba(249,137,226,0.8))',
-        background: 'https://source.unsplash.com/random/1920x1080?technology',
-        shapes: [
-            { top: '30%', left: '15%', delay: '1s' },
-            { top: '50%', right: '10%', delay: '3s' },
-        ],
-    },
-    {
-        title: '지금 바로 시작해보세요!',
-        isLoginSection: true,
-        gradient: 'linear-gradient(90deg, rgba(184,6,218,0.8), rgba(249,137,226,0.8), rgba(30,129,235,0.8))',
-        background: 'https://source.unsplash.com/random/1920x1080?business',
-        shapes: [
-            { top: '25%', left: '20%', delay: '0.5s' },
-            { top: '55%', right: '20%', delay: '2.5s' },
-        ],
-    },
-];
