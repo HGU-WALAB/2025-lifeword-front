@@ -202,7 +202,7 @@ const handleKakaoLogin = () => {
         return;
     }
 
-    const kakaoURL = `https://kauth.kakao.com/oauth/authorize?client_id=${REST_API_KEY}&redirect_uri=${REDIRECT_URI}&response_type=code`;
+    const kakaoURL = `https://kauth.kakao.com/oauth/authorize?client_id=${REST_API_KEY}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=account_email`;
     window.location.href = kakaoURL;
 };
 
@@ -210,18 +210,11 @@ const handleGoogleLogin = () => {
     const CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID;
     const REDIRECT_URI = process.env.REACT_APP_GOOGLE_REDIRECT_URI;
 
-    console.log('Environment Variables:', {
-        CLIENT_ID,
-        REDIRECT_URI,
-        allEnv: process.env, // 모든 환경 변수 확인
-    });
-
     if (!CLIENT_ID || !REDIRECT_URI) {
         console.error('Required environment variables are missing');
         return;
     }
 
-    const googleURL = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=email profile&access_type=offline`;
-    console.log('Google Login URL:', googleURL);
+    const googleURL = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=email profile&access_type=offline&prompt=consent`;
     window.location.href = googleURL;
 };

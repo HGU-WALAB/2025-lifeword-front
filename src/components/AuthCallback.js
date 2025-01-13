@@ -23,11 +23,10 @@ const AuthCallback = () => {
                     throw new Error('No authorization code found');
                 }
 
-                let userId;
+                let userId, userEmail;
                 const isGoogle = url.searchParams.get('scope')?.includes('email');
 
                 if (isGoogle) {
-                    // 구글 로그인 처리
                     console.log('2. 구글 토큰 요청');
                     const tokenData = await getGoogleToken(code);
                     if (!tokenData.access_token) {
@@ -35,9 +34,9 @@ const AuthCallback = () => {
                     }
                     console.log('3. 구글 사용자 정보 요청');
                     const userInfo = await getGoogleUserInfo(tokenData.access_token);
-                    userId = `google_${userInfo.id}`; // 구글 사용자 구분을 위한 prefix
+                    userId = `google_${userInfo.id}`;
+                    userEmail = userInfo.email;
                 } else {
-                    // 카카오 로그인 처리
                     console.log('2. 카카오 토큰 요청');
                     const tokenData = await getKakaoToken(code);
                     if (!tokenData.access_token) {
@@ -45,7 +44,8 @@ const AuthCallback = () => {
                     }
                     console.log('3. 카카오 사용자 정보 요청');
                     const userInfo = await getKakaoUserInfo(tokenData.access_token);
-                    userId = `kakao_${userInfo.id}`; // 카카오 사용자 구분을 위한 prefix
+                    userId = `kakao_${userInfo.id}`;
+                    userEmail = userInfo.kakao_account?.email;
                 }
 
                 console.log('4. 사용자 확인');
@@ -58,6 +58,7 @@ const AuthCallback = () => {
 
                 localStorage.setItem('isLoggedIn', 'true');
                 localStorage.setItem('kakaoUID', userId);
+                localStorage.setItem('userEmail', userEmail);
                 console.log('6. 로그인 완료');
 
                 navigate('/', { replace: true });
@@ -65,6 +66,7 @@ const AuthCallback = () => {
                 console.error('Login process failed:', error);
                 localStorage.removeItem('isLoggedIn');
                 localStorage.removeItem('kakaoUID');
+                localStorage.removeItem('userEmail');
                 navigate('/onboarding', { replace: true });
             }
         };

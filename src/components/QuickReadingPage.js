@@ -174,7 +174,7 @@ const Container = styled.div`
     flex-direction: column;
     align-items: center;
     background-color: #f5f5f5;
-    min-height: 100vh;
+    height: 92vh;
 `;
 
 const TestamentSelector = styled.div`
