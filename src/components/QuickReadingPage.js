@@ -109,21 +109,6 @@ const QuickReadingPage = () => {
                 ))}
             </BookNavigation>
 
-            <ScrollView>
-                {loading ? (
-                    <LoadingText>성경 구절을 불러오는 중...</LoadingText>
-                ) : (
-                    <ChapterSection>
-                        <ChapterTitle>
-                            {currentBook?.long_label} {currentChapter}장
-                        </ChapterTitle>
-                        {verses.map((verse) => (
-                            <VerseItem key={verse.idx} verse={verse} />
-                        ))}
-                    </ChapterSection>
-                )}
-            </ScrollView>
-
             <NavigationContainer>
                 <NavigationButton
                     onClick={handlePrevChapter}
@@ -150,6 +135,21 @@ const QuickReadingPage = () => {
                     <ChevronRight size={20} />
                 </NavigationButton>
             </NavigationContainer>
+
+            <ScrollView>
+                {loading ? (
+                    <LoadingText>성경 구절을 불러오는 중...</LoadingText>
+                ) : (
+                    <ChapterSection>
+                        <ChapterTitle>
+                            {currentBook?.long_label} {currentChapter}장
+                        </ChapterTitle>
+                        {verses.map((verse) => (
+                            <VerseItem key={verse.idx} verse={verse} />
+                        ))}
+                    </ChapterSection>
+                )}
+            </ScrollView>
         </Container>
     );
 };
