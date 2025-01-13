@@ -152,17 +152,6 @@ const FloatingShape = styled.div`
     }
 `;
 
-const BrandName = styled.h2`
-    font-size: 6rem;
-    font-weight: 700;
-    margin-top: 2rem;
-    opacity: 0;
-    transform: translateY(30px);
-    animation: slideUp 0.8s ease 0.3s forwards;
-    text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.5);
-    letter-spacing: 4px;
-`;
-
 const MultiLineTitle = styled(Title)`
     font-size: 4rem;
     white-space: pre-line;

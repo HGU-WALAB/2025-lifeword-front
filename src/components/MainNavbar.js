@@ -1,6 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
-import { Book, Zap, Search, Bookmark, LogOut, PlusCircle, BookOpen } from 'lucide-react';
+import { Zap, Search, Bookmark, LogOut, PlusCircle, BookOpen } from 'lucide-react';
 import LogoWhite from '../assets/LogoWhite.png';
 
 const MainNavbar = ({ onPageChange, currentPage }) => {
