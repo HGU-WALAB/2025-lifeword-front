@@ -14,6 +14,29 @@ const SignUpPage = () => {
     const [verificationCode, setVerificationCode] = useState('');
     const [showVerification, setShowVerification] = useState(false);
     const [isPhoneVerified, setIsPhoneVerified] = useState(false);
+    const [churchName, setChurchName] = useState('');
+    const [role, setRole] = useState('');
+    const [province, setProvince] = useState('');
+
+    const provinces = [
+        '서울특별시',
+        '부산광역시',
+        '대구광역시',
+        '인천광역시',
+        '광주광역시',
+        '대전광역시',
+        '울산광역시',
+        '세종특별자치시',
+        '경기도',
+        '강원도',
+        '충청북도',
+        '충청남도',
+        '전라북도',
+        '전라남도',
+        '경상북도',
+        '경상남도',
+        '제주특별자치도',
+    ];
 
     useEffect(() => {
         setupRecaptcha();
@@ -111,6 +134,44 @@ const SignUpPage = () => {
                                 required
                             />
                         </InputWrapper>
+                    </FormGroup>
+
+                    <FormGroup>
+                        <Label>교회 이름</Label>
+                        <InputWrapper>
+                            <Input
+                                type="text"
+                                value={churchName}
+                                onChange={(e) => setChurchName(e.target.value)}
+                                placeholder="교회 이름을 입력하세요"
+                                required
+                            />
+                        </InputWrapper>
+                    </FormGroup>
+
+                    <FormGroup>
+                        <Label>직분</Label>
+                        <SelectWrapper>
+                            <Select value={role} onChange={(e) => setRole(e.target.value)} required>
+                                <option value="">직분을 선택하세요</option>
+                                <option value="pastor">목회자</option>
+                                <option value="believer">신도</option>
+                            </Select>
+                        </SelectWrapper>
+                    </FormGroup>
+
+                    <FormGroup>
+                        <Label>주소</Label>
+                        <SelectWrapper>
+                            <Select value={province} onChange={(e) => setProvince(e.target.value)} required>
+                                <option value="">광역시/도 선택</option>
+                                {provinces.map((prov) => (
+                                    <option key={prov} value={prov}>
+                                        {prov}
+                                    </option>
+                                ))}
+                            </Select>
+                        </SelectWrapper>
                     </FormGroup>
 
                     <FormGroup>
@@ -305,6 +366,31 @@ const VerificationButton = styled.button`
 
     &:hover:not(:disabled) {
         background: #3a2570;
+    }
+`;
+
+const SelectWrapper = styled.div`
+    width: 100%;
+`;
+
+const Select = styled.select`
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #eee;
+    border-radius: 8px;
+    font-size: 1rem;
+    background-color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:focus {
+        outline: none;
+        border-color: #4f3296;
+    }
+
+    &:disabled {
+        background-color: #f5f5f5;
+        cursor: not-allowed;
     }
 `;
 
