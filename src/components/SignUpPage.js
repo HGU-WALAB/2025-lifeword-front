@@ -88,11 +88,17 @@ const SignUpPage = () => {
             return;
         }
         try {
+            const [provider, uid] = userId.split('_');
+
             const userData = {
-                kakaoUid: userId,
+                oauthProvider: provider,
+                oauthUid: uid,
                 email: userEmail,
                 name: name,
-                phone: phone,
+                contact: phone,
+                church: churchName,
+                job: role === 'pastor' ? '목회자' : '평신도',
+                place: province,
             };
 
             const response = await createUser(userData);
@@ -102,10 +108,12 @@ const SignUpPage = () => {
                 localStorage.setItem('userEmail', userEmail);
                 localStorage.setItem('userName', name);
                 navigate('/', { replace: true });
+            } else {
+                throw new Error(response.message || '회원가입에 실패했습니다.');
             }
         } catch (error) {
             console.error('Error creating user:', error);
-            alert('회원가입에 실패했습니다.');
+            alert(error.message || '회원가입에 실패했습니다.');
         }
     };
 
@@ -155,7 +163,7 @@ const SignUpPage = () => {
                             <Select value={role} onChange={(e) => setRole(e.target.value)} required>
                                 <option value="">직분을 선택하세요</option>
                                 <option value="pastor">목회자</option>
-                                <option value="believer">신도</option>
+                                <option value="believer">평신도</option>
                             </Select>
                         </SelectWrapper>
                     </FormGroup>
