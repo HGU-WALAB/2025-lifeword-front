@@ -14,6 +14,9 @@ const MainNavbar = () => {
 
     const handleLogout = () => {
         localStorage.removeItem('UID');
+        localStorage.removeItem('isLoggedIn');
+        localStorage.removeItem('userEmail');
+
         window.location.href = '/eax9952';
     };
 
