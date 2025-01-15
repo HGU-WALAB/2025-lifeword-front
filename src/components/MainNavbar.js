@@ -1,45 +1,49 @@
 import React from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
 import { Zap, Search, Bookmark, LogOut, PlusCircle, BookOpen } from 'lucide-react';
 import LogoWhite from '../assets/LogoWhite.png';
 
-const MainNavbar = ({ onPageChange, currentPage }) => {
+const MainNavbar = () => {
+    const navigate = useNavigate();
+    const location = useLocation();
+
+    const isActive = (path) => {
+        return location.pathname === `/main${path}` || (path === '/quick-reading' && location.pathname === '/main');
+    };
+
     const handleLogout = () => {
-        localStorage.removeItem('isLoggedIn');
         localStorage.removeItem('UID');
-        localStorage.removeItem('userEmail');
-        localStorage.removeItem('_grecaptcha');
-        localStorage.removeItem('userName');
-        window.location.reload();
+        window.location.href = '/eax9952';
     };
 
     return (
         <NavContainer>
-            <LogoWrapper>
-                <Logo src={LogoWhite} alt="BIBLY" />
-            </LogoWrapper>
-            <MenuContainer>
-                <MenuItem onClick={() => onPageChange('quick')} active={currentPage === 'quick'}>
+            <LogoContainer>
+                <Logo src={LogoWhite} alt="Bibly Logo" onClick={() => navigate('/main')} />
+            </LogoContainer>
+            <NavItems>
+                <NavItem onClick={() => navigate('/main/quick-reading')} active={isActive('/quick-reading')}>
                     <Zap size={24} />
                     <span>빠른 성경 읽기</span>
-                </MenuItem>
-                <MenuItem onClick={() => onPageChange('search')} active={currentPage === 'search'}>
+                </NavItem>
+                <NavItem onClick={() => navigate('/main/search')} active={isActive('/search')}>
                     <Search size={24} />
-                    <span>상세 검색</span>
-                </MenuItem>
-                <MenuItem onClick={() => onPageChange('bookmark')} active={currentPage === 'bookmark'}>
+                    <span>검색</span>
+                </NavItem>
+                <NavItem onClick={() => navigate('/main/bookmarks')} active={isActive('/bookmarks')}>
                     <Bookmark size={24} />
                     <span>북마크</span>
-                </MenuItem>
-                <MenuItem onClick={() => onPageChange('sermon-list')} active={currentPage === 'sermon-list'}>
-                    <BookOpen size={24} />
-                    <span>설교 찾기</span>
-                </MenuItem>
-                <MenuItem onClick={() => onPageChange('add-sermon')} active={currentPage === 'add-sermon'}>
+                </NavItem>
+                <NavItem onClick={() => navigate('/main/add-sermon')} active={isActive('/add-sermon')}>
                     <PlusCircle size={24} />
-                    <span>설교 추가하기</span>
-                </MenuItem>
-            </MenuContainer>
+                    <span>설교 작성</span>
+                </NavItem>
+                <NavItem onClick={() => navigate('/main/sermon-list')} active={isActive('/sermon-list')}>
+                    <BookOpen size={24} />
+                    <span>설교 목록</span>
+                </NavItem>
+            </NavItems>
             <LogoutButton onClick={handleLogout}>
                 <LogOut size={24} />
                 <span>로그아웃</span>
@@ -60,7 +64,7 @@ const NavContainer = styled.nav`
     top: 0;
 `;
 
-const LogoWrapper = styled.div`
+const LogoContainer = styled.div`
     padding: 20px 0;
     display: flex;
     justify-content: center;
@@ -72,14 +76,14 @@ const Logo = styled.img`
     height: auto;
 `;
 
-const MenuContainer = styled.div`
+const NavItems = styled.div`
     display: flex;
     flex-direction: column;
     gap: 8px;
     margin-top: 20px;
 `;
 
-const MenuItem = styled.button`
+const NavItem = styled.button`
     display: flex;
     align-items: center;
     gap: 12px;
@@ -98,7 +102,7 @@ const MenuItem = styled.button`
     }
 `;
 
-const LogoutButton = styled(MenuItem)`
+const LogoutButton = styled(NavItem)`
     margin-top: auto;
     margin-bottom: 30px;
     color: #9ca3af;

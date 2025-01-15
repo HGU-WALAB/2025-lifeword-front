@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import styled from 'styled-components';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { createSermon } from '../services/APIService';
@@ -17,6 +17,7 @@ const AddSermonPage = () => {
         contentText: '',
         public: true,
     });
+    const editorRef = useRef(null);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -26,30 +27,61 @@ const AddSermonPage = () => {
         }));
     };
 
-    const handleEditorChange = (htmlContent) => {
+    const handleEditorChange = (content) => {
         setSermonData((prev) => ({
             ...prev,
-            contentText: htmlContent,
+            contentText: content,
         }));
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        if (!sermonData.sermonTitle || !sermonData.sermonDate || !sermonData.contentText) {
+            alert('제목, 날짜, 내용은 필수 입력사항입니다.');
+            return;
+        }
+
         try {
             const userId = localStorage.getItem('UID');
+            if (!userId) {
+                alert('로그인이 필요합니다.');
+                return;
+            }
+
+            const cleanContent = sermonData.contentText.replace(/<span class="ql-cursor">.*?<\/span>/g, '');
+
             const submitData = {
                 ...sermonData,
+                contentText: cleanContent,
                 userId,
             };
 
             const response = await createSermon(submitData);
-            if (response.success) {
+
+            if (response) {
                 alert('설교가 성공적으로 등록되었습니다.');
-                // 폼 초기화 또는 리디렉션
+                setSermonData({
+                    sermonDate: '',
+                    worshipType: '',
+                    mainScripture: '',
+                    additionalScripture: '',
+                    sermonTitle: '',
+                    summary: '',
+                    notes: '',
+                    recordInfo: '',
+                    contentText: '',
+                    public: true,
+                });
+
+                if (editorRef.current) {
+                    editorRef.current.clearEditor();
+                }
+            } else {
+                alert('설교 등록에 실패했습니다.');
             }
         } catch (error) {
-            console.error('Error creating sermon:', error);
-            alert('설교 등록에 실패했습니다.');
+            alert('설교 등록 중 오류가 발생했습니다.');
         }
     };
 
@@ -160,10 +192,10 @@ const AddSermonPage = () => {
                     />
                 </FormSection>
 
-                <FormSection>
+                <EditorSection>
                     <Label>설교 내용</Label>
-                    <SermonEditor onChange={handleEditorChange} />
-                </FormSection>
+                    <SermonEditor ref={editorRef} onChange={handleEditorChange} />
+                </EditorSection>
 
                 <FormSection>
                     <Label>공개 설정</Label>
@@ -191,8 +223,8 @@ const AddSermonPage = () => {
 
 const Container = styled.div`
     margin-left: 280px;
-    padding: 40px 60px;
-    width: calc(100vw - 280px);
+    padding: 40px;
+    width: calc(100vw - 360px);
     background-color: #f5f5f5;
     display: flex;
     flex-direction: column;
@@ -234,6 +266,15 @@ const FormGrid = styled.div`
 `;
 
 const FormSection = styled.div`
+    margin-bottom: 32px;
+    padding-right: 35px;
+
+    &:last-child {
+        margin-bottom: 0;
+    }
+`;
+
+const EditorSection = styled.div`
     margin-bottom: 32px;
 
     &:last-child {
@@ -280,26 +321,11 @@ const DateInput = styled(Input)`
 
 const TextArea = styled.textarea`
     width: 100%;
-    height: 300px;
     padding: 16px;
     border: 2px solid #eee;
     border-radius: 8px;
     font-size: 1rem;
     resize: vertical;
-    transition: all 0.2s ease;
-
-    &:focus {
-        outline: none;
-        border-color: #4f3296;
-    }
-`;
-
-const Select = styled.select`
-    width: 100%;
-    padding: 12px 16px;
-    border: 2px solid #eee;
-    border-radius: 8px;
-    font-size: 1rem;
     transition: all 0.2s ease;
 
     &:focus {

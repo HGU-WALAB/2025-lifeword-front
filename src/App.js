@@ -6,45 +6,18 @@ import MainPage from './pages/MainPage';
 import AuthCallback from './components/AuthCallback';
 import SignUpPage from './components/SignUpPage';
 
-const ProtectedRoute = ({ children }) => {
-    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
-    console.log('ProtectedRoute - Login status:', isLoggedIn);
-
-    if (!isLoggedIn) {
-        console.log('Not logged in, redirecting to onboarding...');
-        return <Navigate to="/onboarding" replace />;
-    }
-
-    console.log('Logged in, rendering protected content...');
-    return children;
-};
-
 function App() {
-    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
-    console.log('App - Initial login status:', isLoggedIn);
-
     return (
-        <Router basename="/eax9952">
-            <ParallaxProvider>
+        <ParallaxProvider>
+            <Router basename="/eax9952">
                 <Routes>
-                    <Route
-                        path="/"
-                        element={
-                            <ProtectedRoute>
-                                <MainPage />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route path="/onboarding" element={isLoggedIn ? <Navigate to="/" replace /> : <Onboarding />} />
+                    <Route path="/" element={<Onboarding />} />
                     <Route path="/auth" element={<AuthCallback />} />
                     <Route path="/signup" element={<SignUpPage />} />
-                    <Route
-                        path="*"
-                        element={isLoggedIn ? <Navigate to="/" replace /> : <Navigate to="/onboarding" replace />}
-                    />
+                    <Route path="/main/*" element={<MainPage />} />
                 </Routes>
-            </ParallaxProvider>
-        </Router>
+            </Router>
+        </ParallaxProvider>
     );
 }
 
