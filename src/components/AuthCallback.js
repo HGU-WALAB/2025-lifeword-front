@@ -1,13 +1,6 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-    getKakaoToken,
-    getKakaoUserInfo,
-    verifyUser,
-    // createUser,
-    getGoogleToken,
-    getGoogleUserInfo,
-} from '../services/APIService';
+import { getKakaoToken, getKakaoUserInfo, verifyUser, getGoogleToken, getGoogleUserInfo } from '../services/APIService';
 
 const AuthCallback = () => {
     const navigate = useNavigate();
@@ -23,7 +16,7 @@ const AuthCallback = () => {
                     throw new Error('No authorization code found');
                 }
 
-                let userId, userEmail;
+                let userId, userEmail, uid;
                 const isGoogle = url.searchParams.get('scope')?.includes('email');
 
                 if (isGoogle) {
@@ -34,7 +27,8 @@ const AuthCallback = () => {
                     }
                     console.log('3. 구글 사용자 정보 요청');
                     const userInfo = await getGoogleUserInfo(tokenData.access_token);
-                    userId = `google_${userInfo.id}`;
+                    uid = userInfo.id;
+                    userId = `${uid}`;
                     userEmail = userInfo.email;
                 } else {
                     console.log('2. 카카오 토큰 요청');
@@ -44,12 +38,13 @@ const AuthCallback = () => {
                     }
                     console.log('3. 카카오 사용자 정보 요청');
                     const userInfo = await getKakaoUserInfo(tokenData.access_token);
-                    userId = `kakao_${userInfo.id}`;
+                    uid = userInfo.id;
+                    userId = `${uid}`;
                     userEmail = userInfo.kakao_account?.email;
                 }
 
                 console.log('4. 사용자 확인');
-                const verifyResult = await verifyUser(userId);
+                const verifyResult = await verifyUser(uid);
 
                 if (!verifyResult.response_object.exists) {
                     navigate('/signup', {
@@ -63,7 +58,7 @@ const AuthCallback = () => {
                 }
 
                 localStorage.setItem('isLoggedIn', 'true');
-                localStorage.setItem('kakaoUID', userId);
+                localStorage.setItem('UID', userId);
                 localStorage.setItem('userEmail', userEmail);
                 console.log('6. 로그인 완료');
 
@@ -71,7 +66,7 @@ const AuthCallback = () => {
             } catch (error) {
                 console.error('Login process failed:', error);
                 localStorage.removeItem('isLoggedIn');
-                localStorage.removeItem('kakaoUID');
+                localStorage.removeItem('UID');
                 localStorage.removeItem('userEmail');
                 navigate('/onboarding', { replace: true });
             }

@@ -13,7 +13,7 @@ const BookmarkPage = () => {
     const fetchBookmarks = async () => {
         setLoading(true);
         try {
-            const kakaoUID = localStorage.getItem('kakaoUID');
+            const kakaoUID = localStorage.getItem('UID');
             const response = await getBookmarks(kakaoUID);
             if (response.success) {
                 setBookmarks(response.response_object);
@@ -35,7 +35,7 @@ const BookmarkPage = () => {
         }
 
         try {
-            const kakaoUID = localStorage.getItem('kakaoUID');
+            const kakaoUID = localStorage.getItem('UID');
             console.log('Deleting bookmark with verse_id:', bookmark.verse_id);
             const response = await deleteBookmark(kakaoUID, bookmark.verse_id);
             console.log('Delete response:', response);

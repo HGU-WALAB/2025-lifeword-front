@@ -104,7 +104,7 @@ const SignUpPage = () => {
             const response = await createUser(userData);
             if (response.success) {
                 localStorage.setItem('isLoggedIn', 'true');
-                localStorage.setItem('kakaoUID', userId);
+                localStorage.setItem('UID', userId);
                 localStorage.setItem('userEmail', userEmail);
                 localStorage.setItem('userName', name);
                 navigate('/', { replace: true });

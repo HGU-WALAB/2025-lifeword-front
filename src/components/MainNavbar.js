@@ -6,7 +6,8 @@ import LogoWhite from '../assets/LogoWhite.png';
 const MainNavbar = ({ onPageChange, currentPage }) => {
     const handleLogout = () => {
         localStorage.removeItem('isLoggedIn');
-        localStorage.removeItem('kakaoUID');
+        localStorage.removeItem('UID');
+        localStorage.removeItem('userEmail');
         window.location.reload();
     };
 

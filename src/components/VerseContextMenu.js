@@ -27,7 +27,7 @@ const VerseContextMenu = ({ targetRef, verse }) => {
 
     const handleBookmark = async () => {
         try {
-            const kakaoUID = localStorage.getItem('kakaoUID');
+            const kakaoUID = localStorage.getItem('UID');
             const response = await createBookmark(kakaoUID, verse.idx);
             if (response.success) {
                 alert('북마크가 추가되었습니다.');
