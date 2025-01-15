@@ -193,6 +193,44 @@ export const createSermon = async (sermonData) => {
     }
 };
 
+export const getPublicSermons = async () => {
+    try {
+        const response = await fetch(`${BASE_URL}/sermons/publiclist`);
+        return await response.json();
+    } catch (error) {
+        console.error('Error getting public sermons:', error);
+        throw error;
+    }
+};
+
+export const updateSermon = async (sermonId, userId, sermonData) => {
+    try {
+        const response = await fetch(`${BASE_URL}/sermons/${sermonId}?userId=${userId}`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(sermonData),
+        });
+        return await response.json();
+    } catch (error) {
+        console.error('Error updating sermon:', error);
+        throw error;
+    }
+};
+
+export const deleteSermon = async (sermonId, userId) => {
+    try {
+        const response = await fetch(`${BASE_URL}/sermons/${sermonId}?userId=${userId}`, {
+            method: 'DELETE',
+        });
+        return await response.json();
+    } catch (error) {
+        console.error('Error deleting sermon:', error);
+        throw error;
+    }
+};
+
 export const getSermons = async () => {
     try {
         const response = await fetch(`${BASE_URL}/sermons`);
