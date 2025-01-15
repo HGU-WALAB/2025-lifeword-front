@@ -107,7 +107,7 @@ const SignUpPage = () => {
                 localStorage.setItem('UID', response.response_object.id);
                 localStorage.setItem('userEmail', userEmail);
                 localStorage.setItem('userName', name);
-                navigate('/', { replace: true });
+                navigate('/main', { replace: true });
             } else {
                 throw new Error(response.message || '회원가입에 실패했습니다.');
             }

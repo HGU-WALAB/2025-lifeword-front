@@ -16,6 +16,8 @@ const MainNavbar = () => {
         localStorage.removeItem('UID');
         localStorage.removeItem('isLoggedIn');
         localStorage.removeItem('userEmail');
+        localStorage.removeItem('_grecaptcha');
+        localStorage.removeItem('userName');
 
         window.location.href = '/eax9952';
     };
