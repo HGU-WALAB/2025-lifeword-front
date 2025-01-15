@@ -169,12 +169,13 @@ const VerseItem = ({ verse }) => {
 const Container = styled.div`
     padding: 40px;
     margin-left: 280px;
-    width: calc(100vw - 280px);
+    width: calc(100vw - 350px);
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     background-color: #f5f5f5;
-    min-height: 100vh;
+    height: 91vh;
 `;
 
 const TestamentSelector = styled.div`

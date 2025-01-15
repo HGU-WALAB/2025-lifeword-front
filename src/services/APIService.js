@@ -1,9 +1,9 @@
 const BASE_URL = 'http://walab.handong.edu:8080/naimkim_1/api/v1';
 
 // User 관련 API
-export const verifyUser = async (kakaoUid) => {
+export const verifyUser = async (oauthUid) => {
     try {
-        const response = await fetch(`${BASE_URL}/users/verify?kakaoUid=${kakaoUid}`);
+        const response = await fetch(`${BASE_URL}/users/verify?oauthUid=${oauthUid}`);
         return await response.json();
     } catch (error) {
         console.error('Error verifying user:', error);
@@ -11,14 +11,14 @@ export const verifyUser = async (kakaoUid) => {
     }
 };
 
-export const createUser = async (kakaoUid) => {
+export const createUser = async (userData) => {
     try {
         const response = await fetch(`${BASE_URL}/users`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ kakaoUid }),
+            body: JSON.stringify(userData),
         });
         return await response.json();
     } catch (error) {
@@ -189,6 +189,44 @@ export const createSermon = async (sermonData) => {
         return await response.json();
     } catch (error) {
         console.error('Error creating sermon:', error);
+        throw error;
+    }
+};
+
+export const getPublicSermons = async () => {
+    try {
+        const response = await fetch(`${BASE_URL}/sermons/publiclist`);
+        return await response.json();
+    } catch (error) {
+        console.error('Error getting public sermons:', error);
+        throw error;
+    }
+};
+
+export const updateSermon = async (sermonId, userId, sermonData) => {
+    try {
+        const response = await fetch(`${BASE_URL}/sermons/${sermonId}?userId=${userId}`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(sermonData),
+        });
+        return await response.json();
+    } catch (error) {
+        console.error('Error updating sermon:', error);
+        throw error;
+    }
+};
+
+export const deleteSermon = async (sermonId, userId) => {
+    try {
+        const response = await fetch(`${BASE_URL}/sermons/${sermonId}?userId=${userId}`, {
+            method: 'DELETE',
+        });
+        return await response.json();
+    } catch (error) {
+        console.error('Error deleting sermon:', error);
         throw error;
     }
 };
