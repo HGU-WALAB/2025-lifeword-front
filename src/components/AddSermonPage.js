@@ -2,34 +2,50 @@ import React, { useState } from 'react';
 import styled from 'styled-components';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { createSermon } from '../services/APIService';
+import SermonEditor from './Editor/SermonEditor';
 
 const AddSermonPage = () => {
-    const [owner, setOwner] = useState('');
-    const [title, setTitle] = useState('');
-    const [sermonDate, setSermonDate] = useState('');
-    const [sermonContent, setSermonContent] = useState('');
-    const [currentTag, setCurrentTag] = useState('');
-    const [tags, setTags] = useState([]);
+    const [sermonData, setSermonData] = useState({
+        sermonDate: '',
+        worshipType: '',
+        mainScripture: '',
+        additionalScripture: '',
+        sermonTitle: '',
+        summary: '',
+        notes: '',
+        recordInfo: '',
+        contentText: '',
+        public: true,
+    });
+
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setSermonData((prev) => ({
+            ...prev,
+            [name]: value,
+        }));
+    };
+
+    const handleEditorChange = (htmlContent) => {
+        setSermonData((prev) => ({
+            ...prev,
+            contentText: htmlContent,
+        }));
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            const sermonData = {
-                owner,
-                title,
-                sermonDate,
-                sermonContent,
-                keywords: tags,
+            const userId = localStorage.getItem('UID');
+            const submitData = {
+                ...sermonData,
+                userId,
             };
 
-            const response = await createSermon(sermonData);
+            const response = await createSermon(submitData);
             if (response.success) {
                 alert('설교가 성공적으로 등록되었습니다.');
-                setOwner('');
-                setTitle('');
-                setSermonDate('');
-                setSermonContent('');
-                setTags([]);
+                // 폼 초기화 또는 리디렉션
             }
         } catch (error) {
             console.error('Error creating sermon:', error);
@@ -37,64 +53,39 @@ const AddSermonPage = () => {
         }
     };
 
-    const handleTagKeyDown = (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            if (currentTag.trim().length > 0) {
-                setCurrentTag(currentTag.trim() + ' ');
-                setTimeout(() => {
-                    const newTag = currentTag.trim().split(' ')[0];
-                    if (!tags.includes(newTag)) {
-                        setTags([...tags, newTag]);
-                    }
-                    setCurrentTag('');
-                }, 10);
-            }
-        } else if (e.key === 'Backspace' && currentTag === '' && tags.length > 0) {
-            e.preventDefault();
-            setTags(tags.slice(0, -1));
-        }
-    };
-
-    const removeTag = (tagToRemove) => {
-        setTags(tags.filter((tag) => tag !== tagToRemove));
-    };
-
-    const handleTagChange = (e) => {
-        setCurrentTag(e.target.value.replace(/^#/, ''));
-    };
-
     return (
         <Container>
             <PageHeader>
-                <Title>설교 추가하기</Title>
-                <Description>새로운 설교를 등록해보세요.</Description>
+                <Title>설교 작성하기</Title>
+                <Description>새로운 설교를 기록해보세요.</Description>
             </PageHeader>
 
             <FormContainer onSubmit={handleSubmit}>
                 <FormGrid>
-                    <FormSection>
-                        <Label>설교자</Label>
-                        <Input
-                            type="text"
-                            value={owner}
-                            onChange={(e) => setOwner(e.target.value)}
-                            placeholder="설교자 이름을 입력하세요"
-                            required
-                        />
-                    </FormSection>
-
                     <FormSection>
                         <Label>설교 날짜</Label>
                         <DateInputWrapper>
                             <CalendarIcon size={20} />
                             <DateInput
                                 type="date"
-                                value={sermonDate}
-                                onChange={(e) => setSermonDate(e.target.value)}
+                                name="sermonDate"
+                                value={sermonData.sermonDate}
+                                onChange={handleInputChange}
                                 required
                             />
                         </DateInputWrapper>
+                    </FormSection>
+
+                    <FormSection>
+                        <Label>예배 종류</Label>
+                        <Input
+                            type="text"
+                            name="worshipType"
+                            value={sermonData.worshipType}
+                            onChange={handleInputChange}
+                            placeholder="예) 주일-새벽, 주일오전, 수요저녁, 금요철야"
+                            required
+                        />
                     </FormSection>
                 </FormGrid>
 
@@ -102,40 +93,94 @@ const AddSermonPage = () => {
                     <Label>설교 제목</Label>
                     <Input
                         type="text"
-                        value={title}
-                        onChange={(e) => setTitle(e.target.value)}
+                        name="sermonTitle"
+                        value={sermonData.sermonTitle}
+                        onChange={handleInputChange}
                         placeholder="설교 제목을 입력하세요"
                         required
                     />
                 </FormSection>
 
+                <FormGrid>
+                    <FormSection>
+                        <Label>주 성경 본문</Label>
+                        <Input
+                            type="text"
+                            name="mainScripture"
+                            value={sermonData.mainScripture}
+                            onChange={handleInputChange}
+                            placeholder="예) 요한복음 3:16"
+                            required
+                        />
+                    </FormSection>
+
+                    <FormSection>
+                        <Label>추가 성경 본문</Label>
+                        <Input
+                            type="text"
+                            name="additionalScripture"
+                            value={sermonData.additionalScripture}
+                            onChange={handleInputChange}
+                            placeholder="예) 로마서 8:28"
+                        />
+                    </FormSection>
+                </FormGrid>
+
                 <FormSection>
-                    <Label>설교 내용</Label>
+                    <Label>설교 요약</Label>
                     <TextArea
-                        value={sermonContent}
-                        onChange={(e) => setSermonContent(e.target.value)}
-                        placeholder="설교 내용을 입력하세요"
+                        name="summary"
+                        value={sermonData.summary}
+                        onChange={handleInputChange}
+                        placeholder="설교의 주요 내용을 요약해서 입력하세요"
+                        rows={4}
                         required
                     />
                 </FormSection>
 
                 <FormSection>
-                    <Label>키워드</Label>
-                    <TagsContainer>
-                        {tags.map((tag, index) => (
-                            <Tag key={index}>
-                                #{tag}
-                                <RemoveTag onClick={() => removeTag(tag)}>×</RemoveTag>
-                            </Tag>
-                        ))}
-                        <TagInput
-                            value={currentTag}
-                            onChange={handleTagChange}
-                            onKeyDown={handleTagKeyDown}
-                            placeholder="키워드를 입력하고 Enter를 누르세요"
+                    <Label>노트</Label>
+                    <TextArea
+                        name="notes"
+                        value={sermonData.notes}
+                        onChange={handleInputChange}
+                        placeholder="추가 노트를 입력하세요"
+                        rows={3}
+                    />
+                </FormSection>
+
+                <FormSection>
+                    <Label>설교록 정보</Label>
+                    <Input
+                        type="text"
+                        name="recordInfo"
+                        value={sermonData.recordInfo}
+                        onChange={handleInputChange}
+                        placeholder="예) 234호 308쪽"
+                    />
+                </FormSection>
+
+                <FormSection>
+                    <Label>설교 내용</Label>
+                    <SermonEditor onChange={handleEditorChange} />
+                </FormSection>
+
+                <FormSection>
+                    <Label>공개 설정</Label>
+                    <CheckboxWrapper>
+                        <Checkbox
+                            type="checkbox"
+                            name="public"
+                            checked={sermonData.public}
+                            onChange={(e) =>
+                                setSermonData((prev) => ({
+                                    ...prev,
+                                    public: e.target.checked,
+                                }))
+                            }
                         />
-                    </TagsContainer>
-                    <TagHelper>Enter로 키워드 추가, Backspace로 삭제</TagHelper>
+                        <CheckboxLabel>공개 설정</CheckboxLabel>
+                    </CheckboxWrapper>
                 </FormSection>
 
                 <SubmitButton type="submit">설교 등록하기</SubmitButton>
@@ -249,66 +294,35 @@ const TextArea = styled.textarea`
     }
 `;
 
-const TagsContainer = styled.div`
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    padding: 8px;
+const Select = styled.select`
+    width: 100%;
+    padding: 12px 16px;
     border: 2px solid #eee;
     border-radius: 8px;
-    min-height: 48px;
-    align-items: center;
+    font-size: 1rem;
+    transition: all 0.2s ease;
 
-    &:focus-within {
+    &:focus {
+        outline: none;
         border-color: #4f3296;
     }
 `;
 
-const Tag = styled.span`
-    display: inline-flex;
+const CheckboxWrapper = styled.div`
+    display: flex;
     align-items: center;
-    background: #4f3296;
-    color: white;
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 0.9rem;
+    gap: 8px;
 `;
 
-const RemoveTag = styled.span`
-    margin-left: 6px;
-    width: 18px;
-    height: 18px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.2);
+const Checkbox = styled.input`
+    width: 20px;
+    height: 20px;
     cursor: pointer;
-    font-size: 14px;
-
-    &:hover {
-        background: rgba(255, 255, 255, 0.4);
-    }
 `;
 
-const TagHelper = styled.p`
-    margin-top: 8px;
-    color: #666;
-    font-size: 0.8rem;
-    font-style: italic;
-`;
-
-const TagInput = styled.input`
-    border: none;
-    outline: none;
-    padding: 4px 8px;
-    flex: 1;
-    min-width: 120px;
-    font-size: 0.9rem;
-
-    &::placeholder {
-        color: #aaa;
-    }
+const CheckboxLabel = styled.label`
+    font-size: 1rem;
+    color: #333;
 `;
 
 const SubmitButton = styled.button`
