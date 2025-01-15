@@ -28,7 +28,7 @@ const AuthCallback = () => {
                     console.log('3. 구글 사용자 정보 요청');
                     const userInfo = await getGoogleUserInfo(tokenData.access_token);
                     uid = userInfo.id;
-                    userId = `${uid}`;
+                    userId = `google_${uid}`;
                     userEmail = userInfo.email;
                 } else {
                     console.log('2. 카카오 토큰 요청');
@@ -39,7 +39,7 @@ const AuthCallback = () => {
                     console.log('3. 카카오 사용자 정보 요청');
                     const userInfo = await getKakaoUserInfo(tokenData.access_token);
                     uid = userInfo.id;
-                    userId = `${uid}`;
+                    userId = `kakao_${uid}`;
                     userEmail = userInfo.kakao_account?.email;
                 }
 
@@ -58,7 +58,7 @@ const AuthCallback = () => {
                 }
 
                 localStorage.setItem('isLoggedIn', 'true');
-                localStorage.setItem('UID', userId);
+                localStorage.setItem('UID', verifyResult.response_object.userId);
                 localStorage.setItem('userEmail', userEmail);
                 console.log('6. 로그인 완료');
 

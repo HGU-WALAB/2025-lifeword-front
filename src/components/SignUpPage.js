@@ -91,7 +91,7 @@ const SignUpPage = () => {
             const [provider, uid] = userId.split('_');
 
             const userData = {
-                oauthProvider: provider,
+                oauthProvider: provider.toLowerCase(),
                 oauthUid: uid,
                 email: userEmail,
                 name: name,
@@ -104,7 +104,7 @@ const SignUpPage = () => {
             const response = await createUser(userData);
             if (response.success) {
                 localStorage.setItem('isLoggedIn', 'true');
-                localStorage.setItem('UID', userId);
+                localStorage.setItem('UID', response.response_object.id);
                 localStorage.setItem('userEmail', userEmail);
                 localStorage.setItem('userName', name);
                 navigate('/', { replace: true });

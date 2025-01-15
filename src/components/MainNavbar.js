@@ -8,6 +8,8 @@ const MainNavbar = ({ onPageChange, currentPage }) => {
         localStorage.removeItem('isLoggedIn');
         localStorage.removeItem('UID');
         localStorage.removeItem('userEmail');
+        localStorage.removeItem('_grecaptcha');
+        localStorage.removeItem('userName');
         window.location.reload();
     };
 
