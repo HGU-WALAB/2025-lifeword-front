@@ -13,10 +13,10 @@ const BookmarkPage = () => {
     const fetchBookmarks = async () => {
         setLoading(true);
         try {
-            const kakaoUID = localStorage.getItem('UID');
-            const response = await getBookmarks(kakaoUID);
+            const userID = localStorage.getItem('UID');
+            const response = await getBookmarks(userID);
             if (response.success) {
-                setBookmarks(response.response_object);
+                setBookmarks(response.data);
             }
         } catch (error) {
             console.error('Error fetching bookmarks:', error);
@@ -35,9 +35,9 @@ const BookmarkPage = () => {
         }
 
         try {
-            const kakaoUID = localStorage.getItem('UID');
+            const userID = localStorage.getItem('UID');
             console.log('Deleting bookmark with verse_id:', bookmark.verse_id);
-            const response = await deleteBookmark(kakaoUID, bookmark.verse_id);
+            const response = await deleteBookmark(userID, bookmark.verse_id);
             console.log('Delete response:', response);
             if (response.success) {
                 alert('북마크가 삭제되었습니다.');

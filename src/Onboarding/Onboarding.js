@@ -1,14 +1,24 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ParallaxBanner } from 'react-scroll-parallax';
 import styled from 'styled-components';
+import { useNavigate } from 'react-router-dom';
 import { OnboardingGlobalStyles } from '../styles/OnboardingGlobalStyles';
 import LogoWhite from '../assets/LogoWhite.png';
+import LoginForm from '../components/LoginForm';
 
 const Onboarding = () => {
+    const [showLoginForm, setShowLoginForm] = useState(false);
+    const navigate = useNavigate();
+
+    const handleLogoClick = () => {
+        navigate('/');
+        window.location.reload();
+    };
+
     return (
         <div style={{ height: '100vh' }}>
             <OnboardingGlobalStyles />
-            <FixedLogo src={LogoWhite} alt="BIBLY" />
+            <FixedLogo src={LogoWhite} alt="BIBLY" onClick={handleLogoClick} />
             <ParallaxBanner
                 layers={[
                     {
@@ -50,12 +60,23 @@ const Onboarding = () => {
                         opacity: [0.5, 1],
                         children: (
                             <Content>
-                                <MultiLineTitle>하나님의 말씀을 더 가까이, BIBLY</MultiLineTitle>
-                                <Description>지금 바로 시작해보세요!</Description>
-                                <LoginButtons>
-                                    <KakaoLoginButton onClick={handleKakaoLogin}>카카오로 시작하기</KakaoLoginButton>
-                                    <GoogleLoginButton onClick={handleGoogleLogin}>구글로 시작하기</GoogleLoginButton>
-                                </LoginButtons>
+                                {showLoginForm ? (
+                                    <LoginForm onClose={() => setShowLoginForm(false)} />
+                                ) : (
+                                    <>
+                                        <MultiLineTitle>하나님의 말씀을 더 가까이, BIBLY</MultiLineTitle>
+                                        <Description>지금 바로 시작해보세요!</Description>
+                                        <LoginButtons>
+                                            <KakaoLoginButton onClick={handleKakaoLogin}>
+                                                카카오로 시작하기
+                                            </KakaoLoginButton>
+                                            <GoogleLoginButton onClick={handleGoogleLogin}>
+                                                구글로 시작하기
+                                            </GoogleLoginButton>
+                                            <LoginButton onClick={() => setShowLoginForm(true)}>로그인하기</LoginButton>
+                                        </LoginButtons>
+                                    </>
+                                )}
                             </Content>
                         ),
                     },
@@ -79,6 +100,7 @@ const FixedLogo = styled.img`
     height: auto;
     z-index: 1000;
     opacity: 0;
+    cursor: pointer;
     animation: fadeIn 0.8s ease forwards;
 
     @keyframes fadeIn {
@@ -191,6 +213,16 @@ const GoogleLoginButton = styled(KakaoLoginButton)`
     background-color: #ffffff;
     color: #000000;
     border: 1px solid #dddddd;
+`;
+
+const LoginButton = styled(GoogleLoginButton)`
+    background-color: transparent;
+    color: #ffffff;
+    border: 1px solid #ffffff;
+
+    &:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+    }
 `;
 
 const handleKakaoLogin = () => {

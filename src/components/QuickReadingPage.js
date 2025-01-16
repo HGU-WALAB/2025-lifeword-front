@@ -19,8 +19,8 @@ const QuickReadingPage = () => {
         const fetchBooks = async () => {
             try {
                 const response = await getBooks(testament);
-                if (response.success && response.response_object.length > 0) {
-                    const uniqueBooks = response.response_object.filter(
+                if (response.success && response.data.length > 0) {
+                    const uniqueBooks = response.data.filter(
                         (book, index, self) =>
                             index === self.findIndex((b) => b.book === book.book && b.long_label === book.long_label)
                     );
@@ -43,12 +43,10 @@ const QuickReadingPage = () => {
             try {
                 const response = await getBibles(testament, currentBook.book);
                 if (response.success) {
-                    const uniqueChapters = [...new Set(response.response_object.map((verse) => verse.chapter))];
+                    const uniqueChapters = [...new Set(response.data.map((verse) => verse.chapter))];
                     setChapters(uniqueChapters);
 
-                    const currentChapterVerses = response.response_object.filter(
-                        (verse) => verse.chapter === currentChapter
-                    );
+                    const currentChapterVerses = response.data.filter((verse) => verse.chapter === currentChapter);
                     setVerses(currentChapterVerses);
                 }
             } catch (error) {
