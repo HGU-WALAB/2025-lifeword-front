@@ -16,7 +16,7 @@ const SermonListPage = () => {
         try {
             const response = await getSermons();
             if (response.success) {
-                setSermons(response.response_object);
+                setSermons(response.data);
             }
         } catch (error) {
             console.error('Error fetching sermons:', error);
@@ -29,7 +29,7 @@ const SermonListPage = () => {
         try {
             const response = await getSermonById(id);
             if (response.success) {
-                setSelectedSermon(response.response_object);
+                setSelectedSermon(response.data);
             }
         } catch (error) {
             console.error('Error fetching sermon details:', error);

@@ -4,7 +4,8 @@ import { ParallaxProvider } from 'react-scroll-parallax';
 import Onboarding from './Onboarding/Onboarding';
 import MainPage from './pages/MainPage';
 import AuthCallback from './components/AuthCallback';
-import SignUpPage from './components/SignUpPage';
+import SignUpPageSocial from './components/SignUpPageSocial';
+import SignUpPageBibly from './components/SignUpPageBibly';
 
 const ProtectedRoute = ({ children }) => {
     const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
@@ -23,7 +24,8 @@ function App() {
                 <Routes>
                     <Route path="/" element={<Onboarding />} />
                     <Route path="/auth" element={<AuthCallback />} />
-                    <Route path="/signup" element={<SignUpPage />} />
+                    <Route path="/signup" element={<SignUpPageSocial />} />
+                    <Route path="/signup-bibly" element={<SignUpPageBibly />} />
                     <Route
                         path="/main/*"
                         element={

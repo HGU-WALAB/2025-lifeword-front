@@ -3,10 +3,32 @@ const BASE_URL = 'http://walab.handong.edu:8080/naimkim_1/api/v1';
 // User 관련 API
 export const verifyUser = async (oauthUid) => {
     try {
-        const response = await fetch(`${BASE_URL}/users/verify?oauthUid=${oauthUid}`);
-        return await response.json();
+        const response = await fetch(`${BASE_URL}/users/verify/kakao-google?oauthUid=${oauthUid}`);
+        const data = await response.json();
+        if (data.success) {
+            localStorage.setItem('job', data.data.job);
+            localStorage.setItem('admin', data.data.admin);
+        }
+        return data;
     } catch (error) {
         console.error('Error verifying user:', error);
+        throw error;
+    }
+};
+
+export const login = async (email, password) => {
+    try {
+        const response = await fetch(
+            `${BASE_URL}/users/verify/bibly?email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`
+        );
+        const data = await response.json();
+        if (data.success) {
+            localStorage.setItem('job', data.data.job);
+            localStorage.setItem('admin', data.data.admin);
+        }
+        return data;
+    } catch (error) {
+        console.error('Error logging in:', error);
         throw error;
     }
 };
@@ -28,9 +50,9 @@ export const createUser = async (userData) => {
 };
 
 // Bookmark 관련 API
-export const createBookmark = async (kakaoUid, verseId) => {
+export const createBookmark = async (userID, verseId) => {
     try {
-        const response = await fetch(`${BASE_URL}/bookmarks?kakaoUid=${kakaoUid}`, {
+        const response = await fetch(`${BASE_URL}/bookmarks?userID=${userID}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -44,9 +66,9 @@ export const createBookmark = async (kakaoUid, verseId) => {
     }
 };
 
-export const getBookmarks = async (kakaoUid) => {
+export const getBookmarks = async (userID) => {
     try {
-        const response = await fetch(`${BASE_URL}/bookmarks?kakaoUid=${kakaoUid}`);
+        const response = await fetch(`${BASE_URL}/bookmarks?userID=${userID}`);
         return await response.json();
     } catch (error) {
         console.error('Error getting bookmarks:', error);
@@ -54,9 +76,9 @@ export const getBookmarks = async (kakaoUid) => {
     }
 };
 
-export const deleteBookmark = async (kakaoUID, verseId) => {
+export const deleteBookmark = async (userID, verseId) => {
     try {
-        const response = await fetch(`${BASE_URL}/bookmarks/${verseId}?kakaoUid=${kakaoUID}`, {
+        const response = await fetch(`${BASE_URL}/bookmarks/${verseId}?userID=${userID}`, {
             method: 'DELETE',
         });
 
@@ -247,6 +269,21 @@ export const getSermonById = async (id) => {
         return await response.json();
     } catch (error) {
         console.error('Error getting sermon:', error);
+        throw error;
+    }
+};
+
+export const verifyEmail = async (email) => {
+    try {
+        const response = await fetch(`${BASE_URL}/users/verify/bibly-emailCheck?email=${encodeURIComponent(email)}`);
+        const data = await response.json();
+
+        return {
+            success: true,
+            data: data,
+        };
+    } catch (error) {
+        console.error('Error verifying email:', error);
         throw error;
     }
 };

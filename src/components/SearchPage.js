@@ -18,7 +18,7 @@ const SearchPage = () => {
         try {
             const response = await searchBibles(keyword);
             if (response.success) {
-                setSearchResults(response.response_object);
+                setSearchResults(response.data);
                 setCurrentPage(1);
             } else {
                 alert(response.message);

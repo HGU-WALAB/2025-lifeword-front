@@ -52,7 +52,7 @@ const AuthCallback = () => {
                 const verifyResult = await verifyUser(uid);
                 console.log('verify 응답:', verifyResult);
 
-                if (!verifyResult.response_object.exists) {
+                if (!verifyResult.data.exists) {
                     console.log('5. 신규 사용자 - 회원가입으로 이동');
                     navigate('/signup', {
                         state: {
@@ -66,7 +66,7 @@ const AuthCallback = () => {
 
                 console.log('5. 기존 사용자 - 로그인 진행');
                 localStorage.setItem('isLoggedIn', 'true');
-                localStorage.setItem('UID', verifyResult.response_object.userId);
+                localStorage.setItem('UID', verifyResult.data.userId);
                 localStorage.setItem('userEmail', userEmail);
                 console.log('6. 로그인 완료 - /main으로 이동');
 
