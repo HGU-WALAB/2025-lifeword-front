@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import styled from 'styled-components';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { createSermon } from '../services/APIService';
@@ -18,6 +18,10 @@ const AddSermonPage = () => {
         public: true,
     });
     const editorRef = useRef(null);
+
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, []);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
