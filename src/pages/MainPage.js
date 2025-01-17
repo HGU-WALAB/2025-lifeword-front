@@ -7,6 +7,7 @@ import SearchPage from '../components/SearchPage';
 import BookmarkPage from '../components/BookmarkPage';
 import AddSermonPage from '../components/AddSermonPage';
 import SermonListPage from '../components/SermonListPage';
+import AdminPage from '../components/AdminPage';
 
 const MainPage = () => {
     return (
@@ -20,6 +21,7 @@ const MainPage = () => {
                     <Route path="/bookmarks" element={<BookmarkPage />} />
                     <Route path="/add-sermon" element={<AddSermonPage />} />
                     <Route path="/sermon-list" element={<SermonListPage />} />
+                    {localStorage.getItem('admin') === 'true' && <Route path="/admin" element={<AdminPage />} />}
                 </Routes>
             </MainContent>
         </Container>
