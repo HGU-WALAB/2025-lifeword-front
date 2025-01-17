@@ -252,7 +252,7 @@ export const getUserSermons = async (userId, option = 'all') => {
 
 export const updateSermon = async (sermonId, userId, sermonData) => {
     try {
-        const response = await fetch(`${BASE_URL}/sermons/${sermonId}?userId=${userId}`, {
+        const response = await fetch(`${BASE_URL}/sermons/update/${sermonId}?userId=${userId}`, {
             method: 'PATCH',
             headers: {
                 'Content-Type': 'application/json',
@@ -276,7 +276,6 @@ export const deleteSermon = async (sermonId, userId) => {
             throw new Error('Failed to delete sermon');
         }
 
-        // 응답이 비어있을 수 있으므로 조건부로 JSON 파싱
         const text = await response.text();
         return text ? JSON.parse(text) : { success: true };
     } catch (error) {

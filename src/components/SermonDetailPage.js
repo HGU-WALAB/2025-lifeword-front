@@ -166,7 +166,7 @@ const SermonDetailPage = () => {
 const Container = styled.div`
     margin-left: 320px;
     padding: 40px;
-    width: calc(100vw - 360px);
+    width: calc(100vw - 400px);
     min-height: 91vh;
     background-color: #f5f5f5;
     overflow-y: auto;
@@ -191,20 +191,6 @@ const ContentWrapper = styled.div`
     border-radius: 16px;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
     padding: 48px;
-
-    @media (max-width: 1024px) {
-        padding: 32px;
-    }
-
-    @media (max-width: 768px) {
-        padding: 24px;
-        margin: 0;
-        border-radius: 8px;
-    }
-
-    @media (max-width: 480px) {
-        padding: 16px;
-    }
 `;
 
 const Header = styled.div`
