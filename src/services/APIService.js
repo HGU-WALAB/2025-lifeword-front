@@ -267,3 +267,13 @@ export const deleteSermon = async (sermonId, userId) => {
         throw error;
     }
 };
+
+export const getSermonDetail = async (sermonId) => {
+    try {
+        const response = await fetch(`${BASE_URL}/sermons/${sermonId}/details`);
+        return await response.json();
+    } catch (error) {
+        console.error('Error getting sermon detail:', error);
+        throw error;
+    }
+};

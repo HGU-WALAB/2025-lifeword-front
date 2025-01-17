@@ -10,6 +10,9 @@ const AdminNavbar = () => {
     const location = useLocation();
 
     const isActive = (path) => {
+        if (path === '/sermon-list') {
+            return location.pathname.includes('/main/sermon-list');
+        }
         return location.pathname === `/main${path}` || (path === '/quick-reading' && location.pathname === '/main');
     };
 

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { getPublicSermons } from '../services/APIService';
 import { X, Calendar, User, Tag, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const ITEMS_PER_PAGE = 20;
 
@@ -12,6 +13,7 @@ const SermonListPage = () => {
     const [filterType, setFilterType] = useState('public');
     const [mySermonFilter, setMySermonFilter] = useState('all');
     const [currentPage, setCurrentPage] = useState(1);
+    const navigate = useNavigate();
 
     useEffect(() => {
         if (filterType === 'public') {
@@ -89,7 +91,13 @@ const SermonListPage = () => {
                                 <LoadingText>로딩 중...</LoadingText>
                             ) : currentSermons.length > 0 ? (
                                 currentSermons.map((sermon) => (
-                                    <SermonCard key={sermon.sermonId}>
+                                    <SermonCard
+                                        key={sermon.sermonId}
+                                        onClick={() => {
+                                            console.log('Navigating to sermon detail:', sermon.sermonId);
+                                            navigate(`detail/${sermon.sermonId}`);
+                                        }}
+                                    >
                                         <WorshipType>{sermon.worshipType}</WorshipType>
                                         <div>
                                             <AuthorName>{sermon.ownerName}</AuthorName>
@@ -226,6 +234,7 @@ const SermonCard = styled.div`
     border-radius: 12px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     transition: all 0.2s ease;
+    cursor: pointer;
 
     &:hover {
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
