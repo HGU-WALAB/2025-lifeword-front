@@ -6,6 +6,7 @@ import QuickReadingPage from '../components/QuickReadingPage';
 import SearchPage from '../components/SearchPage';
 import BookmarkPage from '../components/BookmarkPage';
 import AddSermonPage from '../components/AddSermonPage';
+import EditSermonPage from '../components/EditSermonPage';
 import SermonListPage from '../components/SermonListPage';
 import SermonDetailPage from '../components/SermonDetailPage';
 import AdminPage from '../components/AdminPage';
@@ -21,6 +22,7 @@ const MainPage = () => {
                     <Route path="/search" element={<SearchPage />} />
                     <Route path="/bookmarks" element={<BookmarkPage />} />
                     <Route path="/add-sermon" element={<AddSermonPage />} />
+                    <Route path="/edit-sermon/:id" element={<EditSermonPage />} />
                     <Route path="/sermon-list/*" element={<SermonListLayout />} />
                     {localStorage.getItem('admin') === 'true' && <Route path="/admin" element={<AdminPage />} />}
                 </Routes>

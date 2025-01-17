@@ -47,7 +47,7 @@ const SermonDetailPage = () => {
     };
 
     const handleEdit = () => {
-        navigate(`/edit/${id}`);
+        navigate(`/main/edit-sermon/${id}`);
     };
 
     if (loading) {
