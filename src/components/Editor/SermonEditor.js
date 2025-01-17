@@ -29,6 +29,13 @@ class SermonEditor extends Component {
             const editor = this.quillRef.getEditor();
             editor.root.style.fontSize = '14px';
             editor.format('size', '14px');
+
+            // 에디터 자동 포커스 방지
+            setTimeout(() => {
+                if (editor && editor.root) {
+                    editor.root.blur();
+                }
+            }, 100);
         }
     }
 

@@ -61,7 +61,6 @@ const SignUpPageBibly = () => {
     const handleEmailVerification = async () => {
         try {
             const response = await verifyEmail(email);
-            console.log('Email verification response:', response);
 
             if (response.success) {
                 if (response.data === true) {

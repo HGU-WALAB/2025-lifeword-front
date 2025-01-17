@@ -49,6 +49,21 @@ export const createUser = async (userData) => {
     }
 };
 
+export const verifyEmail = async (email) => {
+    try {
+        const response = await fetch(`${BASE_URL}/users/verify/bibly-emailCheck?email=${encodeURIComponent(email)}`);
+        const data = await response.json();
+
+        return {
+            success: true,
+            data: data,
+        };
+    } catch (error) {
+        console.error('Error verifying email:', error);
+        throw error;
+    }
+};
+
 // Bookmark 관련 API
 export const createBookmark = async (userID, verseId) => {
     try {
@@ -225,6 +240,16 @@ export const getPublicSermons = async () => {
     }
 };
 
+export const getUserSermons = async (userId, option = 'all') => {
+    try {
+        const response = await fetch(`${BASE_URL}/sermons/user/list?userId=${userId}&option=${option}`);
+        return await response.json();
+    } catch (error) {
+        console.error('Error getting user sermons:', error);
+        throw error;
+    }
+};
+
 export const updateSermon = async (sermonId, userId, sermonData) => {
     try {
         const response = await fetch(`${BASE_URL}/sermons/${sermonId}?userId=${userId}`, {
@@ -246,44 +271,38 @@ export const deleteSermon = async (sermonId, userId) => {
         const response = await fetch(`${BASE_URL}/sermons/${sermonId}?userId=${userId}`, {
             method: 'DELETE',
         });
-        return await response.json();
+
+        if (!response.ok) {
+            throw new Error('Failed to delete sermon');
+        }
+
+        // 응답이 비어있을 수 있으므로 조건부로 JSON 파싱
+        const text = await response.text();
+        return text ? JSON.parse(text) : { success: true };
     } catch (error) {
         console.error('Error deleting sermon:', error);
         throw error;
     }
 };
 
-export const getSermons = async () => {
+export const getSermonDetail = async (sermonId) => {
     try {
-        const response = await fetch(`${BASE_URL}/sermons`);
+        const response = await fetch(`${BASE_URL}/sermons/details/${sermonId}`);
         return await response.json();
     } catch (error) {
-        console.error('Error getting sermons:', error);
+        console.error('Error getting sermon detail:', error);
         throw error;
     }
 };
 
-export const getSermonById = async (id) => {
+export const searchSermons = async (keyword, userId, searchIn = 'both') => {
     try {
-        const response = await fetch(`${BASE_URL}/sermons/${id}`);
+        const response = await fetch(
+            `${BASE_URL}/sermons/search?keyword=${encodeURIComponent(keyword)}&userId=${userId}&searchIn=${searchIn}`
+        );
         return await response.json();
     } catch (error) {
-        console.error('Error getting sermon:', error);
-        throw error;
-    }
-};
-
-export const verifyEmail = async (email) => {
-    try {
-        const response = await fetch(`${BASE_URL}/users/verify/bibly-emailCheck?email=${encodeURIComponent(email)}`);
-        const data = await response.json();
-
-        return {
-            success: true,
-            data: data,
-        };
-    } catch (error) {
-        console.error('Error verifying email:', error);
+        console.error('Error searching sermons:', error);
         throw error;
     }
 };

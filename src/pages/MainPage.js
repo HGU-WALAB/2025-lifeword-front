@@ -6,7 +6,10 @@ import QuickReadingPage from '../components/QuickReadingPage';
 import SearchPage from '../components/SearchPage';
 import BookmarkPage from '../components/BookmarkPage';
 import AddSermonPage from '../components/AddSermonPage';
+import EditSermonPage from '../components/EditSermonPage';
 import SermonListPage from '../components/SermonListPage';
+import SermonDetailPage from '../components/SermonDetailPage';
+import AdminPage from '../components/AdminPage';
 
 const MainPage = () => {
     return (
@@ -19,10 +22,23 @@ const MainPage = () => {
                     <Route path="/search" element={<SearchPage />} />
                     <Route path="/bookmarks" element={<BookmarkPage />} />
                     <Route path="/add-sermon" element={<AddSermonPage />} />
-                    <Route path="/sermon-list" element={<SermonListPage />} />
+                    <Route path="/edit-sermon/:id" element={<EditSermonPage />} />
+                    <Route path="/sermon-list/*" element={<SermonListLayout />} />
+                    {localStorage.getItem('admin') === 'true' && <Route path="/admin" element={<AdminPage />} />}
                 </Routes>
             </MainContent>
         </Container>
+    );
+};
+
+const SermonListLayout = () => {
+    return (
+        <SermonListContainer>
+            <Routes>
+                <Route path="/" element={<SermonListPage />} />
+                <Route path="/detail/:id" element={<SermonDetailPage />} />
+            </Routes>
+        </SermonListContainer>
     );
 };
 
@@ -34,6 +50,12 @@ const Container = styled.div`
 
 const MainContent = styled.div`
     flex: 1;
+`;
+
+const SermonListContainer = styled.div`
+    display: flex;
+    width: 100%;
+    height: 100%;
 `;
 
 export default MainPage;
