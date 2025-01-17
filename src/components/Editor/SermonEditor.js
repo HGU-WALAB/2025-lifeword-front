@@ -18,10 +18,15 @@ class SermonEditor extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            editorHtml: '<p style="font-size: 16px;"></p>',
+            editorHtml: props.value || '',
         };
-        this.handleChange = this.handleChange.bind(this);
         this.quillRef = null;
+    }
+
+    componentDidUpdate(prevProps) {
+        if (prevProps.value !== this.props.value) {
+            this.setState({ editorHtml: this.props.value });
+        }
     }
 
     componentDidMount() {
@@ -30,12 +35,9 @@ class SermonEditor extends Component {
             editor.root.style.fontSize = '14px';
             editor.format('size', '14px');
 
-            // 에디터 자동 포커스 방지
-            setTimeout(() => {
-                if (editor && editor.root) {
-                    editor.root.blur();
-                }
-            }, 100);
+            // 에디터 자동 포커스 방지 및 blur 처리
+            editor.blur();
+            editor.root.blur();
         }
     }
 
@@ -72,18 +74,22 @@ class SermonEditor extends Component {
         'blockquote',
     ];
 
-    handleChange(content) {
+    handleChange = (content) => {
         this.setState({ editorHtml: content });
         if (this.props.onChange) {
             this.props.onChange(content);
         }
-    }
+    };
 
     clearEditor() {
         if (this.quillRef) {
             const editor = this.quillRef.getEditor();
             editor.setContents([]);
         }
+    }
+
+    getEditor() {
+        return this.quillRef.getEditor();
     }
 
     render() {
