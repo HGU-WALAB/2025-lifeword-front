@@ -22,6 +22,7 @@ export const LogoContainer = styled.div`
 export const Logo = styled.img`
     width: 170px;
     height: auto;
+    cursor: pointer;
 `;
 
 export const NavItems = styled.div`
