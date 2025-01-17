@@ -45,6 +45,26 @@ const SermonListPage = () => {
         }
     };
 
+    const getVisiblePages = () => {
+        if (totalPages <= 11) {
+            return Array.from({ length: totalPages }, (_, i) => i + 1);
+        }
+
+        const pages = [];
+
+        for (let i = 1; i <= 5; i++) {
+            pages.push(i);
+        }
+
+        pages.push('...');
+
+        for (let i = totalPages - 4; i <= totalPages; i++) {
+            pages.push(i);
+        }
+
+        return pages;
+    };
+
     return (
         <Container>
             <PageHeader>
@@ -94,7 +114,6 @@ const SermonListPage = () => {
                                     <SermonCard
                                         key={sermon.sermonId}
                                         onClick={() => {
-                                            console.log('Navigating to sermon detail:', sermon.sermonId);
                                             navigate(`detail/${sermon.sermonId}`);
                                         }}
                                     >
@@ -115,23 +134,34 @@ const SermonListPage = () => {
                             )}
                         </SermonList>
                         {!loading && sermons.length > 0 && (
-                            <Pagination>
-                                <PageButton
+                            <PaginationContainer>
+                                <PaginationButton
                                     onClick={() => handlePageChange(currentPage - 1)}
                                     disabled={currentPage === 1}
                                 >
                                     <ChevronLeft size={20} />
-                                </PageButton>
-                                <PageInfo>
-                                    {currentPage} / {totalPages}
-                                </PageInfo>
-                                <PageButton
+                                </PaginationButton>
+
+                                <PageNumbers>
+                                    {getVisiblePages().map((page, index) => (
+                                        <PageButton
+                                            key={index}
+                                            active={currentPage === page}
+                                            onClick={() => (typeof page === 'number' ? handlePageChange(page) : null)}
+                                            disabled={typeof page !== 'number'}
+                                        >
+                                            {page}
+                                        </PageButton>
+                                    ))}
+                                </PageNumbers>
+
+                                <PaginationButton
                                     onClick={() => handlePageChange(currentPage + 1)}
                                     disabled={currentPage === totalPages}
                                 >
                                     <ChevronRight size={20} />
-                                </PageButton>
-                            </Pagination>
+                                </PaginationButton>
+                            </PaginationContainer>
                         )}
                     </>
                 )}
@@ -475,38 +505,69 @@ const SubFilterButton = styled.button`
     }
 `;
 
-const Pagination = styled.div`
+const PaginationContainer = styled.div`
     display: flex;
-    justify-content: center;
     align-items: center;
     gap: 16px;
-    margin-top: 32px;
-    margin-bottom: 16px;
+    padding: 16px 0;
+    background-color: #f5f5f5;
+    width: 100%;
+    max-width: 800px;
+    justify-content: center;
+    margin: 32px auto;
+`;
+
+const PaginationButton = styled.button`
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 50%;
+    background-color: ${(props) => (props.disabled ? '#f5f5f5' : '#4F3296')};
+    color: ${(props) => (props.disabled ? '#999' : 'white')};
+    cursor: ${(props) => (props.disabled ? 'not-allowed' : 'pointer')};
+    transition: all 0.2s ease;
+
+    &:hover:not(:disabled) {
+        background-color: #3a2570;
+    }
+`;
+
+const PageNumbers = styled.div`
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+    padding: 8px 4px;
+
+    &::-webkit-scrollbar {
+        display: none;
+    }
 `;
 
 const PageButton = styled.button`
-    background: none;
-    border: none;
-    padding: 8px;
-    cursor: pointer;
-    color: ${(props) => (props.disabled ? '#ccc' : '#4F3296')};
+    width: 36px;
+    height: 36px;
     display: flex;
     align-items: center;
     justify-content: center;
-
-    &:disabled {
-        cursor: not-allowed;
-    }
-
-    &:hover:not(:disabled) {
-        color: #3a2570;
-    }
-`;
-
-const PageInfo = styled.span`
-    font-family: 'Inter';
+    border: none;
+    border-radius: 50%;
+    background-color: ${(props) => (props.active ? '#4F3296' : '#f5f5f5')};
+    color: ${(props) => (props.active ? 'white' : props.disabled ? '#999' : '#333')};
+    cursor: ${(props) => (props.disabled ? 'default' : 'pointer')};
+    transition: all 0.2s ease;
     font-size: 14px;
-    color: #666;
+
+    &:hover {
+        background-color: ${(props) => {
+            if (props.disabled) return '#f5f5f5';
+            return props.active ? '#3a2570' : '#e5e5e5';
+        }};
+    }
 `;
 
 export default SermonListPage;
