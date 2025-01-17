@@ -25,11 +25,8 @@ export const setupRecaptcha = () => {
         if (!recaptchaVerifier) {
             recaptchaVerifier = new FirebaseRecaptchaVerifier(auth, 'recaptcha-container', {
                 size: 'invisible',
-                callback: () => {
-                    console.log('reCAPTCHA verified');
-                },
+                callback: () => {},
                 'expired-callback': () => {
-                    console.log('reCAPTCHA expired');
                     recaptchaVerifier = null;
                 },
             });
@@ -47,8 +44,6 @@ export const requestPhoneVerification = async (phoneNumber) => {
             throw new Error('올바른 전화번호 형식이 아닙니다.');
         }
         const formattedPhone = `+82${cleaned.slice(1)}`;
-
-        console.log('Sending verification to:', formattedPhone);
 
         if (!recaptchaVerifier) {
             setupRecaptcha();

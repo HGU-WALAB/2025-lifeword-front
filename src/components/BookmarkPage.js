@@ -36,12 +36,9 @@ const BookmarkPage = () => {
 
         try {
             const userID = localStorage.getItem('UID');
-            console.log('Deleting bookmark with verse_id:', bookmark.verse_id);
             const response = await deleteBookmark(userID, bookmark.verse_id);
-            console.log('Delete response:', response);
             if (response.success) {
                 alert('북마크가 삭제되었습니다.');
-                console.log('Fetching updated bookmarks...');
                 await fetchBookmarks();
 
                 // 현재 페이지의 아이템이 없으면 이전 페이지로 이동
@@ -49,8 +46,6 @@ const BookmarkPage = () => {
                 if (currentPage > newTotalPages) {
                     setCurrentPage(Math.max(1, newTotalPages));
                 }
-
-                console.log('Bookmarks updated');
             }
         } catch (error) {
             console.error('Error deleting bookmark:', error);
