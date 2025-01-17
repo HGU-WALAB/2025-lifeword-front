@@ -1,14 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
-import { getSermonDetail } from '../services/APIService';
-import { ArrowLeft } from 'lucide-react';
+import { getSermonDetail, deleteSermon } from '../services/APIService';
+import { ArrowLeft, Pencil, Trash2 } from 'lucide-react';
 
 const SermonDetailPage = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
     const [sermon, setSermon] = useState(null);
     const [loading, setLoading] = useState(true);
+
+    // URL의 state나 search 파라미터에서 type 확인
+    const searchParams = new URLSearchParams(location.search);
+    const isMySermon = searchParams.get('type') === 'my';
 
     useEffect(() => {
         const fetchSermonDetail = async () => {
@@ -27,6 +32,24 @@ const SermonDetailPage = () => {
         }
     }, [id]);
 
+    const handleDelete = async () => {
+        if (window.confirm('정말로 이 설교를 삭제하시겠습니까?')) {
+            try {
+                const userId = localStorage.getItem('UID');
+                await deleteSermon(id, userId);
+                alert('설교가 삭제되었습니다.');
+                navigate(-1);
+            } catch (error) {
+                console.error('Error deleting sermon:', error);
+                alert('설교 삭제 중 오류가 발생했습니다.');
+            }
+        }
+    };
+
+    const handleEdit = () => {
+        navigate(`/edit/${id}`);
+    };
+
     if (loading) {
         return <LoadingText>로딩 중...</LoadingText>;
     }
@@ -38,11 +61,23 @@ const SermonDetailPage = () => {
     return (
         <Container>
             <ContentWrapper>
-                <BackButton onClick={() => navigate(-1)}>
-                    <ArrowLeft size={20} />
-                    <span>뒤로 가기</span>
-                </BackButton>
                 <Header>
+                    <TopBar>
+                        <BackButton onClick={() => navigate(-1)}>
+                            <ArrowLeft size={20} />
+                            <span>뒤로 가기</span>
+                        </BackButton>
+                        {isMySermon && (
+                            <ActionButtons>
+                                <ActionButton onClick={handleEdit}>
+                                    <Pencil size={16} />
+                                </ActionButton>
+                                <ActionButton onClick={handleDelete} isDelete>
+                                    <Trash2 size={16} />
+                                </ActionButton>
+                            </ActionButtons>
+                        )}
+                    </TopBar>
                     <MetaInfo>
                         <AuthorDate>
                             <Author>{sermon.ownerName}</Author>
@@ -664,6 +699,37 @@ const BackButton = styled.button`
 
     &:hover svg {
         transform: translateX(-4px);
+    }
+`;
+
+const TopBar = styled.div`
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+`;
+
+const ActionButtons = styled.div`
+    display: flex;
+    gap: 8px;
+`;
+
+const ActionButton = styled.button`
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: none;
+    background: ${(props) => (props.isDelete ? '#fee2e2' : '#f3f4f6')};
+    color: ${(props) => (props.isDelete ? '#dc2626' : '#4f3296')};
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+        background: ${(props) => (props.isDelete ? '#fecaca' : '#e5e7eb')};
+        color: ${(props) => (props.isDelete ? '#b91c1c' : '#3a2570')};
     }
 `;
 

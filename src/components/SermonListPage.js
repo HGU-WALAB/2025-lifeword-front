@@ -168,7 +168,7 @@ const SermonListPage = () => {
                             <SermonCard
                                 key={sermon.sermonId}
                                 onClick={() => {
-                                    navigate(`detail/${sermon.sermonId}`);
+                                    navigate(`detail/${sermon.sermonId}?type=${filterType}`);
                                 }}
                             >
                                 <WorshipType>{sermon.worshipType}</WorshipType>

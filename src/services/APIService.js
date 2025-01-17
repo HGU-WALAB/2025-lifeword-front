@@ -271,7 +271,14 @@ export const deleteSermon = async (sermonId, userId) => {
         const response = await fetch(`${BASE_URL}/sermons/${sermonId}?userId=${userId}`, {
             method: 'DELETE',
         });
-        return await response.json();
+
+        if (!response.ok) {
+            throw new Error('Failed to delete sermon');
+        }
+
+        // 응답이 비어있을 수 있으므로 조건부로 JSON 파싱
+        const text = await response.text();
+        return text ? JSON.parse(text) : { success: true };
     } catch (error) {
         console.error('Error deleting sermon:', error);
         throw error;
