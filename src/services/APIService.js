@@ -240,6 +240,16 @@ export const getPublicSermons = async () => {
     }
 };
 
+export const getUserSermons = async (userId, option = 'all') => {
+    try {
+        const response = await fetch(`${BASE_URL}/sermons/user/list?userId=${userId}&option=${option}`);
+        return await response.json();
+    } catch (error) {
+        console.error('Error getting user sermons:', error);
+        throw error;
+    }
+};
+
 export const updateSermon = async (sermonId, userId, sermonData) => {
     try {
         const response = await fetch(`${BASE_URL}/sermons/${sermonId}?userId=${userId}`, {
@@ -270,10 +280,22 @@ export const deleteSermon = async (sermonId, userId) => {
 
 export const getSermonDetail = async (sermonId) => {
     try {
-        const response = await fetch(`${BASE_URL}/sermons/${sermonId}/details`);
+        const response = await fetch(`${BASE_URL}/sermons/details/${sermonId}`);
         return await response.json();
     } catch (error) {
         console.error('Error getting sermon detail:', error);
+        throw error;
+    }
+};
+
+export const searchSermons = async (keyword, userId, searchIn = 'both') => {
+    try {
+        const response = await fetch(
+            `${BASE_URL}/sermons/search?keyword=${encodeURIComponent(keyword)}&userId=${userId}&searchIn=${searchIn}`
+        );
+        return await response.json();
+    } catch (error) {
+        console.error('Error searching sermons:', error);
         throw error;
     }
 };
