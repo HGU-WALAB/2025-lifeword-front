@@ -1,38 +1,45 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { getSermons, getSermonById } from '../services/APIService';
-import { X, Calendar, User, Tag } from 'lucide-react';
+import { getPublicSermons } from '../services/APIService';
+import { X, Calendar, User, Tag, ChevronLeft, ChevronRight } from 'lucide-react';
+
+const ITEMS_PER_PAGE = 20;
 
 const SermonListPage = () => {
     const [sermons, setSermons] = useState([]);
     const [selectedSermon, setSelectedSermon] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [filterType, setFilterType] = useState('public');
+    const [mySermonFilter, setMySermonFilter] = useState('all');
+    const [currentPage, setCurrentPage] = useState(1);
 
     useEffect(() => {
-        fetchSermons();
-    }, []);
+        if (filterType === 'public') {
+            fetchPublicSermons();
+        }
+    }, [filterType]);
 
-    const fetchSermons = async () => {
+    const fetchPublicSermons = async () => {
         try {
-            const response = await getSermons();
-            if (response.success) {
-                setSermons(response.data);
-            }
+            setLoading(true);
+            const data = await getPublicSermons();
+            setSermons(data);
         } catch (error) {
-            console.error('Error fetching sermons:', error);
+            console.error('Error fetching public sermons:', error);
         } finally {
             setLoading(false);
         }
     };
 
-    const handleSermonClick = async (id) => {
-        try {
-            const response = await getSermonById(id);
-            if (response.success) {
-                setSelectedSermon(response.data);
-            }
-        } catch (error) {
-            console.error('Error fetching sermon details:', error);
+    const totalPages = Math.ceil(sermons.length / ITEMS_PER_PAGE);
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    const currentSermons = sermons.slice(startIndex, endIndex);
+
+    const handlePageChange = (newPage) => {
+        if (newPage >= 1 && newPage <= totalPages) {
+            setCurrentPage(newPage);
+            window.scrollTo(0, 0);
         }
     };
 
@@ -41,32 +48,85 @@ const SermonListPage = () => {
             <PageHeader>
                 <Title>설교 목록</Title>
                 <Description>등록된 설교 목록을 확인하고 내용을 살펴보세요.</Description>
+                <FilterContainer>
+                    <FilterButton active={filterType === 'public'} onClick={() => setFilterType('public')}>
+                        전체 공개 설교
+                    </FilterButton>
+                    <MySermonFilterContainer>
+                        <FilterButton active={filterType === 'my'} onClick={() => setFilterType('my')}>
+                            내 설교
+                        </FilterButton>
+                        {filterType === 'my' && (
+                            <SubFilterContainer>
+                                <SubFilterButton
+                                    active={mySermonFilter === 'all'}
+                                    onClick={() => setMySermonFilter('all')}
+                                >
+                                    전체
+                                </SubFilterButton>
+                                <SubFilterButton
+                                    active={mySermonFilter === 'public'}
+                                    onClick={() => setMySermonFilter('public')}
+                                >
+                                    공개
+                                </SubFilterButton>
+                                <SubFilterButton
+                                    active={mySermonFilter === 'private'}
+                                    onClick={() => setMySermonFilter('private')}
+                                >
+                                    비공개
+                                </SubFilterButton>
+                            </SubFilterContainer>
+                        )}
+                    </MySermonFilterContainer>
+                </FilterContainer>
             </PageHeader>
-
             <ContentWrapper>
-                <SermonGrid>
-                    {loading ? (
-                        <LoadingText>로딩 중...</LoadingText>
-                    ) : sermons.length > 0 ? (
-                        sermons.map((sermon) => (
-                            <SermonCard key={sermon.id} onClick={() => handleSermonClick(sermon.id)}>
-                                <SermonTitle>{sermon.title}</SermonTitle>
-                                <SermonMeta>
-                                    <MetaItem>
-                                        <Calendar size={16} />
-                                        {sermon.sermonDate}
-                                    </MetaItem>
-                                    <MetaItem>
-                                        <User size={16} />
-                                        {sermon.owner}
-                                    </MetaItem>
-                                </SermonMeta>
-                            </SermonCard>
-                        ))
-                    ) : (
-                        <EmptyText>등록된 설교가 없습니다.</EmptyText>
-                    )}
-                </SermonGrid>
+                {filterType === 'public' && (
+                    <>
+                        <SermonList>
+                            {loading ? (
+                                <LoadingText>로딩 중...</LoadingText>
+                            ) : currentSermons.length > 0 ? (
+                                currentSermons.map((sermon) => (
+                                    <SermonCard key={sermon.sermonId}>
+                                        <WorshipType>{sermon.worshipType}</WorshipType>
+                                        <div>
+                                            <AuthorName>{sermon.ownerName}</AuthorName>
+                                            <SermonDate>{new Date(sermon.sermonDate).toLocaleDateString()}</SermonDate>
+                                        </div>
+                                        <SermonTitle>{sermon.sermonTitle}</SermonTitle>
+                                        <ScriptureContainer>
+                                            <Scripture>{sermon.mainScripture}</Scripture>
+                                        </ScriptureContainer>
+                                        <SermonSummary>{sermon.summary}</SermonSummary>
+                                    </SermonCard>
+                                ))
+                            ) : (
+                                <EmptyText>등록된 설교가 없습니다.</EmptyText>
+                            )}
+                        </SermonList>
+                        {!loading && sermons.length > 0 && (
+                            <Pagination>
+                                <PageButton
+                                    onClick={() => handlePageChange(currentPage - 1)}
+                                    disabled={currentPage === 1}
+                                >
+                                    <ChevronLeft size={20} />
+                                </PageButton>
+                                <PageInfo>
+                                    {currentPage} / {totalPages}
+                                </PageInfo>
+                                <PageButton
+                                    onClick={() => handlePageChange(currentPage + 1)}
+                                    disabled={currentPage === totalPages}
+                                >
+                                    <ChevronRight size={20} />
+                                </PageButton>
+                            </Pagination>
+                        )}
+                    </>
+                )}
             </ContentWrapper>
 
             {selectedSermon && (
@@ -136,56 +196,107 @@ const Description = styled.p`
 `;
 
 const ContentWrapper = styled.div`
-    background: white;
-    border-radius: 12px;
-    padding: 32px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+
+    @media (max-width: 1024px) {
+        padding: 16px;
+    }
 `;
 
-const SermonGrid = styled.div`
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 24px;
+const SermonList = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    width: 100%;
 `;
 
 const SermonCard = styled.div`
-    background: white;
+    box-sizing: border-box;
+    position: relative;
+    width: 100%;
+    max-width: 800px;
+    min-height: 180px;
+    margin: 0 auto;
     padding: 24px;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
     border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     transition: all 0.2s ease;
-    border: 1px solid #eee;
 
     &:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-        border-color: #4f3296;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        transform: translateY(-2px);
     }
 `;
 
-const SermonTitle = styled.h3`
-    font-size: 1.3rem;
-    color: #4f3296;
-    margin-bottom: 16px;
-    font-weight: 600;
+const AuthorName = styled.span`
+    display: inline-block;
+    font-family: 'Inter';
+    font-weight: 500;
+    font-size: 12px;
+    color: #595c62;
+    margin-right: 16px;
 `;
 
-const SermonMeta = styled.div`
-    display: flex;
-    gap: 16px;
+const SermonDate = styled.span`
+    display: inline-block;
+    font-family: 'Inter';
+    font-weight: 500;
+    font-size: 12px;
+    color: #595c62;
 `;
 
-const MetaItem = styled.div`
+const SermonTitle = styled.h2`
+    font-family: 'Inter';
+    font-weight: 800;
+    font-size: 24px;
+    color: #212a3e;
+    margin: 16px 0;
+    padding-right: 120px; // worshipType을 위한 공간
+`;
+
+const ScriptureContainer = styled.div`
     display: flex;
     align-items: center;
-    gap: 6px;
-    color: #666;
-    font-size: 0.9rem;
+    gap: 12px;
+    margin-bottom: 16px;
+`;
 
-    svg {
-        color: #4f3296;
-    }
+const Scripture = styled.span`
+    font-family: 'Inter';
+    font-weight: 500;
+    font-size: 12px;
+    color: #212a3e;
+`;
+
+const WorshipType = styled.span`
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    padding: 6px 12px;
+    background: #f3f4f6;
+    border-radius: 20px;
+    font-family: 'Inter';
+    font-weight: 500;
+    font-size: 12px;
+    color: #4f3296;
+`;
+
+const SermonSummary = styled.p`
+    font-family: 'Inter';
+    font-weight: 500;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #4b5563;
+    margin: 0;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
 `;
 
 const ModalOverlay = styled.div`
@@ -300,6 +411,93 @@ const LoadingText = styled.div`
 
 const EmptyText = styled(LoadingText)`
     color: #999;
+`;
+
+const FilterContainer = styled.div`
+    display: flex;
+    gap: 16px;
+    margin-top: 24px;
+`;
+
+const MySermonFilterContainer = styled.div`
+    display: flex;
+    gap: 16px;
+    align-items: center;
+`;
+
+const FilterButton = styled.button`
+    padding: 12px 24px;
+    border-radius: 8px;
+    border: none;
+    background-color: ${(props) => (props.active ? '#4f3296' : '#fff')};
+    color: ${(props) => (props.active ? '#fff' : '#4f3296')};
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    border: 1px solid ${(props) => (props.active ? '#4f3296' : '#eee')};
+
+    &:hover {
+        background-color: ${(props) => (props.active ? '#3a2570' : '#f8f5ff')};
+    }
+`;
+
+const SubFilterContainer = styled.div`
+    display: flex;
+    gap: 8px;
+    padding: 4px;
+    background-color: #f5f5f5;
+    border-radius: 8px;
+`;
+
+const SubFilterButton = styled.button`
+    padding: 8px 16px;
+    border-radius: 6px;
+    border: none;
+    background-color: ${(props) => (props.active ? '#4f3296' : 'transparent')};
+    color: ${(props) => (props.active ? '#fff' : '#666')};
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+        background-color: ${(props) => (props.active ? '#3a2570' : '#e5e5e5')};
+    }
+`;
+
+const Pagination = styled.div`
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+    margin-top: 32px;
+    margin-bottom: 16px;
+`;
+
+const PageButton = styled.button`
+    background: none;
+    border: none;
+    padding: 8px;
+    cursor: pointer;
+    color: ${(props) => (props.disabled ? '#ccc' : '#4F3296')};
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &:disabled {
+        cursor: not-allowed;
+    }
+
+    &:hover:not(:disabled) {
+        color: #3a2570;
+    }
+`;
+
+const PageInfo = styled.span`
+    font-family: 'Inter';
+    font-size: 14px;
+    color: #666;
 `;
 
 export default SermonListPage;

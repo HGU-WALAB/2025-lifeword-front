@@ -49,6 +49,21 @@ export const createUser = async (userData) => {
     }
 };
 
+export const verifyEmail = async (email) => {
+    try {
+        const response = await fetch(`${BASE_URL}/users/verify/bibly-emailCheck?email=${encodeURIComponent(email)}`);
+        const data = await response.json();
+
+        return {
+            success: true,
+            data: data,
+        };
+    } catch (error) {
+        console.error('Error verifying email:', error);
+        throw error;
+    }
+};
+
 // Bookmark 관련 API
 export const createBookmark = async (userID, verseId) => {
     try {
@@ -249,41 +264,6 @@ export const deleteSermon = async (sermonId, userId) => {
         return await response.json();
     } catch (error) {
         console.error('Error deleting sermon:', error);
-        throw error;
-    }
-};
-
-export const getSermons = async () => {
-    try {
-        const response = await fetch(`${BASE_URL}/sermons`);
-        return await response.json();
-    } catch (error) {
-        console.error('Error getting sermons:', error);
-        throw error;
-    }
-};
-
-export const getSermonById = async (id) => {
-    try {
-        const response = await fetch(`${BASE_URL}/sermons/${id}`);
-        return await response.json();
-    } catch (error) {
-        console.error('Error getting sermon:', error);
-        throw error;
-    }
-};
-
-export const verifyEmail = async (email) => {
-    try {
-        const response = await fetch(`${BASE_URL}/users/verify/bibly-emailCheck?email=${encodeURIComponent(email)}`);
-        const data = await response.json();
-
-        return {
-            success: true,
-            data: data,
-        };
-    } catch (error) {
-        console.error('Error verifying email:', error);
         throw error;
     }
 };
