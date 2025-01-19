@@ -1,15 +1,18 @@
 import React from 'react';
 import styled from 'styled-components';
 import { Users, BookOpen } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const AdminPage = () => {
+    const navigate = useNavigate();
+
     return (
         <Container>
             <Title>관리자 페이지</Title>
             <Description>관리자 전용 페이지입니다.</Description>
 
             <CardGrid>
-                <Card>
+                <Card onClick={() => navigate('/main/admin/users')}>
                     <CardIcon>
                         <Users size={24} />
                     </CardIcon>
@@ -19,7 +22,7 @@ const AdminPage = () => {
                     </CardContent>
                 </Card>
 
-                <Card>
+                <Card onClick={() => navigate('/main/admin/sermons')}>
                     <CardIcon>
                         <BookOpen size={24} />
                     </CardIcon>

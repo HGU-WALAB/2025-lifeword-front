@@ -305,3 +305,58 @@ export const searchSermons = async (keyword, userId, searchIn = 'both') => {
         throw error;
     }
 };
+
+// 관리자 관련 API
+export const getAdminUsers = async () => {
+    try {
+        const response = await fetch(`${BASE_URL}/admin/users`);
+        return await response.json();
+    } catch (error) {
+        console.error('Error getting admin users:', error);
+        throw error;
+    }
+};
+
+export const searchAdminUsers = async (type, value) => {
+    try {
+        const response = await fetch(`${BASE_URL}/admin/users/search?type=${type}&value=${encodeURIComponent(value)}`);
+        return await response.json();
+    } catch (error) {
+        console.error('Error searching admin users:', error);
+        throw error;
+    }
+};
+
+export const updateAdminUser = async (userId, userData) => {
+    try {
+        const response = await fetch(`${BASE_URL}/admin/users/${userId}`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(userData),
+        });
+        return await response.json();
+    } catch (error) {
+        console.error('Error updating admin user:', error);
+        throw error;
+    }
+};
+
+export const deleteAdminUser = async (userId) => {
+    try {
+        const response = await fetch(`${BASE_URL}/admin/users/${userId}`, {
+            method: 'DELETE',
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to delete user');
+        }
+
+        const text = await response.text();
+        return text ? JSON.parse(text) : { success: true };
+    } catch (error) {
+        console.error('Error deleting admin user:', error);
+        throw error;
+    }
+};

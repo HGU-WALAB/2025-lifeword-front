@@ -10,6 +10,8 @@ import EditSermonPage from '../components/EditSermonPage';
 import SermonListPage from '../components/SermonListPage';
 import SermonDetailPage from '../components/SermonDetailPage';
 import AdminPage from '../components/AdminPage';
+import UserManagementPage from '../components/UserManagementPage';
+import SermonManagementPage from '../components/SermonManagementPage';
 
 const MainPage = () => {
     return (
@@ -25,6 +27,12 @@ const MainPage = () => {
                     <Route path="/edit-sermon/:id" element={<EditSermonPage />} />
                     <Route path="/sermon-list/*" element={<SermonListLayout />} />
                     {localStorage.getItem('admin') === 'true' && <Route path="/admin" element={<AdminPage />} />}
+                    {localStorage.getItem('admin') === 'true' && (
+                        <Route path="/admin/users" element={<UserManagementPage />} />
+                    )}
+                    {localStorage.getItem('admin') === 'true' && (
+                        <Route path="/admin/sermons" element={<SermonManagementPage />} />
+                    )}
                 </Routes>
             </MainContent>
         </Container>
