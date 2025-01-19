@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
-import { getSermonDetail, deleteSermon } from '../services/APIService';
+import { getSermonDetail, deleteSermon } from '../../services/APIService';
 import { ArrowLeft, Pencil, Trash2 } from 'lucide-react';
 
 const SermonDetailPage = () => {

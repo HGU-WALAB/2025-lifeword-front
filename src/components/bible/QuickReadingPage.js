@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { getBooks, getBibles } from '../services/APIService';
+import { getBooks, getBibles } from '../../services/APIService';
 import VerseContextMenu from './VerseContextMenu';
 
 const QuickReadingPage = () => {

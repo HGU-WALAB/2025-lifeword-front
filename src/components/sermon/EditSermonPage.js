@@ -2,8 +2,8 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { Calendar as CalendarIcon, ArrowLeft } from 'lucide-react';
-import { getSermonDetail, updateSermon } from '../services/APIService';
-import SermonEditor from './Editor/SermonEditor';
+import { getSermonDetail, updateSermon } from '../../services/APIService';
+import SermonEditor from '../Editor/SermonEditor';
 
 const EditSermonPage = () => {
     const { id } = useParams();

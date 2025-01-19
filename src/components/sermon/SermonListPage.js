@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import styled from 'styled-components';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
-import { getPublicSermons, getUserSermons, searchSermons } from '../services/APIService';
+import { getPublicSermons, getUserSermons, searchSermons } from '../../services/APIService';
 
 const ITEMS_PER_PAGE = 20;
 

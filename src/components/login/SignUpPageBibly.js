@@ -1,19 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { createUser } from '../services/APIService';
-import { setupRecaptcha, requestPhoneVerification, verifyPhoneNumber } from '../services/PhoneAuthService';
+import { useNavigate } from 'react-router-dom';
+import { createUser, verifyEmail } from '../../services/APIService';
+import { setupRecaptcha, requestPhoneVerification, verifyPhoneNumber } from '../../services/PhoneAuthService';
 
-const SignUpPage = () => {
+const SignUpPageBibly = () => {
     const navigate = useNavigate();
-    const location = useLocation();
-    const { userId, userEmail } = location.state || {};
 
     const [name, setName] = useState('');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
     const [phone, setPhone] = useState('');
     const [verificationCode, setVerificationCode] = useState('');
     const [showVerification, setShowVerification] = useState(false);
     const [isPhoneVerified, setIsPhoneVerified] = useState(false);
+    const [isEmailVerified, setIsEmailVerified] = useState(false);
     const [churchName, setChurchName] = useState('');
     const [role, setRole] = useState('');
     const [province, setProvince] = useState('');
@@ -45,12 +46,8 @@ const SignUpPage = () => {
     const formatPhoneNumber = (value) => {
         if (!value) return value;
         const phoneNumber = value.replace(/[^\d]/g, '');
-        if (phoneNumber.length <= 3) {
-            return phoneNumber;
-        }
-        if (phoneNumber.length <= 7) {
-            return `${phoneNumber.slice(0, 3)}-${phoneNumber.slice(3)}`;
-        }
+        if (phoneNumber.length <= 3) return phoneNumber;
+        if (phoneNumber.length <= 7) return `${phoneNumber.slice(0, 3)}-${phoneNumber.slice(3)}`;
         return `${phoneNumber.slice(0, 3)}-${phoneNumber.slice(3, 7)}-${phoneNumber.slice(7, 11)}`;
     };
 
@@ -58,6 +55,27 @@ const SignUpPage = () => {
         const formattedPhone = formatPhoneNumber(e.target.value);
         if (formattedPhone.replace(/-/g, '').length <= 11) {
             setPhone(formattedPhone);
+        }
+    };
+
+    const handleEmailVerification = async () => {
+        try {
+            const response = await verifyEmail(email);
+
+            if (response.success) {
+                if (response.data === true) {
+                    setIsEmailVerified(false);
+                    alert('이미 사용 중인 이메일입니다.');
+                } else {
+                    setIsEmailVerified(true);
+                    alert('사용 가능한 이메일입니다.');
+                }
+            } else {
+                alert('이메일 확인 중 오류가 발생했습니다.');
+            }
+        } catch (error) {
+            console.error('Email verification error:', error);
+            alert('이메일 확인 중 오류가 발생했습니다.');
         }
     };
 
@@ -87,13 +105,17 @@ const SignUpPage = () => {
             alert('전화번호 인증이 필요합니다.');
             return;
         }
-        try {
-            const [provider, uid] = userId.split('_');
+        if (!isEmailVerified) {
+            alert('이메일 인증이 필요합니다.');
+            return;
+        }
 
+        try {
             const userData = {
-                oauthProvider: provider.toLowerCase(),
-                oauthUid: uid,
-                email: userEmail,
+                oauthProvider: 'bibly',
+                oauthUid: '',
+                email: email,
+                password: password,
                 name: name,
                 contact: phone,
                 church: churchName,
@@ -103,10 +125,7 @@ const SignUpPage = () => {
 
             const response = await createUser(userData);
             if (response.success) {
-                localStorage.setItem('isLoggedIn', 'true');
-                localStorage.setItem('UID', response.data.id);
-                localStorage.setItem('userEmail', userEmail);
-                localStorage.setItem('userName', name);
+                alert('회원가입이 완료되었습니다.');
                 navigate('/main', { replace: true });
             } else {
                 throw new Error(response.message || '회원가입에 실패했습니다.');
@@ -123,63 +142,82 @@ const SignUpPage = () => {
                 <Title>회원가입</Title>
                 <Description>BIBLY에서 사용할 정보를 입력해주세요.</Description>
 
+                <div id="recaptcha-container"></div>
+
                 <Form onSubmit={handleSubmit}>
                     <FormGroup>
                         <Label>이메일</Label>
-                        <InputWrapper>
-                            <DisabledInput value={userEmail || ''} disabled />
-                        </InputWrapper>
+                        <EmailInputGroup>
+                            <EmailInput
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                placeholder="이메일을 입력하세요"
+                                disabled={isEmailVerified}
+                                required
+                            />
+                            <VerificationButton
+                                type="button"
+                                onClick={handleEmailVerification}
+                                disabled={isEmailVerified || !email}
+                            >
+                                {isEmailVerified ? '인증완료' : '중복확인'}
+                            </VerificationButton>
+                        </EmailInputGroup>
+                    </FormGroup>
+
+                    <FormGroup>
+                        <Label>비밀번호</Label>
+                        <Input
+                            type="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            placeholder="비밀번호를 입력하세요"
+                            required
+                        />
                     </FormGroup>
 
                     <FormGroup>
                         <Label>이름</Label>
-                        <InputWrapper>
-                            <Input
-                                type="text"
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
-                                placeholder="이름을 입력하세요"
-                                required
-                            />
-                        </InputWrapper>
+                        <Input
+                            type="text"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            placeholder="이름을 입력하세요"
+                            required
+                        />
                     </FormGroup>
 
                     <FormGroup>
                         <Label>교회 이름</Label>
-                        <InputWrapper>
-                            <Input
-                                type="text"
-                                value={churchName}
-                                onChange={(e) => setChurchName(e.target.value)}
-                                placeholder="교회 이름을 입력하세요"
-                                required
-                            />
-                        </InputWrapper>
+                        <Input
+                            type="text"
+                            value={churchName}
+                            onChange={(e) => setChurchName(e.target.value)}
+                            placeholder="교회 이름을 입력하세요"
+                            required
+                        />
                     </FormGroup>
 
                     <FormGroup>
                         <Label>직분</Label>
-                        <SelectWrapper>
-                            <Select value={role} onChange={(e) => setRole(e.target.value)} required>
-                                <option value="">직분을 선택하세요</option>
-                                <option value="pastor">목회자</option>
-                                <option value="believer">평신도</option>
-                            </Select>
-                        </SelectWrapper>
+                        <Select value={role} onChange={(e) => setRole(e.target.value)} required>
+                            <option value="">직분을 선택하세요</option>
+                            <option value="pastor">목회자</option>
+                            <option value="believer">평신도</option>
+                        </Select>
                     </FormGroup>
 
                     <FormGroup>
                         <Label>주소</Label>
-                        <SelectWrapper>
-                            <Select value={province} onChange={(e) => setProvince(e.target.value)} required>
-                                <option value="">광역시/도 선택</option>
-                                {provinces.map((prov) => (
-                                    <option key={prov} value={prov}>
-                                        {prov}
-                                    </option>
-                                ))}
-                            </Select>
-                        </SelectWrapper>
+                        <Select value={province} onChange={(e) => setProvince(e.target.value)} required>
+                            <option value="">광역시/도 선택</option>
+                            {provinces.map((prov) => (
+                                <option key={prov} value={prov}>
+                                    {prov}
+                                </option>
+                            ))}
+                        </Select>
                     </FormGroup>
 
                     <FormGroup>
@@ -189,7 +227,6 @@ const SignUpPage = () => {
                                 <DisabledInput value={phone} disabled />
                             ) : (
                                 <PhoneInput
-                                    id="recaptcha-container"
                                     type="tel"
                                     value={phone}
                                     onChange={handlePhoneChange}
@@ -279,13 +316,6 @@ const FormGroup = styled.div`
     gap: 8px;
 `;
 
-const InputWrapper = styled.div`
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-`;
-
 const Label = styled.label`
     color: #333;
     font-weight: 500;
@@ -293,7 +323,7 @@ const Label = styled.label`
 `;
 
 const Input = styled.input`
-    width: 95%;
+    width: 93%;
     padding: 12px 16px;
     border: 2px solid #eee;
     border-radius: 8px;
@@ -306,20 +336,12 @@ const Input = styled.input`
     }
 `;
 
-const PhoneInput = styled.input`
+const EmailInput = styled(Input)`
     flex: 1;
-    padding: 12px 16px;
-    border: 2px solid #eee;
-    border-radius: 8px;
-    font-size: 1rem;
-    transition: all 0.2s ease;
-    background-color: ${(props) => (props.disabled ? '#f5f5f5' : 'white')};
-    color: ${(props) => (props.disabled ? '#666' : 'black')};
+`;
 
-    &:focus {
-        outline: none;
-        border-color: ${(props) => (props.disabled ? '#eee' : '#4f3296')};
-    }
+const PhoneInput = styled(Input)`
+    flex: 1;
 `;
 
 const DisabledInput = styled(Input)`
@@ -327,32 +349,32 @@ const DisabledInput = styled(Input)`
     color: #666;
 `;
 
-const SubmitButton = styled.button`
-    width: 100%;
-    padding: 16px;
-    background: #4f3296;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 1.1rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    margin-top: 16px;
-
-    &:hover {
-        background: #3a2570;
-    }
-`;
-
-const PhoneInputGroup = styled.div`
+const EmailInputGroup = styled.div`
     display: flex;
     gap: 8px;
     width: 100%;
 `;
 
-const VerificationInputGroup = styled(PhoneInputGroup)`
+const PhoneInputGroup = styled(EmailInputGroup)``;
+
+const VerificationInputGroup = styled(EmailInputGroup)`
     margin-top: 8px;
+`;
+
+const Select = styled.select`
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #eee;
+    border-radius: 8px;
+    font-size: 1rem;
+    background-color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:focus {
+        outline: none;
+        border-color: #4f3296;
+    }
 `;
 
 const VerificationButton = styled.button`
@@ -377,29 +399,22 @@ const VerificationButton = styled.button`
     }
 `;
 
-const SelectWrapper = styled.div`
+const SubmitButton = styled.button`
     width: 100%;
-`;
-
-const Select = styled.select`
-    width: 100%;
-    padding: 12px 16px;
-    border: 2px solid #eee;
+    padding: 16px;
+    background: #4f3296;
+    color: white;
+    border: none;
     border-radius: 8px;
-    font-size: 1rem;
-    background-color: white;
+    font-size: 1.1rem;
+    font-weight: 500;
     cursor: pointer;
     transition: all 0.2s ease;
+    margin-top: 16px;
 
-    &:focus {
-        outline: none;
-        border-color: #4f3296;
-    }
-
-    &:disabled {
-        background-color: #f5f5f5;
-        cursor: not-allowed;
+    &:hover {
+        background: #3a2570;
     }
 `;
 
-export default SignUpPage;
+export default SignUpPageBibly;

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { Search, Edit2, Trash2, X, Check, ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react';
-import { getAdminUsers, searchAdminUsers, updateAdminUser, deleteAdminUser } from '../services/APIService';
+import { getAdminUsers, searchAdminUsers, updateAdminUser, deleteAdminUser } from '../../services/APIService';
 import { useNavigate } from 'react-router-dom';
 
 const UserManagementPage = () => {
@@ -235,7 +235,7 @@ const UserManagementPage = () => {
 };
 
 const Container = styled.div`
-    margin-left: 280px;
+    margin-left: 320px;
     padding: 40px;
     width: calc(100vw - 400px);
     min-height: 92vh;
@@ -243,10 +243,12 @@ const Container = styled.div`
 `;
 
 const ContentWrapper = styled.div`
-    padding: 40px;
-    width: 100%;
-    min-height: 92vh;
-    background-color: #f5f5f5;
+    max-width: 1200px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+    padding: 48px;
 `;
 
 const TopBar = styled.div`

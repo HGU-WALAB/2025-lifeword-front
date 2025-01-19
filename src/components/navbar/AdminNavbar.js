@@ -13,6 +13,14 @@ const AdminNavbar = () => {
         if (path === '/sermon-list') {
             return location.pathname.includes('/main/sermon-list');
         }
+        if (path === '/admin') {
+            // 관리 페이지, 사용자 관리, 설교 관리 페이지에서 모두 활성화
+            return (
+                location.pathname.includes('/main/admin') ||
+                location.pathname.includes('/main/user-management') ||
+                location.pathname.includes('/main/sermon-management')
+            );
+        }
         return location.pathname === `/main${path}` || (path === '/quick-reading' && location.pathname === '/main');
     };
 
