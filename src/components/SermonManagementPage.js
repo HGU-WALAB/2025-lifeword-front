@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { Search, Edit2, Trash2, X, Check, ChevronLeft, ChevronRight, ArrowLeft, Eye } from 'lucide-react';
+import { Search, Edit2, Trash2, ChevronLeft, ChevronRight, ArrowLeft, Eye } from 'lucide-react';
 import { getPublicSermons, searchSermons, deleteSermon } from '../services/APIService';
 import { useNavigate } from 'react-router-dom';
 

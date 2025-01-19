@@ -11,18 +11,15 @@ const UserManagementPage = () => {
     const [searchValue, setSearchValue] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [editingUser, setEditingUser] = useState(null);
-    const [loading, setLoading] = useState(false);
     const itemsPerPage = 10;
 
     const loadUsers = async () => {
-        setLoading(true);
         try {
             const data = await getAdminUsers();
             setUsers(data);
         } catch (error) {
             console.error('Failed to load users:', error);
         }
-        setLoading(false);
     };
 
     useEffect(() => {
@@ -34,7 +31,6 @@ const UserManagementPage = () => {
             loadUsers();
             return;
         }
-        setLoading(true);
         try {
             const results = await searchAdminUsers(searchType, searchValue);
             setUsers(Array.isArray(results) ? results : []);
@@ -43,7 +39,6 @@ const UserManagementPage = () => {
             console.error('Search failed:', error);
             setUsers([]);
         }
-        setLoading(false);
     };
 
     const handleEdit = (user) => {
@@ -240,7 +235,7 @@ const UserManagementPage = () => {
 };
 
 const Container = styled.div`
-    margin-left: 320px;
+    margin-left: 280px;
     padding: 40px;
     width: calc(100vw - 400px);
     min-height: 92vh;
@@ -248,12 +243,10 @@ const Container = styled.div`
 `;
 
 const ContentWrapper = styled.div`
-    max-width: 1200px;
-    margin: 0 auto;
-    background: white;
-    border-radius: 16px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
-    padding: 48px;
+    padding: 40px;
+    width: 100%;
+    min-height: 92vh;
+    background-color: #f5f5f5;
 `;
 
 const TopBar = styled.div`

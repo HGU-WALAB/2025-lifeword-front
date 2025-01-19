@@ -12,8 +12,6 @@ const SermonListPage = () => {
     const [sermons, setSermons] = useState([]);
     const [loading, setLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
-    const [searchKeyword, setSearchKeyword] = useState('');
-    const [searchMode, setSearchMode] = useState('both');
     const [isSearching, setIsSearching] = useState(false);
     const [searchType, setSearchType] = useState('both');
     const [searchValue, setSearchValue] = useState('');
@@ -101,7 +99,7 @@ const SermonListPage = () => {
                 } else if (filterType === 'my') {
                     if (mySermonFilter === 'public') return sermon.public;
                     if (mySermonFilter === 'private') return !sermon.public;
-                    return true; // 'all' 인 경우
+                    return true;
                 }
                 return true;
             });
@@ -112,14 +110,6 @@ const SermonListPage = () => {
         } finally {
             setLoading(false);
         }
-    };
-
-    const handleResetSearch = () => {
-        setSearchValue('');
-        setIsSearching(false);
-        setSearchType('both');
-        fetchSermons();
-        setCurrentPage(1);
     };
 
     return (
@@ -138,8 +128,8 @@ const SermonListPage = () => {
                         placeholder="검색어를 입력하세요"
                         onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                     />
-                    <SearchButton onClick={handleSearch}>
-                        <Search size={20} />
+                    <SearchButton onClick={handleSearch} disabled={loading}>
+                        {loading ? '검색 중...' : <Search size={20} />}
                     </SearchButton>
                 </SearchContainer>
             </Header>
