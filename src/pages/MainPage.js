@@ -11,6 +11,7 @@ import SermonListPage from '../components/SermonListPage';
 import SermonDetailPage from '../components/SermonDetailPage';
 import AdminPage from '../components/AdminPage';
 import UserManagementPage from '../components/UserManagementPage';
+import SermonManagementPage from '../components/SermonManagementPage';
 
 const MainPage = () => {
     return (
@@ -28,6 +29,9 @@ const MainPage = () => {
                     {localStorage.getItem('admin') === 'true' && <Route path="/admin" element={<AdminPage />} />}
                     {localStorage.getItem('admin') === 'true' && (
                         <Route path="/admin/users" element={<UserManagementPage />} />
+                    )}
+                    {localStorage.getItem('admin') === 'true' && (
+                        <Route path="/admin/sermons" element={<SermonManagementPage />} />
                     )}
                 </Routes>
             </MainContent>

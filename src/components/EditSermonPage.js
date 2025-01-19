@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import { Calendar as CalendarIcon } from 'lucide-react';
+import { Calendar as CalendarIcon, ArrowLeft } from 'lucide-react';
 import { getSermonDetail, updateSermon } from '../services/APIService';
 import SermonEditor from './Editor/SermonEditor';
 
@@ -111,136 +111,139 @@ const EditSermonPage = () => {
 
     return (
         <Container>
-            <PageHeader>
-                <Title>설교 수정하기</Title>
-                <Description>설교 내용을 수정해보세요.</Description>
-            </PageHeader>
+            <ContentWrapper>
+                <TopBar>
+                    <BackButton onClick={() => navigate(-1)}>
+                        <ArrowLeft size={20} />
+                        <span>뒤로 가기</span>
+                    </BackButton>
+                </TopBar>
+                <FormContainer onSubmit={handleSubmit}>
+                    <FormGrid>
+                        <FormSection>
+                            <Label>설교 날짜</Label>
+                            <DateInputWrapper>
+                                <CalendarIcon size={20} />
+                                <DateInput
+                                    type="date"
+                                    name="sermonDate"
+                                    value={formData.sermonDate}
+                                    onChange={handleInputChange}
+                                    required
+                                />
+                            </DateInputWrapper>
+                        </FormSection>
 
-            <FormContainer onSubmit={handleSubmit}>
-                <FormGrid>
-                    <FormSection>
-                        <Label>설교 날짜</Label>
-                        <DateInputWrapper>
-                            <CalendarIcon size={20} />
-                            <DateInput
-                                type="date"
-                                name="sermonDate"
-                                value={formData.sermonDate}
+                        <FormSection>
+                            <Label>예배 종류</Label>
+                            <Input
+                                type="text"
+                                name="worshipType"
+                                value={formData.worshipType}
                                 onChange={handleInputChange}
+                                placeholder="예) 주일-새벽, 주일오전, 수요저녁, 금요철야"
                                 required
                             />
-                        </DateInputWrapper>
-                    </FormSection>
+                        </FormSection>
+                    </FormGrid>
 
                     <FormSection>
-                        <Label>예배 종류</Label>
+                        <Label>설교 제목</Label>
                         <Input
                             type="text"
-                            name="worshipType"
-                            value={formData.worshipType}
+                            name="sermonTitle"
+                            value={formData.sermonTitle}
                             onChange={handleInputChange}
-                            placeholder="예) 주일-새벽, 주일오전, 수요저녁, 금요철야"
-                            required
-                        />
-                    </FormSection>
-                </FormGrid>
-
-                <FormSection>
-                    <Label>설교 제목</Label>
-                    <Input
-                        type="text"
-                        name="sermonTitle"
-                        value={formData.sermonTitle}
-                        onChange={handleInputChange}
-                        placeholder="설교 제목을 입력하세요"
-                        required
-                    />
-                </FormSection>
-
-                <FormGrid>
-                    <FormSection>
-                        <Label>주 성경 본문</Label>
-                        <Input
-                            type="text"
-                            name="mainScripture"
-                            value={formData.mainScripture}
-                            onChange={handleInputChange}
-                            placeholder="예) 요한복음 3:16"
+                            placeholder="설교 제목을 입력하세요"
                             required
                         />
                     </FormSection>
 
+                    <FormGrid>
+                        <FormSection>
+                            <Label>주 성경 본문</Label>
+                            <Input
+                                type="text"
+                                name="mainScripture"
+                                value={formData.mainScripture}
+                                onChange={handleInputChange}
+                                placeholder="예) 요한복음 3:16"
+                                required
+                            />
+                        </FormSection>
+
+                        <FormSection>
+                            <Label>추가 성경 본문</Label>
+                            <Input
+                                type="text"
+                                name="additionalScripture"
+                                value={formData.additionalScripture}
+                                onChange={handleInputChange}
+                                placeholder="예) 로마서 8:28"
+                            />
+                        </FormSection>
+                    </FormGrid>
+
                     <FormSection>
-                        <Label>추가 성경 본문</Label>
-                        <Input
-                            type="text"
-                            name="additionalScripture"
-                            value={formData.additionalScripture}
+                        <Label>설교 요약</Label>
+                        <TextArea
+                            name="summary"
+                            value={formData.summary}
                             onChange={handleInputChange}
-                            placeholder="예) 로마서 8:28"
+                            placeholder="설교의 주요 내용을 요약해서 입력하세요"
+                            rows={4}
+                            required
                         />
                     </FormSection>
-                </FormGrid>
 
-                <FormSection>
-                    <Label>설교 요약</Label>
-                    <TextArea
-                        name="summary"
-                        value={formData.summary}
-                        onChange={handleInputChange}
-                        placeholder="설교의 주요 내용을 요약해서 입력하세요"
-                        rows={4}
-                        required
-                    />
-                </FormSection>
-
-                <FormSection>
-                    <Label>노트</Label>
-                    <TextArea
-                        name="notes"
-                        value={formData.notes}
-                        onChange={handleInputChange}
-                        placeholder="추가 노트를 입력하세요"
-                        rows={3}
-                    />
-                </FormSection>
-
-                <FormSection>
-                    <Label>설교록 정보</Label>
-                    <Input
-                        type="text"
-                        name="recordInfo"
-                        value={formData.recordInfo}
-                        onChange={handleInputChange}
-                        placeholder="예) 234호 308쪽"
-                    />
-                </FormSection>
-
-                <EditorSection>
-                    <Label>설교 내용</Label>
-                    <SermonEditor ref={editorRef} value={formData.contentText} onChange={handleEditorChange} />
-                </EditorSection>
-
-                <FormSection>
-                    <Label>공개 설정</Label>
-                    <CheckboxWrapper>
-                        <Checkbox
-                            type="checkbox"
-                            name="public"
-                            checked={formData.public}
-                            onChange={(e) =>
-                                setFormData((prev) => ({
-                                    ...prev,
-                                    public: e.target.checked,
-                                }))
-                            }
+                    <FormSection>
+                        <Label>노트</Label>
+                        <TextArea
+                            name="notes"
+                            value={formData.notes}
+                            onChange={handleInputChange}
+                            placeholder="추가 노트를 입력하세요"
+                            rows={3}
                         />
-                        <CheckboxLabel>공개 설정</CheckboxLabel>
-                    </CheckboxWrapper>
-                </FormSection>
+                    </FormSection>
 
-                <SubmitButton type="submit">수정 완료</SubmitButton>
-            </FormContainer>
+                    <FormSection>
+                        <Label>설교록 정보</Label>
+                        <Input
+                            type="text"
+                            name="recordInfo"
+                            value={formData.recordInfo}
+                            onChange={handleInputChange}
+                            placeholder="예) 234호 308쪽"
+                        />
+                    </FormSection>
+
+                    <EditorSection>
+                        <Label>설교 내용</Label>
+                        <SermonEditor ref={editorRef} value={formData.contentText} onChange={handleEditorChange} />
+                    </EditorSection>
+
+                    <FormSection>
+                        <Label>공개 설정</Label>
+                        <CheckboxWrapper>
+                            <Checkbox
+                                type="checkbox"
+                                name="public"
+                                checked={formData.public}
+                                onChange={(e) =>
+                                    setFormData((prev) => ({
+                                        ...prev,
+                                        public: e.target.checked,
+                                    }))
+                                }
+                            />
+                            <CheckboxLabel>공개 설정</CheckboxLabel>
+                        </CheckboxWrapper>
+                    </FormSection>
+
+                    <SubmitButton type="submit">수정 완료</SubmitButton>
+                </FormContainer>
+            </ContentWrapper>
         </Container>
     );
 };
@@ -255,31 +258,52 @@ const Container = styled.div`
     align-items: center;
 `;
 
-const PageHeader = styled.div`
-    margin-bottom: 40px;
-    width: 100%;
+const TopBar = styled.div`
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+`;
+
+const BackButton = styled.button`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: transparent;
+    border: none;
+    color: #4f3296;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-radius: 8px;
+
+    &:hover {
+        background: #f3f4f6;
+    }
+
+    svg {
+        transition: transform 0.2s ease;
+    }
+
+    &:hover svg {
+        transform: translateX(-4px);
+    }
+`;
+
+const ContentWrapper = styled.div`
     max-width: 800px;
-`;
-
-const Title = styled.h1`
-    font-size: 2.5rem;
-    color: #333;
-    margin-bottom: 0.5rem;
-    font-weight: 600;
-`;
-
-const Description = styled.p`
-    color: #666;
-    font-size: 1.1rem;
+    margin: 0 auto;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+    padding: 48px;
+    width: 100%;
 `;
 
 const FormContainer = styled.form`
-    background: white;
-    padding: 48px;
-    border-radius: 16px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
     width: 100%;
-    max-width: 800px;
 `;
 
 const FormGrid = styled.div`

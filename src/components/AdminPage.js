@@ -22,7 +22,7 @@ const AdminPage = () => {
                     </CardContent>
                 </Card>
 
-                <Card>
+                <Card onClick={() => navigate('/main/admin/sermons')}>
                     <CardIcon>
                         <BookOpen size={24} />
                     </CardIcon>

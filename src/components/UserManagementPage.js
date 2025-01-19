@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { Search, Edit2, Trash2, X, Check, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Edit2, Trash2, X, Check, ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react';
 import { getAdminUsers, searchAdminUsers, updateAdminUser, deleteAdminUser } from '../services/APIService';
+import { useNavigate } from 'react-router-dom';
 
 const UserManagementPage = () => {
+    const navigate = useNavigate();
     const [users, setUsers] = useState([]);
     const [searchType, setSearchType] = useState('name');
     const [searchValue, setSearchValue] = useState('');
@@ -76,154 +78,163 @@ const UserManagementPage = () => {
 
     return (
         <Container>
-            <Header>
-                <Title>사용자 관리</Title>
-                <SearchContainer>
-                    <Select value={searchType} onChange={(e) => setSearchType(e.target.value)}>
-                        <option value="name">이름</option>
-                        <option value="email">이메일</option>
-                        <option value="job">직분</option>
-                        <option value="church">교회</option>
-                    </Select>
-                    <SearchInput
-                        type="text"
-                        value={searchValue}
-                        onChange={(e) => setSearchValue(e.target.value)}
-                        placeholder="검색어를 입력하세요"
-                        onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                    />
-                    <SearchButton onClick={handleSearch}>
-                        <Search size={20} />
-                    </SearchButton>
-                </SearchContainer>
-            </Header>
+            <ContentWrapper>
+                <TopBar>
+                    <BackButton onClick={() => navigate('/main/admin')}>
+                        <ArrowLeft size={20} />
+                        <span>뒤로 가기</span>
+                    </BackButton>
+                </TopBar>
 
-            {users.length === 0 ? (
-                <EmptyState>검색 결과가 없습니다.</EmptyState>
-            ) : (
-                <>
-                    <Table>
-                        <thead>
-                            <tr>
-                                <Th>이름</Th>
-                                <Th>이메일</Th>
-                                <Th>연락처</Th>
-                                <Th>교회</Th>
-                                <Th>직분</Th>
-                                <Th>지역</Th>
-                                <Th>가입일</Th>
-                                <Th>작업</Th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {currentUsers.map((user) => (
-                                <tr key={user.id}>
-                                    {editingUser?.id === user.id ? (
-                                        <>
-                                            <Td>
-                                                <Input
-                                                    value={editingUser.name}
-                                                    onChange={(e) =>
-                                                        setEditingUser({ ...editingUser, name: e.target.value })
-                                                    }
-                                                />
-                                            </Td>
-                                            <Td>
-                                                <Input
-                                                    value={editingUser.email}
-                                                    onChange={(e) =>
-                                                        setEditingUser({ ...editingUser, email: e.target.value })
-                                                    }
-                                                />
-                                            </Td>
-                                            <Td>
-                                                <Input
-                                                    value={editingUser.contact}
-                                                    onChange={(e) =>
-                                                        setEditingUser({ ...editingUser, contact: e.target.value })
-                                                    }
-                                                />
-                                            </Td>
-                                            <Td>
-                                                <Input
-                                                    value={editingUser.church}
-                                                    onChange={(e) =>
-                                                        setEditingUser({ ...editingUser, church: e.target.value })
-                                                    }
-                                                />
-                                            </Td>
-                                            <Td>
-                                                <Select
-                                                    value={editingUser.job}
-                                                    onChange={(e) =>
-                                                        setEditingUser({ ...editingUser, job: e.target.value })
-                                                    }
-                                                >
-                                                    <option value="목회자">목회자</option>
-                                                    <option value="평신도">평신도</option>
-                                                </Select>
-                                            </Td>
-                                            <Td>
-                                                <Input
-                                                    value={editingUser.place}
-                                                    onChange={(e) =>
-                                                        setEditingUser({ ...editingUser, place: e.target.value })
-                                                    }
-                                                />
-                                            </Td>
-                                            <Td>{new Date(user.createdAt).toLocaleDateString()}</Td>
-                                            <Td>
-                                                <ActionButton onClick={handleSave}>
-                                                    <Check size={16} color="green" />
-                                                </ActionButton>
-                                                <ActionButton onClick={() => setEditingUser(null)}>
-                                                    <X size={16} color="red" />
-                                                </ActionButton>
-                                            </Td>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Td>{user.name}</Td>
-                                            <Td>{user.email}</Td>
-                                            <Td>{user.contact}</Td>
-                                            <Td>{user.church}</Td>
-                                            <Td>{user.job}</Td>
-                                            <Td>{user.place}</Td>
-                                            <Td>{new Date(user.createdAt).toLocaleDateString()}</Td>
-                                            <Td>
-                                                <ActionButton onClick={() => handleEdit(user)}>
-                                                    <Edit2 size={16} color="#4f3296" />
-                                                </ActionButton>
-                                                <ActionButton onClick={() => handleDelete(user.id)}>
-                                                    <Trash2 size={16} color="red" />
-                                                </ActionButton>
-                                            </Td>
-                                        </>
-                                    )}
+                <Header>
+                    <Title>사용자 관리</Title>
+                    <SearchContainer>
+                        <Select value={searchType} onChange={(e) => setSearchType(e.target.value)}>
+                            <option value="name">이름</option>
+                            <option value="email">이메일</option>
+                            <option value="job">직분</option>
+                            <option value="church">교회</option>
+                        </Select>
+                        <SearchInput
+                            type="text"
+                            value={searchValue}
+                            onChange={(e) => setSearchValue(e.target.value)}
+                            placeholder="검색어를 입력하세요"
+                            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                        />
+                        <SearchButton onClick={handleSearch}>
+                            <Search size={20} />
+                        </SearchButton>
+                    </SearchContainer>
+                </Header>
+
+                {users.length === 0 ? (
+                    <EmptyState>검색 결과가 없습니다.</EmptyState>
+                ) : (
+                    <>
+                        <Table>
+                            <thead>
+                                <tr>
+                                    <Th>이름</Th>
+                                    <Th>이메일</Th>
+                                    <Th>연락처</Th>
+                                    <Th>교회</Th>
+                                    <Th>직분</Th>
+                                    <Th>지역</Th>
+                                    <Th>가입일</Th>
+                                    <Th>작업</Th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </Table>
+                            </thead>
+                            <tbody>
+                                {currentUsers.map((user) => (
+                                    <tr key={user.id}>
+                                        {editingUser?.id === user.id ? (
+                                            <>
+                                                <Td>
+                                                    <Input
+                                                        value={editingUser.name}
+                                                        onChange={(e) =>
+                                                            setEditingUser({ ...editingUser, name: e.target.value })
+                                                        }
+                                                    />
+                                                </Td>
+                                                <Td>
+                                                    <Input
+                                                        value={editingUser.email}
+                                                        onChange={(e) =>
+                                                            setEditingUser({ ...editingUser, email: e.target.value })
+                                                        }
+                                                    />
+                                                </Td>
+                                                <Td>
+                                                    <Input
+                                                        value={editingUser.contact}
+                                                        onChange={(e) =>
+                                                            setEditingUser({ ...editingUser, contact: e.target.value })
+                                                        }
+                                                    />
+                                                </Td>
+                                                <Td>
+                                                    <Input
+                                                        value={editingUser.church}
+                                                        onChange={(e) =>
+                                                            setEditingUser({ ...editingUser, church: e.target.value })
+                                                        }
+                                                    />
+                                                </Td>
+                                                <Td>
+                                                    <Select
+                                                        value={editingUser.job}
+                                                        onChange={(e) =>
+                                                            setEditingUser({ ...editingUser, job: e.target.value })
+                                                        }
+                                                    >
+                                                        <option value="목회자">목회자</option>
+                                                        <option value="평신도">평신도</option>
+                                                    </Select>
+                                                </Td>
+                                                <Td>
+                                                    <Input
+                                                        value={editingUser.place}
+                                                        onChange={(e) =>
+                                                            setEditingUser({ ...editingUser, place: e.target.value })
+                                                        }
+                                                    />
+                                                </Td>
+                                                <Td>{new Date(user.createdAt).toLocaleDateString()}</Td>
+                                                <Td>
+                                                    <ActionButton onClick={handleSave}>
+                                                        <Check size={16} color="green" />
+                                                    </ActionButton>
+                                                    <ActionButton onClick={() => setEditingUser(null)}>
+                                                        <X size={16} color="red" />
+                                                    </ActionButton>
+                                                </Td>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Td>{user.name}</Td>
+                                                <Td>{user.email}</Td>
+                                                <Td>{user.contact}</Td>
+                                                <Td>{user.church}</Td>
+                                                <Td>{user.job}</Td>
+                                                <Td>{user.place}</Td>
+                                                <Td>{new Date(user.createdAt).toLocaleDateString()}</Td>
+                                                <Td>
+                                                    <ActionButton onClick={() => handleEdit(user)}>
+                                                        <Edit2 size={16} color="#4f3296" />
+                                                    </ActionButton>
+                                                    <ActionButton onClick={() => handleDelete(user.id)}>
+                                                        <Trash2 size={16} color="red" />
+                                                    </ActionButton>
+                                                </Td>
+                                            </>
+                                        )}
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </Table>
 
-                    <Pagination>
-                        <PaginationButton
-                            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                            disabled={currentPage === 1}
-                        >
-                            <ChevronLeft size={20} />
-                        </PaginationButton>
-                        <PageInfo>
-                            {currentPage} / {totalPages}
-                        </PageInfo>
-                        <PaginationButton
-                            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                            disabled={currentPage === totalPages}
-                        >
-                            <ChevronRight size={20} />
-                        </PaginationButton>
-                    </Pagination>
-                </>
-            )}
+                        <Pagination>
+                            <PaginationButton
+                                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                                disabled={currentPage === 1}
+                            >
+                                <ChevronLeft size={20} />
+                            </PaginationButton>
+                            <PageInfo>
+                                {currentPage} / {totalPages}
+                            </PageInfo>
+                            <PaginationButton
+                                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                                disabled={currentPage === totalPages}
+                            >
+                                <ChevronRight size={20} />
+                            </PaginationButton>
+                        </Pagination>
+                    </>
+                )}
+            </ContentWrapper>
         </Container>
     );
 };
@@ -234,6 +245,49 @@ const Container = styled.div`
     width: calc(100vw - 400px);
     min-height: 92vh;
     background-color: #f5f5f5;
+`;
+
+const ContentWrapper = styled.div`
+    max-width: 1200px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+    padding: 48px;
+`;
+
+const TopBar = styled.div`
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+`;
+
+const BackButton = styled.button`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: transparent;
+    border: none;
+    color: #4f3296;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-radius: 8px;
+
+    &:hover {
+        background: #f3f4f6;
+    }
+
+    svg {
+        transition: transform 0.2s ease;
+    }
+
+    &:hover svg {
+        transform: translateX(-4px);
+    }
 `;
 
 const Header = styled.div`

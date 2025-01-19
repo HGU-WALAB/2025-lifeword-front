@@ -15,6 +15,8 @@ const SermonListPage = () => {
     const [searchKeyword, setSearchKeyword] = useState('');
     const [searchMode, setSearchMode] = useState('both');
     const [isSearching, setIsSearching] = useState(false);
+    const [searchType, setSearchType] = useState('both');
+    const [searchValue, setSearchValue] = useState('');
 
     // URL 파라미터에서 필터 상태 읽기
     const filterType = searchParams.get('type') || 'public';
@@ -85,15 +87,14 @@ const SermonListPage = () => {
         return pages;
     };
 
-    const handleSearch = async (e) => {
-        e.preventDefault();
-        if (!searchKeyword.trim()) return;
+    const handleSearch = async () => {
+        if (!searchValue.trim()) return;
 
         try {
             setLoading(true);
             setIsSearching(true);
             const userId = localStorage.getItem('UID');
-            const data = await searchSermons(searchKeyword, userId, searchMode);
+            const data = await searchSermons(searchValue, userId, searchType);
             const filteredData = data.filter((sermon) => {
                 if (filterType === 'public') {
                     return sermon.public;
@@ -114,15 +115,34 @@ const SermonListPage = () => {
     };
 
     const handleResetSearch = () => {
-        setSearchKeyword('');
+        setSearchValue('');
         setIsSearching(false);
-        setSearchMode('both');
+        setSearchType('both');
         fetchSermons();
         setCurrentPage(1);
     };
 
     return (
         <Container>
+            <Header>
+                <SearchContainer>
+                    <Select value={searchType} onChange={(e) => setSearchType(e.target.value)}>
+                        <option value="title">제목</option>
+                        <option value="content">내용</option>
+                        <option value="both">제목+내용</option>
+                    </Select>
+                    <SearchInput
+                        type="text"
+                        value={searchValue}
+                        onChange={(e) => setSearchValue(e.target.value)}
+                        placeholder="검색어를 입력하세요"
+                        onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                    />
+                    <SearchButton onClick={handleSearch}>
+                        <Search size={20} />
+                    </SearchButton>
+                </SearchContainer>
+            </Header>
             <PageHeader>
                 <Title>설교 목록</Title>
                 <Description>등록된 설교 목록을 확인하고 내용을 살펴보세요.</Description>
@@ -231,37 +251,6 @@ const SermonListPage = () => {
                         </PaginationButton>
                     </PaginationContainer>
                 )}
-                <SearchContainer>
-                    <SearchForm onSubmit={handleSearch}>
-                        <SearchInputWrapper>
-                            <SearchInput
-                                type="text"
-                                placeholder="설교 검색..."
-                                value={searchKeyword}
-                                onChange={(e) => setSearchKeyword(e.target.value)}
-                            />
-                            <SearchButton type="submit">
-                                <Search size={20} />
-                            </SearchButton>
-                        </SearchInputWrapper>
-                        <SearchOptions>
-                            <SearchOption active={searchMode === 'both'} onClick={() => setSearchMode('both')}>
-                                제목+내용
-                            </SearchOption>
-                            <SearchOption active={searchMode === 'title'} onClick={() => setSearchMode('title')}>
-                                제목
-                            </SearchOption>
-                            <SearchOption active={searchMode === 'content'} onClick={() => setSearchMode('content')}>
-                                내용
-                            </SearchOption>
-                        </SearchOptions>
-                        {isSearching && (
-                            <ResetButton type="button" onClick={handleResetSearch}>
-                                검색 초기화
-                            </ResetButton>
-                        )}
-                    </SearchForm>
-                </SearchContainer>
             </ContentWrapper>
         </Container>
     );
@@ -548,97 +537,47 @@ const PublicBadge = styled.div`
     font-weight: 500;
 `;
 
+const Header = styled.div`
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    margin-bottom: 30px;
+`;
+
 const SearchContainer = styled.div`
-    margin-top: 40px;
-    padding: 24px;
-    background: white;
-    border-radius: 16px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
-    max-width: 800px;
-    margin-left: auto;
-    margin-right: auto;
-`;
-
-const SearchForm = styled.form`
     display: flex;
-    flex-direction: column;
-    gap: 16px;
-`;
-
-const SearchInputWrapper = styled.div`
-    display: flex;
-    gap: 8px;
-    width: 100%;
+    gap: 10px;
 `;
 
 const SearchInput = styled.input`
-    flex: 1;
-    padding: 12px 16px;
-    border: 2px solid #eee;
-    border-radius: 8px;
-    font-size: 16px;
-    transition: all 0.2s ease;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    width: 250px;
+    font-size: 14px;
+`;
 
-    &:focus {
-        outline: none;
-        border-color: #4f3296;
-    }
+const Select = styled.select`
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    background-color: white;
+    font-size: 14px;
 `;
 
 const SearchButton = styled.button`
-    padding: 12px 24px;
-    background: #4f3296;
-    border: none;
-    border-radius: 8px;
+    padding: 8px 16px;
+    background-color: #4f3296;
     color: white;
+    border: none;
+    border-radius: 6px;
     cursor: pointer;
-    transition: all 0.2s ease;
     display: flex;
     align-items: center;
     justify-content: center;
 
     &:hover {
-        background: #3a2570;
-    }
-`;
-
-const SearchOptions = styled.div`
-    display: flex;
-    gap: 8px;
-    padding: 4px;
-    background: #f5f5f5;
-    border-radius: 8px;
-    width: fit-content;
-`;
-
-const SearchOption = styled.button`
-    padding: 8px 16px;
-    border: none;
-    border-radius: 6px;
-    background: ${(props) => (props.active ? '#4f3296' : 'transparent')};
-    color: ${(props) => (props.active ? 'white' : '#666')};
-    font-size: 14px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-
-    &:hover {
-        background: ${(props) => (props.active ? '#3a2570' : '#e5e5e5')};
-    }
-`;
-
-const ResetButton = styled.button`
-    padding: 8px 16px;
-    background: transparent;
-    border: 1px solid #4f3296;
-    border-radius: 8px;
-    color: #4f3296;
-    font-size: 14px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    width: fit-content;
-
-    &:hover {
-        background: #f8f5ff;
+        background-color: #3b2570;
     }
 `;
 
