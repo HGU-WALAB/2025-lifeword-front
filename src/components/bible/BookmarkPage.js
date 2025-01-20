@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
-import { getBookmarks, deleteBookmark } from '../services/APIService';
+import { getBookmarks, deleteBookmark } from '../../services/APIService';
 
 const ITEMS_PER_PAGE = 20;
 

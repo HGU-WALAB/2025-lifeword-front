@@ -4,7 +4,7 @@ import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import { OnboardingGlobalStyles } from '../styles/OnboardingGlobalStyles';
 import LogoWhite from '../assets/LogoWhite.png';
-import LoginForm from '../components/LoginForm';
+import LoginForm from '../components/login/LoginForm';
 
 const Onboarding = () => {
     const [showLoginForm, setShowLoginForm] = useState(false);

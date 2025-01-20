@@ -2,16 +2,16 @@ import React from 'react';
 import styled from 'styled-components';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import MainNavbar from '../components/MainNavbar';
-import QuickReadingPage from '../components/QuickReadingPage';
-import SearchPage from '../components/SearchPage';
-import BookmarkPage from '../components/BookmarkPage';
-import AddSermonPage from '../components/AddSermonPage';
-import EditSermonPage from '../components/EditSermonPage';
-import SermonListPage from '../components/SermonListPage';
-import SermonDetailPage from '../components/SermonDetailPage';
-import AdminPage from '../components/AdminPage';
-import UserManagementPage from '../components/UserManagementPage';
-import SermonManagementPage from '../components/SermonManagementPage';
+import QuickReadingPage from '../components/bible/QuickReadingPage';
+import SearchPage from '../components/bible/SearchPage';
+import BookmarkPage from '../components/bible/BookmarkPage';
+import AddSermonPage from '../components/sermon/AddSermonPage';
+import EditSermonPage from '../components/sermon/EditSermonPage';
+import SermonListPage from '../components/sermon/SermonListPage';
+import SermonDetailPage from '../components/sermon/SermonDetailPage';
+import AdminPage from '../components/admin/AdminPage';
+import UserManagementPage from '../components/admin/UserManagementPage';
+import SermonManagementPage from '../components/admin/SermonManagementPage';
 
 const MainPage = () => {
     return (
@@ -24,14 +24,13 @@ const MainPage = () => {
                     <Route path="/search" element={<SearchPage />} />
                     <Route path="/bookmarks" element={<BookmarkPage />} />
                     <Route path="/add-sermon" element={<AddSermonPage />} />
-                    <Route path="/edit-sermon/:id" element={<EditSermonPage />} />
                     <Route path="/sermon-list/*" element={<SermonListLayout />} />
-                    {localStorage.getItem('admin') === 'true' && <Route path="/admin" element={<AdminPage />} />}
                     {localStorage.getItem('admin') === 'true' && (
-                        <Route path="/admin/users" element={<UserManagementPage />} />
-                    )}
-                    {localStorage.getItem('admin') === 'true' && (
-                        <Route path="/admin/sermons" element={<SermonManagementPage />} />
+                        <>
+                            <Route path="/admin" element={<AdminPage />} />
+                            <Route path="/admin/users" element={<UserManagementPage />} />
+                            <Route path="/admin/sermons/*" element={<AdminSermonLayout />} />
+                        </>
                     )}
                 </Routes>
             </MainContent>
@@ -45,6 +44,19 @@ const SermonListLayout = () => {
             <Routes>
                 <Route path="/" element={<SermonListPage />} />
                 <Route path="/detail/:id" element={<SermonDetailPage />} />
+                <Route path="/edit/:id" element={<EditSermonPage />} />
+            </Routes>
+        </SermonListContainer>
+    );
+};
+
+const AdminSermonLayout = () => {
+    return (
+        <SermonListContainer>
+            <Routes>
+                <Route path="/" element={<SermonManagementPage />} />
+                <Route path="/detail/:id" element={<SermonDetailPage />} />
+                <Route path="/edit/:id" element={<EditSermonPage />} />
             </Routes>
         </SermonListContainer>
     );

@@ -1,19 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import { getSermonDetail, deleteSermon } from '../services/APIService';
+import { getSermonDetail, deleteSermon } from '../../services/APIService';
 import { ArrowLeft, Pencil, Trash2 } from 'lucide-react';
 
 const SermonDetailPage = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const location = useLocation();
     const [sermon, setSermon] = useState(null);
     const [loading, setLoading] = useState(true);
-
-    // URL의 state나 search 파라미터에서 type 확인
-    const searchParams = new URLSearchParams(location.search);
-    const isMySermon = searchParams.get('type') === 'my';
+    const currentUserId = localStorage.getItem('UID');
+    const isAdmin = localStorage.getItem('admin') === 'true';
+    const currentPath = window.location.pathname;
+    const isAdminPage = currentPath.includes('/admin/sermons');
 
     useEffect(() => {
         const fetchSermonDetail = async () => {
@@ -35,8 +34,8 @@ const SermonDetailPage = () => {
     const handleDelete = async () => {
         if (window.confirm('정말로 이 설교를 삭제하시겠습니까?')) {
             try {
-                const userId = localStorage.getItem('UID');
-                await deleteSermon(id, userId);
+                const targetUserId = isAdminPage ? sermon.userId : currentUserId;
+                await deleteSermon(id, targetUserId);
                 alert('설교가 삭제되었습니다.');
                 navigate(-1);
             } catch (error) {
@@ -47,7 +46,15 @@ const SermonDetailPage = () => {
     };
 
     const handleEdit = () => {
-        navigate(`/main/edit-sermon/${id}`);
+        if (isAdminPage) {
+            localStorage.setItem('originalUserId', sermon.userId);
+        }
+
+        if (currentPath.includes('/admin/sermons')) {
+            navigate(`/main/admin/sermons/edit/${id}`);
+        } else {
+            navigate(`/main/sermon-list/edit/${id}`);
+        }
     };
 
     if (loading) {
@@ -67,7 +74,7 @@ const SermonDetailPage = () => {
                             <ArrowLeft size={20} />
                             <span>뒤로 가기</span>
                         </BackButton>
-                        {isMySermon && (
+                        {(sermon?.userId === currentUserId || (isAdmin && isAdminPage)) && (
                             <ActionButtons>
                                 <ActionButton onClick={handleEdit}>
                                     <Pencil size={16} />

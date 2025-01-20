@@ -2,14 +2,15 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { Calendar as CalendarIcon, ArrowLeft } from 'lucide-react';
-import { getSermonDetail, updateSermon } from '../services/APIService';
-import SermonEditor from './Editor/SermonEditor';
+import { getSermonDetail, updateSermon } from '../../services/APIService';
+import SermonEditor from '../Editor/SermonEditor';
 
 const EditSermonPage = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const editorRef = useRef(null);
     const [loading, setLoading] = useState(true);
+    const [sermon, setSermon] = useState(null);
     const [formData, setFormData] = useState({
         sermonTitle: '',
         sermonDate: '',
@@ -27,6 +28,7 @@ const EditSermonPage = () => {
         const fetchSermonData = async () => {
             try {
                 const data = await getSermonDetail(id);
+                setSermon(data);
                 setFormData({
                     sermonTitle: data.sermonTitle,
                     sermonDate: new Date(data.sermonDate).toISOString().split('T')[0],
@@ -96,9 +98,28 @@ const EditSermonPage = () => {
                 public: formData.public,
             };
 
-            await updateSermon(id, userId, updatedSermon);
+            const currentPath = window.location.pathname;
+            const isAdminPage = currentPath.includes('/admin/sermons');
+
+            // 관리자 페이지에서는 원래 작성자의 userId를 사용
+            const targetUserId = isAdminPage ? localStorage.getItem('originalUserId') : userId;
+
+            await updateSermon(id, targetUserId, updatedSermon);
             alert('설교가 성공적으로 수정되었습니다.');
-            navigate(`/main/sermon-list/detail/${id}?type=my`);
+
+            // 수정 완료 후 originalUserId 삭제
+            if (isAdminPage) {
+                localStorage.removeItem('originalUserId');
+            }
+
+            // URL에서 현재 경로 확인
+            if (currentPath.includes('/admin/sermons')) {
+                navigate('/main/admin/sermons');
+            }
+            // 일반 설교 목록 경로인 경우
+            else {
+                navigate('/main/sermon-list');
+            }
         } catch (error) {
             console.error('Error updating sermon:', error);
             alert('설교 수정 중 오류가 발생했습니다.');

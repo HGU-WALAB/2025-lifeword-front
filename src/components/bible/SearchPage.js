@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import styled from 'styled-components';
 import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
-import { searchBibles } from '../services/APIService';
+import { searchBibles } from '../../services/APIService';
 import VerseContextMenu from './VerseContextMenu';
 
 const ITEMS_PER_PAGE = 20;

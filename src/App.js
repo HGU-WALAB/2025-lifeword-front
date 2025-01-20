@@ -3,9 +3,9 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { ParallaxProvider } from 'react-scroll-parallax';
 import Onboarding from './Onboarding/Onboarding';
 import MainPage from './pages/MainPage';
-import AuthCallback from './components/AuthCallback';
-import SignUpPageSocial from './components/SignUpPageSocial';
-import SignUpPageBibly from './components/SignUpPageBibly';
+import AuthCallback from './components/login/AuthCallback';
+import SignUpPageSocial from './components/login/SignUpPageSocial';
+import SignUpPageBibly from './components/login/SignUpPageBibly';
 
 const ProtectedRoute = ({ children }) => {
     const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';

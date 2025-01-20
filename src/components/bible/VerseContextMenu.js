@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import styled from 'styled-components';
 import { Bookmark } from 'lucide-react';
-import { createBookmark } from '../services/APIService';
+import { createBookmark } from '../../services/APIService';
 
 const VerseContextMenu = ({ targetRef, verse }) => {
     const [position, setPosition] = useState({ x: 0, y: 0 });

@@ -1,6 +1,12 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getKakaoToken, getKakaoUserInfo, verifyUser, getGoogleToken, getGoogleUserInfo } from '../services/APIService';
+import {
+    getKakaoToken,
+    getKakaoUserInfo,
+    verifyUser,
+    getGoogleToken,
+    getGoogleUserInfo,
+} from '../../services/APIService';
 
 const AuthCallback = () => {
     const navigate = useNavigate();

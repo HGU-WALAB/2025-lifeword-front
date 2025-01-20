@@ -1,20 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { useNavigate } from 'react-router-dom';
-import { createUser, verifyEmail } from '../services/APIService';
-import { setupRecaptcha, requestPhoneVerification, verifyPhoneNumber } from '../services/PhoneAuthService';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { createUser } from '../../services/APIService';
+import { setupRecaptcha, requestPhoneVerification, verifyPhoneNumber } from '../../services/PhoneAuthService';
 
-const SignUpPageBibly = () => {
+const SignUpPageSocial = () => {
     const navigate = useNavigate();
+    const location = useLocation();
+    const { userId, userEmail } = location.state || {};
 
     const [name, setName] = useState('');
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
     const [phone, setPhone] = useState('');
     const [verificationCode, setVerificationCode] = useState('');
     const [showVerification, setShowVerification] = useState(false);
     const [isPhoneVerified, setIsPhoneVerified] = useState(false);
-    const [isEmailVerified, setIsEmailVerified] = useState(false);
     const [churchName, setChurchName] = useState('');
     const [role, setRole] = useState('');
     const [province, setProvince] = useState('');
@@ -58,27 +57,6 @@ const SignUpPageBibly = () => {
         }
     };
 
-    const handleEmailVerification = async () => {
-        try {
-            const response = await verifyEmail(email);
-
-            if (response.success) {
-                if (response.data === true) {
-                    setIsEmailVerified(false);
-                    alert('이미 사용 중인 이메일입니다.');
-                } else {
-                    setIsEmailVerified(true);
-                    alert('사용 가능한 이메일입니다.');
-                }
-            } else {
-                alert('이메일 확인 중 오류가 발생했습니다.');
-            }
-        } catch (error) {
-            console.error('Email verification error:', error);
-            alert('이메일 확인 중 오류가 발생했습니다.');
-        }
-    };
-
     const handleVerificationRequest = async () => {
         const response = await requestPhoneVerification(phone);
         if (response.success) {
@@ -105,17 +83,14 @@ const SignUpPageBibly = () => {
             alert('전화번호 인증이 필요합니다.');
             return;
         }
-        if (!isEmailVerified) {
-            alert('이메일 인증이 필요합니다.');
-            return;
-        }
 
         try {
+            const [provider, uid] = userId.split('_');
             const userData = {
-                oauthProvider: 'bibly',
-                oauthUid: '',
-                email: email,
-                password: password,
+                oauthProvider: provider.toLowerCase(),
+                oauthUid: uid,
+                email: userEmail,
+                password: '',
                 name: name,
                 contact: phone,
                 church: churchName,
@@ -125,7 +100,10 @@ const SignUpPageBibly = () => {
 
             const response = await createUser(userData);
             if (response.success) {
-                alert('회원가입이 완료되었습니다.');
+                localStorage.setItem('isLoggedIn', 'true');
+                localStorage.setItem('UID', response.data.id);
+                localStorage.setItem('userEmail', userEmail);
+                localStorage.setItem('userName', name);
                 navigate('/main', { replace: true });
             } else {
                 throw new Error(response.message || '회원가입에 실패했습니다.');
@@ -147,34 +125,7 @@ const SignUpPageBibly = () => {
                 <Form onSubmit={handleSubmit}>
                     <FormGroup>
                         <Label>이메일</Label>
-                        <EmailInputGroup>
-                            <EmailInput
-                                type="email"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                placeholder="이메일을 입력하세요"
-                                disabled={isEmailVerified}
-                                required
-                            />
-                            <VerificationButton
-                                type="button"
-                                onClick={handleEmailVerification}
-                                disabled={isEmailVerified || !email}
-                            >
-                                {isEmailVerified ? '인증완료' : '중복확인'}
-                            </VerificationButton>
-                        </EmailInputGroup>
-                    </FormGroup>
-
-                    <FormGroup>
-                        <Label>비밀번호</Label>
-                        <Input
-                            type="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            placeholder="비밀번호를 입력하세요"
-                            required
-                        />
+                        <DisabledInput value={userEmail || ''} disabled />
                     </FormGroup>
 
                     <FormGroup>
@@ -336,10 +287,6 @@ const Input = styled.input`
     }
 `;
 
-const EmailInput = styled(Input)`
-    flex: 1;
-`;
-
 const PhoneInput = styled(Input)`
     flex: 1;
 `;
@@ -349,15 +296,13 @@ const DisabledInput = styled(Input)`
     color: #666;
 `;
 
-const EmailInputGroup = styled.div`
+const PhoneInputGroup = styled.div`
     display: flex;
     gap: 8px;
     width: 100%;
 `;
 
-const PhoneInputGroup = styled(EmailInputGroup)``;
-
-const VerificationInputGroup = styled(EmailInputGroup)`
+const VerificationInputGroup = styled(PhoneInputGroup)`
     margin-top: 8px;
 `;
 
@@ -417,4 +362,4 @@ const SubmitButton = styled.button`
     }
 `;
 
-export default SignUpPageBibly;
+export default SignUpPageSocial;

@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import styled from 'styled-components';
 import { Calendar as CalendarIcon } from 'lucide-react';
-import { createSermon } from '../services/APIService';
-import SermonEditor from './Editor/SermonEditor';
+import { createSermon } from '../../services/APIService';
+import SermonEditor from '../Editor/SermonEditor';
 
 const AddSermonPage = () => {
     const [sermonData, setSermonData] = useState({
