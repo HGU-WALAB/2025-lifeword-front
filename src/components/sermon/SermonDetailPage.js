@@ -10,6 +10,7 @@ const SermonDetailPage = () => {
     const location = useLocation();
     const [sermon, setSermon] = useState(null);
     const [loading, setLoading] = useState(true);
+    const currentUserId = localStorage.getItem('UID');
 
     // URL의 state나 search 파라미터에서 type 확인
     const searchParams = new URLSearchParams(location.search);
@@ -35,8 +36,7 @@ const SermonDetailPage = () => {
     const handleDelete = async () => {
         if (window.confirm('정말로 이 설교를 삭제하시겠습니까?')) {
             try {
-                const userId = localStorage.getItem('UID');
-                await deleteSermon(id, userId);
+                await deleteSermon(id, currentUserId);
                 alert('설교가 삭제되었습니다.');
                 navigate(-1);
             } catch (error) {
@@ -67,7 +67,7 @@ const SermonDetailPage = () => {
                             <ArrowLeft size={20} />
                             <span>뒤로 가기</span>
                         </BackButton>
-                        {isMySermon && (
+                        {sermon?.userId === currentUserId && (
                             <ActionButtons>
                                 <ActionButton onClick={handleEdit}>
                                     <Pencil size={16} />
