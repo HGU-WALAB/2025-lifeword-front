@@ -360,3 +360,13 @@ export const deleteAdminUser = async (userId) => {
         throw error;
     }
 };
+
+export const getAdminSermons = async () => {
+    try {
+        const response = await fetch(`${BASE_URL}/sermons/admin/list`);
+        return await response.json();
+    } catch (error) {
+        console.error('Error getting admin sermons:', error);
+        throw error;
+    }
+};

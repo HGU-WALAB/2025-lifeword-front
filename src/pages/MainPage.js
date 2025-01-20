@@ -24,14 +24,13 @@ const MainPage = () => {
                     <Route path="/search" element={<SearchPage />} />
                     <Route path="/bookmarks" element={<BookmarkPage />} />
                     <Route path="/add-sermon" element={<AddSermonPage />} />
-                    <Route path="/edit-sermon/:id" element={<EditSermonPage />} />
                     <Route path="/sermon-list/*" element={<SermonListLayout />} />
-                    {localStorage.getItem('admin') === 'true' && <Route path="/admin" element={<AdminPage />} />}
                     {localStorage.getItem('admin') === 'true' && (
-                        <Route path="/admin/users" element={<UserManagementPage />} />
-                    )}
-                    {localStorage.getItem('admin') === 'true' && (
-                        <Route path="/admin/sermons" element={<SermonManagementPage />} />
+                        <>
+                            <Route path="/admin" element={<AdminPage />} />
+                            <Route path="/admin/users" element={<UserManagementPage />} />
+                            <Route path="/admin/sermons/*" element={<AdminSermonLayout />} />
+                        </>
                     )}
                 </Routes>
             </MainContent>
@@ -45,6 +44,19 @@ const SermonListLayout = () => {
             <Routes>
                 <Route path="/" element={<SermonListPage />} />
                 <Route path="/detail/:id" element={<SermonDetailPage />} />
+                <Route path="/edit/:id" element={<EditSermonPage />} />
+            </Routes>
+        </SermonListContainer>
+    );
+};
+
+const AdminSermonLayout = () => {
+    return (
+        <SermonListContainer>
+            <Routes>
+                <Route path="/" element={<SermonManagementPage />} />
+                <Route path="/detail/:id" element={<SermonDetailPage />} />
+                <Route path="/edit/:id" element={<EditSermonPage />} />
             </Routes>
         </SermonListContainer>
     );

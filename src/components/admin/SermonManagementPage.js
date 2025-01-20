@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { Search, Edit2, Trash2, ChevronLeft, ChevronRight, ArrowLeft, Eye } from 'lucide-react';
-import { getPublicSermons, searchSermons, deleteSermon } from '../../services/APIService';
+import { getAdminSermons, searchSermons, deleteSermon } from '../../services/APIService';
 import { useNavigate } from 'react-router-dom';
 
 const SermonManagementPage = () => {
@@ -16,7 +16,7 @@ const SermonManagementPage = () => {
     const loadSermons = async () => {
         setLoading(true);
         try {
-            const data = await getPublicSermons();
+            const data = await getAdminSermons();
             setSermons(data);
         } catch (error) {
             console.error('Failed to load sermons:', error);
@@ -47,14 +47,21 @@ const SermonManagementPage = () => {
     };
 
     const handleEdit = (sermonId) => {
-        navigate(`/main/edit-sermon/${sermonId}`);
+        const sermon = sermons.find((s) => s.sermonId === sermonId);
+        if (sermon) {
+            localStorage.setItem('originalUserId', sermon.userId);
+        }
+        navigate(`/main/admin/sermons/edit/${sermonId}`);
     };
 
     const handleDelete = async (sermonId) => {
         if (window.confirm('정말로 이 설교를 삭제하시겠습니까?')) {
             try {
-                const userId = localStorage.getItem('UID');
-                await deleteSermon(sermonId, userId);
+                const sermon = sermons.find((s) => s.sermonId === sermonId);
+                if (!sermon) {
+                    throw new Error('설교를 찾을 수 없습니다.');
+                }
+                await deleteSermon(sermonId, sermon.userId);
                 loadSermons();
             } catch (error) {
                 console.error('Failed to delete sermon:', error);
