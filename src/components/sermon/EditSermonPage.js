@@ -4,6 +4,7 @@ import styled from 'styled-components';
 import { Calendar as CalendarIcon, ArrowLeft } from 'lucide-react';
 import { getSermonDetail, updateSermon } from '../../services/APIService';
 import SermonEditor from '../Editor/SermonEditor';
+import { useUserState, useOriginalUserId } from '../../recoil/utils';
 
 const EditSermonPage = () => {
     const { id } = useParams();
@@ -11,6 +12,9 @@ const EditSermonPage = () => {
     const editorRef = useRef(null);
     const [loading, setLoading] = useState(true);
     const [sermon, setSermon] = useState(null);
+    const { userId } = useUserState();
+    const [originalUserId] = useOriginalUserId();
+
     const [formData, setFormData] = useState({
         sermonTitle: '',
         sermonDate: '',
@@ -77,7 +81,6 @@ const EditSermonPage = () => {
         }
 
         try {
-            const userId = localStorage.getItem('UID');
             if (!userId) {
                 alert('로그인이 필요합니다.');
                 return;
@@ -102,22 +105,15 @@ const EditSermonPage = () => {
             const isAdminPage = currentPath.includes('/admin/sermons');
 
             // 관리자 페이지에서는 원래 작성자의 userId를 사용
-            const targetUserId = isAdminPage ? localStorage.getItem('originalUserId') : userId;
+            const targetUserId = isAdminPage ? originalUserId : userId;
 
             await updateSermon(id, targetUserId, updatedSermon);
             alert('설교가 성공적으로 수정되었습니다.');
 
-            // 수정 완료 후 originalUserId 삭제
-            if (isAdminPage) {
-                localStorage.removeItem('originalUserId');
-            }
-
             // URL에서 현재 경로 확인
             if (currentPath.includes('/admin/sermons')) {
                 navigate('/main/admin/sermons');
-            }
-            // 일반 설교 목록 경로인 경우
-            else {
+            } else {
                 navigate('/main/sermon-list');
             }
         } catch (error) {

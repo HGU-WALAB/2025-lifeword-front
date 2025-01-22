@@ -2,10 +2,11 @@ import React from 'react';
 import AdminNavbar from './navbar/AdminNavbar';
 import PastorNavbar from './navbar/PastorNavbar';
 import BelieverNavbar from './navbar/BelieverNavbar';
+import { useUserState } from '../recoil/utils';
 
 const MainNavbar = () => {
-    const isAdmin = localStorage.getItem('admin') === 'true';
-    const isPastor = localStorage.getItem('job') === '목회자';
+    const { isAdmin, userJob } = useUserState();
+    const isPastor = userJob === '목회자';
 
     if (isAdmin) {
         return <AdminNavbar />;

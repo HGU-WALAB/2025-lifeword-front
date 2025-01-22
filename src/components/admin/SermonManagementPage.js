@@ -3,14 +3,16 @@ import styled from 'styled-components';
 import { Search, Edit2, Trash2, ChevronLeft, ChevronRight, ArrowLeft, Eye } from 'lucide-react';
 import { getAdminSermons, searchSermons, deleteSermon } from '../../services/APIService';
 import { useNavigate } from 'react-router-dom';
+import { useUserState } from '../../recoil/utils';
 
 const SermonManagementPage = () => {
-    const navigate = useNavigate();
     const [sermons, setSermons] = useState([]);
-    const [searchType, setSearchType] = useState('title');
-    const [searchValue, setSearchValue] = useState('');
-    const [currentPage, setCurrentPage] = useState(1);
     const [loading, setLoading] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [searchValue, setSearchValue] = useState('');
+    const [searchType, setSearchType] = useState('title');
+    const navigate = useNavigate();
+    const { userId } = useUserState();
     const itemsPerPage = 10;
 
     const loadSermons = async () => {
@@ -20,6 +22,7 @@ const SermonManagementPage = () => {
             setSermons(data);
         } catch (error) {
             console.error('Failed to load sermons:', error);
+            setSermons([]);
         }
         setLoading(false);
     };
@@ -35,7 +38,6 @@ const SermonManagementPage = () => {
         }
         setLoading(true);
         try {
-            const userId = localStorage.getItem('UID');
             const results = await searchSermons(searchValue, userId, searchType);
             setSermons(Array.isArray(results) ? results : []);
             setCurrentPage(1);
@@ -48,9 +50,6 @@ const SermonManagementPage = () => {
 
     const handleEdit = (sermonId) => {
         const sermon = sermons.find((s) => s.sermonId === sermonId);
-        if (sermon) {
-            localStorage.setItem('originalUserId', sermon.userId);
-        }
         navigate(`/main/admin/sermons/edit/${sermonId}`);
     };
 

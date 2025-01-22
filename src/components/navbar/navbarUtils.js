@@ -1,11 +1,10 @@
-export const handleLogout = () => {
-    localStorage.removeItem('UID');
-    localStorage.removeItem('isLoggedIn');
-    localStorage.removeItem('userEmail');
-    localStorage.removeItem('_grecaptcha');
-    localStorage.removeItem('userName');
-    localStorage.removeItem('job');
-    localStorage.removeItem('admin');
+import { useClearUserState } from '../../recoil/utils';
 
-    window.location.href = '/eax9952';
+export const useLogout = () => {
+    const clearUserState = useClearUserState();
+
+    return () => {
+        clearUserState();
+        window.location.href = '/eax9952';
+    };
 };

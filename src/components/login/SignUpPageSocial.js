@@ -3,11 +3,13 @@ import styled from 'styled-components';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { createUser } from '../../services/APIService';
 import { setupRecaptcha, requestPhoneVerification, verifyPhoneNumber } from '../../services/PhoneAuthService';
+import { useSetUserState } from '../../recoil/utils';
 
 const SignUpPageSocial = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const { userId, userEmail } = location.state || {};
+    const setUserState = useSetUserState();
 
     const [name, setName] = useState('');
     const [phone, setPhone] = useState('');
@@ -100,10 +102,14 @@ const SignUpPageSocial = () => {
 
             const response = await createUser(userData);
             if (response.success) {
-                localStorage.setItem('isLoggedIn', 'true');
-                localStorage.setItem('UID', response.data.id);
-                localStorage.setItem('userEmail', userEmail);
-                localStorage.setItem('userName', name);
+                setUserState({
+                    isLoggedIn: 'true',
+                    userId: response.data.id,
+                    userEmail: userEmail,
+                    userName: name,
+                    job: role === 'pastor' ? '목회자' : '평신도',
+                    admin: 'false',
+                });
                 navigate('/main', { replace: true });
             } else {
                 throw new Error(response.message || '회원가입에 실패했습니다.');

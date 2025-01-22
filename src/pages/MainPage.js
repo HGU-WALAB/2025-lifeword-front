@@ -12,8 +12,11 @@ import SermonDetailPage from '../components/sermon/SermonDetailPage';
 import AdminPage from '../components/admin/AdminPage';
 import UserManagementPage from '../components/admin/UserManagementPage';
 import SermonManagementPage from '../components/admin/SermonManagementPage';
+import { useUserState } from '../recoil/utils';
 
 const MainPage = () => {
+    const { isAdmin } = useUserState();
+
     return (
         <Container>
             <MainNavbar />
@@ -25,7 +28,7 @@ const MainPage = () => {
                     <Route path="/bookmarks" element={<BookmarkPage />} />
                     <Route path="/add-sermon" element={<AddSermonPage />} />
                     <Route path="/sermon-list/*" element={<SermonListLayout />} />
-                    {localStorage.getItem('admin') === 'true' && (
+                    {isAdmin && (
                         <>
                             <Route path="/admin" element={<AdminPage />} />
                             <Route path="/admin/users" element={<UserManagementPage />} />

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
 import { getBookmarks, deleteBookmark } from '../../services/APIService';
+import { useUserState } from '../../recoil/utils';
 
 const ITEMS_PER_PAGE = 20;
 
@@ -9,12 +10,12 @@ const BookmarkPage = () => {
     const [bookmarks, setBookmarks] = useState([]);
     const [loading, setLoading] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
+    const { userId } = useUserState();
 
     const fetchBookmarks = async () => {
         setLoading(true);
         try {
-            const userID = localStorage.getItem('UID');
-            const response = await getBookmarks(userID);
+            const response = await getBookmarks(userId);
             if (response.success) {
                 setBookmarks(response.data);
             }
@@ -27,7 +28,7 @@ const BookmarkPage = () => {
 
     useEffect(() => {
         fetchBookmarks();
-    }, []);
+    }, [userId]);
 
     const handleDeleteBookmark = async (bookmark) => {
         if (!window.confirm('이 북마크를 삭제하시겠습니까?')) {
@@ -35,8 +36,7 @@ const BookmarkPage = () => {
         }
 
         try {
-            const userID = localStorage.getItem('UID');
-            const response = await deleteBookmark(userID, bookmark.verse_id);
+            const response = await deleteBookmark(userId, bookmark.verse_id);
             if (response.success) {
                 alert('북마크가 삭제되었습니다.');
                 await fetchBookmarks();

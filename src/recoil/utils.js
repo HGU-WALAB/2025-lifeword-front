@@ -8,6 +8,7 @@ import {
     userNameState,
     originalUserIdState,
 } from './atoms';
+import { useCallback } from 'react';
 
 // Custom hook for getting user state
 export const useUserState = () => {
@@ -37,26 +38,18 @@ export const useSetUserState = () => {
     const setIsAdmin = useSetRecoilState(isAdminState);
     const setUserName = useSetRecoilState(userNameState);
 
-    return (userData) => {
-        if (userData.isLoggedIn !== undefined) {
-            setIsLoggedIn(userData.isLoggedIn === 'true');
-        }
-        if (userData.userId !== undefined) {
-            setUserId(userData.userId);
-        }
-        if (userData.userEmail !== undefined) {
-            setUserEmail(userData.userEmail);
-        }
-        if (userData.job !== undefined) {
-            setUserJob(userData.job);
-        }
-        if (userData.admin !== undefined) {
-            setIsAdmin(userData.admin === 'true');
-        }
-        if (userData.userName !== undefined) {
-            setUserName(userData.userName);
-        }
-    };
+    return useCallback(
+        ({ isLoggedIn, userId, userEmail, job, admin, userName }) => {
+            setIsLoggedIn(isLoggedIn === true || isLoggedIn === 'true');
+            setUserId(userId || '');
+            setUserEmail(userEmail || '');
+            setUserJob(job || '');
+            // admin 값을 boolean으로 변환
+            setIsAdmin(admin === true || admin === 1 || admin === '1' || admin === 'true');
+            setUserName(userName || '');
+        },
+        [setIsLoggedIn, setUserId, setUserEmail, setUserJob, setIsAdmin, setUserName]
+    );
 };
 
 // Custom hook for clearing user state

@@ -3,9 +3,11 @@ import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import { createUser, verifyEmail } from '../../services/APIService';
 import { setupRecaptcha, requestPhoneVerification, verifyPhoneNumber } from '../../services/PhoneAuthService';
+import { useSetUserState } from '../../recoil/utils';
 
 const SignUpPageBibly = () => {
     const navigate = useNavigate();
+    const setUserState = useSetUserState();
 
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
@@ -125,6 +127,14 @@ const SignUpPageBibly = () => {
 
             const response = await createUser(userData);
             if (response.success) {
+                setUserState({
+                    isLoggedIn: 'true',
+                    userId: response.data.id,
+                    userEmail: email,
+                    userName: name,
+                    job: role === 'pastor' ? '목회자' : '평신도',
+                    admin: 'false',
+                });
                 alert('회원가입이 완료되었습니다.');
                 navigate('/main', { replace: true });
             } else {
