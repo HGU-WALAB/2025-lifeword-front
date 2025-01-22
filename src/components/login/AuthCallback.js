@@ -6,6 +6,7 @@ import {
     verifyUser,
     getGoogleToken,
     getGoogleUserInfo,
+    updateUserProvider,
 } from '../../services/APIService';
 import { useSetUserState } from '../../recoil/utils';
 
@@ -23,7 +24,7 @@ const AuthCallback = () => {
                     throw new Error('No authorization code found');
                 }
 
-                let userId, userEmail, uid;
+                let userEmail, uid, provider;
                 const isGoogle = url.searchParams.get('scope')?.includes('email');
 
                 if (isGoogle) {
@@ -33,8 +34,8 @@ const AuthCallback = () => {
                     }
                     const userInfo = await getGoogleUserInfo(tokenData.access_token);
                     uid = userInfo.id;
-                    userId = `google_${uid}`;
                     userEmail = userInfo.email;
+                    provider = 'google';
                 } else {
                     const tokenData = await getKakaoToken(code);
                     if (!tokenData.access_token) {
@@ -42,16 +43,16 @@ const AuthCallback = () => {
                     }
                     const userInfo = await getKakaoUserInfo(tokenData.access_token);
                     uid = userInfo.id;
-                    userId = `kakao_${uid}`;
                     userEmail = userInfo.kakao_account?.email;
+                    provider = 'kakao';
                 }
 
-                const verifyResult = await verifyUser(uid, setUserState);
+                const verifyResult = await verifyUser(userEmail, setUserState);
 
                 if (!verifyResult.success || verifyResult.data === null) {
                     navigate('/signup', {
                         state: {
-                            userId: userId,
+                            userId: `${provider}_${uid}`,
                             userEmail: userEmail,
                         },
                         replace: true,
@@ -59,8 +60,10 @@ const AuthCallback = () => {
                     return;
                 }
 
+                await updateUserProvider(userEmail, provider, uid);
+
                 setUserState({
-                    isLoggedIn: 'true',
+                    isLoggedIn: true,
                     userId: verifyResult.data.userId,
                     userEmail: userEmail,
                     job: verifyResult.data.job,
@@ -71,11 +74,11 @@ const AuthCallback = () => {
             } catch (error) {
                 console.error('Login process failed:', error);
                 setUserState({
-                    isLoggedIn: 'false',
+                    isLoggedIn: false,
                     userId: '',
                     userEmail: '',
                     job: '',
-                    admin: 'false',
+                    admin: false,
                 });
                 navigate('/', { replace: true });
             }

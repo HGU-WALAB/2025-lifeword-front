@@ -3,10 +3,10 @@ import axios from 'axios';
 const BASE_URL = 'http://walab.handong.edu:8080/naimkim_1/api/v1';
 
 // User 관련 API
-export const verifyUser = async (oauthUid, setUserState) => {
+export const verifyUser = async (email, setUserState) => {
     try {
         const { data } = await axios.get(`${BASE_URL}/users/verify/kakao-google`, {
-            params: { oauthUid },
+            params: { email },
         });
         if (data.success && setUserState) {
             setUserState({
@@ -347,6 +347,22 @@ export const getAdminSermons = async () => {
         return data;
     } catch (error) {
         console.error('Error getting admin sermons:', error);
+        throw error;
+    }
+};
+
+export const updateUserProvider = async (email, provider, uid) => {
+    try {
+        const { data } = await axios.patch(`${BASE_URL}/users/provider`, null, {
+            params: {
+                email,
+                oauthProvider: provider,
+                oauthUid: uid,
+            },
+        });
+        return data;
+    } catch (error) {
+        console.error('Error updating user provider:', error);
         throw error;
     }
 };
