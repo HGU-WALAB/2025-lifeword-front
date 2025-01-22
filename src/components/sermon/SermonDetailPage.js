@@ -3,14 +3,15 @@ import { useParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { getSermonDetail, deleteSermon } from '../../services/APIService';
 import { ArrowLeft, Pencil, Trash2 } from 'lucide-react';
+import { useUserState, useOriginalUserId } from '../../recoil/utils';
 
 const SermonDetailPage = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const [sermon, setSermon] = useState(null);
     const [loading, setLoading] = useState(true);
-    const currentUserId = localStorage.getItem('UID');
-    const isAdmin = localStorage.getItem('admin') === 'true';
+    const { userId: currentUserId, isAdmin } = useUserState();
+    const [originalUserId, setOriginalUserId] = useOriginalUserId();
     const currentPath = window.location.pathname;
     const isAdminPage = currentPath.includes('/admin/sermons');
 
@@ -47,7 +48,7 @@ const SermonDetailPage = () => {
 
     const handleEdit = () => {
         if (isAdminPage) {
-            localStorage.setItem('originalUserId', sermon.userId);
+            setOriginalUserId(sermon.userId);
         }
 
         if (currentPath.includes('/admin/sermons')) {

@@ -3,11 +3,12 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Zap, Search, Bookmark, LogOut, PlusCircle, BookOpen } from 'lucide-react';
 import LogoWhite from '../../assets/LogoWhite.png';
 import { NavContainer, LogoContainer, Logo, NavItems, NavItem, LogoutButton } from './NavbarStyles';
-import { handleLogout } from './navbarUtils';
+import { useLogout } from './navbarUtils';
 
 const PastorNavbar = () => {
     const navigate = useNavigate();
     const location = useLocation();
+    const logout = useLogout();
 
     const isActive = (path) => {
         if (path === '/sermon-list') {
@@ -43,7 +44,7 @@ const PastorNavbar = () => {
                     <span>설교 목록</span>
                 </NavItem>
             </NavItems>
-            <LogoutButton onClick={() => handleLogout(navigate)}>
+            <LogoutButton onClick={() => logout()}>
                 <LogOut size={24} />
                 <span>로그아웃</span>
             </LogoutButton>

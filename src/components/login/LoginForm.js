@@ -2,29 +2,27 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { login } from '../../services/APIService';
+import { useSetUserState } from '../../recoil/utils';
 
 const LoginForm = ({ onClose }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const navigate = useNavigate();
+    const setUserState = useSetUserState();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            const response = await login(email, password);
+            const response = await login(email, password, setUserState);
             if (response.success) {
-                localStorage.setItem('isLoggedIn', 'true');
-                localStorage.setItem('UID', response.data.userId);
-                localStorage.setItem('userEmail', email);
-                localStorage.setItem('job', response.data.job);
-                localStorage.setItem('admin', response.data.admin);
                 navigate('/main');
             } else {
-                setError(response.message || '로그인에 실패했습니다.');
+                alert('로그인에 실패했습니다.');
             }
         } catch (error) {
-            setError('로그인 중 오류가 발생했습니다.');
+            console.error('Error:', error);
+            alert('로그인 중 오류가 발생했습니다.');
         }
     };
 

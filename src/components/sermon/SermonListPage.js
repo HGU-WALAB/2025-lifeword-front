@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { getPublicSermons, getUserSermons, searchSermons } from '../../services/APIService';
+import { useUserState } from '../../recoil/utils';
 
 const ITEMS_PER_PAGE = 20;
 
@@ -13,8 +14,9 @@ const SermonListPage = () => {
     const [loading, setLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
     const [isSearching, setIsSearching] = useState(false);
-    const [searchType, setSearchType] = useState('both');
+    const [searchType, setSearchType] = useState('title');
     const [searchValue, setSearchValue] = useState('');
+    const { userId } = useUserState();
 
     // URL 파라미터에서 필터 상태 읽기
     const filterType = searchParams.get('type') || 'public';
@@ -40,7 +42,6 @@ const SermonListPage = () => {
                 const data = await getPublicSermons();
                 setSermons(data);
             } else {
-                const userId = localStorage.getItem('UID');
                 const data = await getUserSermons(userId, mySermonFilter);
                 setSermons(data);
             }
@@ -49,11 +50,11 @@ const SermonListPage = () => {
         } finally {
             setLoading(false);
         }
-    }, [filterType, mySermonFilter]);
+    }, [filterType, userId, mySermonFilter]);
 
     useEffect(() => {
         fetchSermons();
-    }, [filterType, mySermonFilter, fetchSermons]);
+    }, [filterType, userId, mySermonFilter, fetchSermons]);
 
     const totalPages = Math.ceil(sermons.length / ITEMS_PER_PAGE);
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -86,27 +87,19 @@ const SermonListPage = () => {
     };
 
     const handleSearch = async () => {
-        if (!searchValue.trim()) return;
-
+        if (!searchValue.trim()) {
+            fetchSermons();
+            return;
+        }
+        setLoading(true);
+        setIsSearching(true);
         try {
-            setLoading(true);
-            setIsSearching(true);
-            const userId = localStorage.getItem('UID');
-            const data = await searchSermons(searchValue, userId, searchType);
-            const filteredData = data.filter((sermon) => {
-                if (filterType === 'public') {
-                    return sermon.public;
-                } else if (filterType === 'my') {
-                    if (mySermonFilter === 'public') return sermon.public;
-                    if (mySermonFilter === 'private') return !sermon.public;
-                    return true;
-                }
-                return true;
-            });
-            setSermons(filteredData);
+            const results = await searchSermons(searchValue, userId, searchType);
+            setSermons(Array.isArray(results) ? results : []);
             setCurrentPage(1);
         } catch (error) {
-            console.error('Error searching sermons:', error);
+            console.error('Search failed:', error);
+            setSermons([]);
         } finally {
             setLoading(false);
         }

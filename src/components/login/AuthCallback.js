@@ -7,9 +7,11 @@ import {
     getGoogleToken,
     getGoogleUserInfo,
 } from '../../services/APIService';
+import { useSetUserState } from '../../recoil/utils';
 
 const AuthCallback = () => {
     const navigate = useNavigate();
+    const setUserState = useSetUserState();
 
     useEffect(() => {
         const processLogin = async () => {
@@ -44,7 +46,7 @@ const AuthCallback = () => {
                     userEmail = userInfo.kakao_account?.email;
                 }
 
-                const verifyResult = await verifyUser(uid);
+                const verifyResult = await verifyUser(uid, setUserState);
 
                 if (!verifyResult.success || verifyResult.data === null) {
                     navigate('/signup', {
@@ -57,24 +59,30 @@ const AuthCallback = () => {
                     return;
                 }
 
-                localStorage.setItem('isLoggedIn', 'true');
-                localStorage.setItem('UID', verifyResult.data.userId);
-                localStorage.setItem('userEmail', userEmail);
-                localStorage.setItem('job', verifyResult.data.job);
-                localStorage.setItem('admin', verifyResult.data.admin);
+                setUserState({
+                    isLoggedIn: 'true',
+                    userId: verifyResult.data.userId,
+                    userEmail: userEmail,
+                    job: verifyResult.data.job,
+                    admin: verifyResult.data.admin,
+                });
 
                 navigate('/main', { replace: true });
             } catch (error) {
                 console.error('Login process failed:', error);
-                localStorage.removeItem('isLoggedIn');
-                localStorage.removeItem('UID');
-                localStorage.removeItem('userEmail');
+                setUserState({
+                    isLoggedIn: 'false',
+                    userId: '',
+                    userEmail: '',
+                    job: '',
+                    admin: 'false',
+                });
                 navigate('/', { replace: true });
             }
         };
 
         processLogin();
-    }, [navigate]);
+    }, [navigate, setUserState]);
 
     return <div>로그인 처리중...</div>;
 };

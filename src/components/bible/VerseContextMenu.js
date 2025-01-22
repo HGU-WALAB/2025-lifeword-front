@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import styled from 'styled-components';
-import { Bookmark } from 'lucide-react';
+import { Bookmark, Copy, Share } from 'lucide-react';
 import { createBookmark } from '../../services/APIService';
+import { useUserState } from '../../recoil/utils';
 
 const VerseContextMenu = ({ targetRef, verse }) => {
     const [position, setPosition] = useState({ x: 0, y: 0 });
     const [isVisible, setIsVisible] = useState(false);
+    const { userId } = useUserState();
 
     const handleContextMenu = useCallback((e) => {
         e.preventDefault();
@@ -27,17 +29,24 @@ const VerseContextMenu = ({ targetRef, verse }) => {
 
     const handleBookmark = async () => {
         try {
-            const kakaoUID = localStorage.getItem('UID');
-            const response = await createBookmark(kakaoUID, verse.idx);
+            if (!userId) {
+                alert('로그인이 필요합니다.');
+                return;
+            }
+
+            const response = await createBookmark(userId, verse.idx);
             if (response.success) {
                 alert('북마크가 추가되었습니다.');
+            } else if (response.message === 'Already bookmarked') {
+                alert('이미 북마크된 구절입니다.');
+            } else {
+                alert(response.message || '북마크 추가에 실패했습니다.');
             }
         } catch (error) {
             console.error('Error creating bookmark:', error);
             alert('북마크 추가에 실패했습니다.');
-        } finally {
-            setIsVisible(false);
         }
+        setIsVisible(false);
     };
 
     useEffect(() => {

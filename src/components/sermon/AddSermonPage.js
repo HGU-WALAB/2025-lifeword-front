@@ -3,8 +3,10 @@ import styled from 'styled-components';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { createSermon } from '../../services/APIService';
 import SermonEditor from '../Editor/SermonEditor';
+import { useUserState } from '../../recoil/utils';
 
 const AddSermonPage = () => {
+    const { userId } = useUserState();
     const [sermonData, setSermonData] = useState({
         sermonDate: '',
         worshipType: '',
@@ -47,7 +49,6 @@ const AddSermonPage = () => {
         }
 
         try {
-            const userId = localStorage.getItem('UID');
             if (!userId) {
                 alert('로그인이 필요합니다.');
                 return;
