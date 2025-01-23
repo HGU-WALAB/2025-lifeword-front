@@ -37,3 +37,16 @@ export const originalUserIdState = atom({
     key: 'originalUserIdState',
     default: '',
 });
+
+// Combined user state
+export const userState = atom({
+    key: 'userState',
+    default: {
+        isLoggedIn: false,
+        userId: '',
+        userEmail: '',
+        userName: '',
+        job: '',
+        admin: false,
+    },
+});

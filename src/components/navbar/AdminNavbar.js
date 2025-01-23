@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Zap, Search, Bookmark, LogOut, PlusCircle, BookOpen, Settings } from 'lucide-react';
+import { Zap, Search, Bookmark, LogOut, PlusCircle, BookOpen, Settings, User } from 'lucide-react';
 import LogoWhite from '../../assets/LogoWhite.png';
 import { NavContainer, LogoContainer, Logo, NavItems, NavItem, LogoutButton } from './NavbarStyles';
 import { useLogout } from './navbarUtils';
@@ -54,6 +54,10 @@ const AdminNavbar = () => {
                 <NavItem onClick={() => navigate('/main/admin')} active={isActive('/admin')}>
                     <Settings size={24} />
                     <span>관리 페이지</span>
+                </NavItem>
+                <NavItem onClick={() => navigate('/main/mypage')} active={isActive('/mypage')}>
+                    <User size={24} />
+                    <span>마이페이지</span>
                 </NavItem>
             </NavItems>
             <LogoutButton onClick={() => logout()}>

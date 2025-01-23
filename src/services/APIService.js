@@ -57,7 +57,7 @@ export const createUser = async (userData) => {
 
 export const verifyEmail = async (email) => {
     try {
-        const { data } = await axios.get(`${BASE_URL}/users/verify/bibly-emailCheck`, {
+        const { data } = await axios.get(`${BASE_URL}/users/verify/emailCheck`, {
             params: { email },
         });
         return {
@@ -363,6 +363,18 @@ export const updateUserProvider = async (email, provider, uid) => {
         return data;
     } catch (error) {
         console.error('Error updating user provider:', error);
+        throw error;
+    }
+};
+
+export const setUserPassword = async (email, password) => {
+    try {
+        const { data } = await axios.patch(`${BASE_URL}/users/setUserPassword`, null, {
+            params: { email, password },
+        });
+        return data;
+    } catch (error) {
+        console.error('Error setting user password:', error);
         throw error;
     }
 };
