@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import styled from 'styled-components';
 import { setUserPassword } from '../../services/APIService';
 import { useUserState } from '../../recoil/utils';
+import { User, Mail, Shield, Award, Lock } from 'lucide-react';
 
 const MyPage = () => {
     const [newPassword, setNewPassword] = useState('');
     const [showPasswordChange, setShowPasswordChange] = useState(false);
-    const { userId, userEmail, userName, userJob: job, isAdmin } = useUserState();
+    const { userEmail, userJob: job, isAdmin } = useUserState();
 
     const handlePasswordChange = async () => {
         try {
@@ -32,31 +33,54 @@ const MyPage = () => {
 
     return (
         <Container>
-            <Title>마이페이지</Title>
+            <PageHeader>
+                <HeaderIcon>
+                    <User size={32} />
+                </HeaderIcon>
+                <Title>마이페이지</Title>
+            </PageHeader>
+
             <ContentWrapper>
                 <InfoSection>
-                    <InfoItem>
-                        <Label>이메일</Label>
+                    <InfoCard>
+                        <InfoHeader>
+                            <CardIcon>
+                                <Mail size={20} />
+                            </CardIcon>
+                            <Label>이메일</Label>
+                        </InfoHeader>
                         <Value>{userEmail}</Value>
-                    </InfoItem>
-                    {/* <InfoItem>
-                        <Label>이름</Label>
-                        <Value>{userName}</Value>
-                    </InfoItem> */}
-                    <InfoItem>
-                        <Label>직분</Label>
+                    </InfoCard>
+
+                    <InfoCard>
+                        <InfoHeader>
+                            <CardIcon>
+                                <Award size={20} />
+                            </CardIcon>
+                            <Label>직분</Label>
+                        </InfoHeader>
                         <Value>{job}</Value>
-                    </InfoItem>
-                    <InfoItem>
-                        <Label>권한</Label>
+                    </InfoCard>
+
+                    <InfoCard>
+                        <InfoHeader>
+                            <CardIcon>
+                                <Shield size={20} />
+                            </CardIcon>
+                            <Label>권한</Label>
+                        </InfoHeader>
                         <Value>{isAdmin ? '관리자' : '일반 사용자'}</Value>
-                    </InfoItem>
+                    </InfoCard>
                 </InfoSection>
 
                 <PasswordSection>
+                    <SectionTitle>
+                        <Lock size={20} />
+                        비밀번호 관리
+                    </SectionTitle>
                     {!showPasswordChange ? (
                         <ChangePasswordButton onClick={() => setShowPasswordChange(true)}>
-                            비밀번호 변경
+                            비밀번호 변경하기
                         </ChangePasswordButton>
                     ) : (
                         <PasswordChangeForm>
@@ -86,40 +110,126 @@ const MyPage = () => {
 };
 
 const Container = styled.div`
-    padding: 2rem;
-    max-width: 800px;
-    margin: 0 auto;
+    margin-left: 320px;
+    padding: 40px;
+    width: calc(100vw - 400px);
+    min-height: 92vh;
+    background-color: #f5f5f5;
+
+    @media (max-width: 1200px) {
+        width: calc(100vw - 320px);
+        padding: 30px;
+    }
+
+    @media (max-width: 768px) {
+        padding: 20px;
+        margin-left: 280px;
+        width: calc(100vw - 280px);
+    }
+`;
+
+const PageHeader = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+
+    @media (max-width: 480px) {
+        flex-direction: column;
+        text-align: center;
+    }
+`;
+
+const HeaderIcon = styled.div`
+    background: #4f3296;
+    color: white;
+    padding: 1rem;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 `;
 
 const Title = styled.h1`
-    font-size: 2rem;
+    font-size: 2.5rem;
     color: #333;
-    margin-bottom: 2rem;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+
+    @media (max-width: 768px) {
+        font-size: 2rem;
+    }
+
+    @media (max-width: 480px) {
+        font-size: 1.8rem;
+    }
 `;
 
 const ContentWrapper = styled.div`
     background: white;
     padding: 2rem;
     border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    max-width: 800px;
+
+    @media (max-width: 768px) {
+        padding: 1.5rem;
+    }
 `;
 
 const InfoSection = styled.div`
-    margin-bottom: 2rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2.5rem;
+
+    @media (max-width: 992px) {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
 `;
 
-const InfoItem = styled.div`
-    margin-bottom: 1rem;
+const InfoCard = styled.div`
+    background: #f3f4f6;
+    padding: 1.5rem;
+    border-radius: 12px;
+    transition: transform 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+
+    &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    @media (max-width: 768px) {
+        padding: 1.2rem;
+    }
+`;
+
+const InfoHeader = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+`;
+
+const CardIcon = styled.div`
+    color: #4f3296;
+    display: flex;
+    align-items: center;
 `;
 
 const Label = styled.span`
     font-weight: 500;
     color: #666;
-    margin-right: 1rem;
+    font-size: 0.9rem;
 `;
 
-const Value = styled.span`
+const Value = styled.div`
     color: #333;
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin-top: 0.5rem;
 `;
 
 const PasswordSection = styled.div`
@@ -127,18 +237,35 @@ const PasswordSection = styled.div`
     border-top: 1px solid #eee;
 `;
 
+const SectionTitle = styled.h2`
+    font-size: 1.2rem;
+    color: #333;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+`;
+
 const ChangePasswordButton = styled.button`
     background: #4f3296;
     color: white;
     border: none;
-    padding: 0.8rem 1.5rem;
+    padding: 1rem 1.5rem;
     border-radius: 8px;
     cursor: pointer;
     font-size: 1rem;
-    transition: background 0.2s;
+    transition: all 0.2s ease;
+    font-weight: 500;
+    width: 100%;
 
     &:hover {
         background: #3a2570;
+        transform: translateY(-2px);
+    }
+
+    @media (max-width: 768px) {
+        padding: 0.8rem 1.2rem;
+        font-size: 0.9rem;
     }
 `;
 
@@ -146,36 +273,53 @@ const PasswordChangeForm = styled.div`
     display: flex;
     flex-direction: column;
     gap: 1rem;
+    max-width: 400px;
+
+    @media (max-width: 768px) {
+        max-width: 100%;
+    }
 `;
 
 const Input = styled.input`
-    padding: 0.8rem;
-    border: 1px solid #ddd;
+    padding: 1rem;
+    border: 2px solid #eee;
     border-radius: 8px;
     font-size: 1rem;
     width: 100%;
-    max-width: 300px;
+    transition: all 0.2s ease;
 
     &:focus {
         outline: none;
         border-color: #4f3296;
+        box-shadow: 0 0 0 3px rgba(79, 50, 150, 0.1);
+    }
+
+    @media (max-width: 768px) {
+        padding: 0.8rem;
+        font-size: 0.9rem;
     }
 `;
 
 const ButtonGroup = styled.div`
     display: flex;
     gap: 1rem;
+
+    @media (max-width: 480px) {
+        flex-direction: column;
+    }
 `;
 
 const SubmitButton = styled(ChangePasswordButton)`
-    background: #4f3296;
+    flex: 1;
 `;
 
 const CancelButton = styled(ChangePasswordButton)`
-    background: #666;
+    flex: 1;
+    background: #e9ecef;
+    color: #495057;
 
     &:hover {
-        background: #555;
+        background: #dee2e6;
     }
 `;
 
