@@ -12,6 +12,7 @@ import SermonDetailPage from '../components/sermon/SermonDetailPage';
 import AdminPage from '../components/admin/AdminPage';
 import UserManagementPage from '../components/admin/UserManagementPage';
 import SermonManagementPage from '../components/admin/SermonManagementPage';
+import MyPage from '../components/mypage/MyPage';
 import { useUserState } from '../recoil/utils';
 
 const MainPage = () => {
@@ -28,6 +29,7 @@ const MainPage = () => {
                     <Route path="/bookmarks" element={<BookmarkPage />} />
                     <Route path="/add-sermon" element={<AddSermonPage />} />
                     <Route path="/sermon-list/*" element={<SermonListLayout />} />
+                    <Route path="/mypage" element={<MyPage />} />
                     {isAdmin && (
                         <>
                             <Route path="/admin" element={<AdminPage />} />

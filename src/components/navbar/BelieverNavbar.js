@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Zap, Search, Bookmark, LogOut, BookOpen } from 'lucide-react';
+import { Zap, Search, Bookmark, LogOut, BookOpen, User } from 'lucide-react';
 import LogoWhite from '../../assets/LogoWhite.png';
 import { NavContainer, LogoContainer, Logo, NavItems, NavItem, LogoutButton } from './NavbarStyles';
 import { useLogout } from './navbarUtils';
@@ -38,6 +38,10 @@ const BelieverNavbar = () => {
                 <NavItem onClick={() => navigate('/main/sermon-list')} active={isActive('/sermon-list')}>
                     <BookOpen size={24} />
                     <span>설교 목록</span>
+                </NavItem>
+                <NavItem onClick={() => navigate('/main/mypage')} active={isActive('/mypage')}>
+                    <User size={24} />
+                    <span>마이페이지</span>
                 </NavItem>
             </NavItems>
             <LogoutButton onClick={() => logout()}>
