@@ -7,7 +7,6 @@ import { useSetUserState } from '../../recoil/utils';
 const LoginForm = ({ onClose }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
     const navigate = useNavigate();
     const setUserState = useSetUserState();
 
@@ -45,7 +44,6 @@ const LoginForm = ({ onClose }) => {
                         onChange={(e) => setPassword(e.target.value)}
                         required
                     />
-                    {error && <ErrorMessage>{error}</ErrorMessage>}
                     <SubmitButton type="submit">로그인</SubmitButton>
                     <SignUpButton type="button" onClick={() => navigate('/signup-bibly')}>
                         회원가입하기
@@ -120,13 +118,6 @@ const SignUpButton = styled(SubmitButton)`
     &:hover {
         background: #f8f5ff;
     }
-`;
-
-const ErrorMessage = styled.p`
-    color: #ef4444;
-    font-size: 0.9rem;
-    margin: 0;
-    text-align: center;
 `;
 
 export default LoginForm;
