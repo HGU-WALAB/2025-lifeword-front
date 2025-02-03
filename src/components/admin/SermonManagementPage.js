@@ -14,6 +14,7 @@ const SermonManagementPage = () => {
     const navigate = useNavigate();
     const { userId } = useUserState();
     const itemsPerPage = 10;
+    const [originalUserId, setOriginalUserId] = useState(null);
 
     const loadSermons = async () => {
         setLoading(true);
@@ -50,6 +51,7 @@ const SermonManagementPage = () => {
 
     const handleEdit = (sermonId) => {
         const sermon = sermons.find((s) => s.sermonId === sermonId);
+        setOriginalUserId(sermon.userId);
         navigate(`/main/admin/sermons/edit/${sermonId}`);
     };
 
