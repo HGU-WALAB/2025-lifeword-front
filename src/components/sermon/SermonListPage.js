@@ -380,12 +380,6 @@ const ScriptureContainer = styled.div`
     margin-bottom: 16px;
 `;
 
-const ScriptureContainerViewSecond = styled.div`
-    display: block;
-    float: right;
-    //gap: 1px;
-    margin-bottom: 16px;
-`;
 
 const Scripture = styled.span`
     font-family: 'Inter';
@@ -620,21 +614,7 @@ const SearchButton = styled.button`
 
 
 //서원 추가
-const SermonCarousel = styled.div`
-    display: flex;
-    gap: 15px;
-    overflow-x: auto;
-    padding: 10px;
-    scroll-behavior: smooth;
 
-    &::-webkit-scrollbar {
-        height: 6px;
-    }
-    &::-webkit-scrollbar-thumb {
-        background-color: #888;
-        border-radius: 3px;
-    }
-`;
 
 const ViewToggleContainer = styled.div`
     display: flex;
@@ -694,41 +674,6 @@ const SermonCardSecondView = styled.div`
     color: #212a3e;
     margin: 16px 0;
     padding-right: 60px;
-`;
-    const SermonCardGrid = styled.div`
-        background: #fff;
-        border-radius: 10px;
-        overflow: hidden;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        transition: transform 0.2s;
-        cursor: pointer;
-
-        &:hover {
-            transform: scale(1.05);
-        }
-    `;
-
-    const SermonImage = styled.img`
-        width: 100%;
-        height: 150px;
-        object-fit: cover;
-    `;
-
-    const SermonInfo = styled.div`
-        padding: 10px;
-        text-align: center;
-    `;
-
-    const SermonTitleHorizontal = styled.h3`
-        font-size: 16px;
-        color: #333;
-        margin-bottom: 5px;
-    `;
-
-    const AuthorNameHorizontal = styled.p`
-    display : block;
-    font-size: 14px;
-    color: #666;
 `;
 
 
