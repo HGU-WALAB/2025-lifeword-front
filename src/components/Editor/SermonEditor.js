@@ -152,7 +152,7 @@ const EditorWrapper = styled.div`
     height: 60%;
 
     .ql-editor {
-        min-height: 300px;
+        min-height: 850px;
         font-size: 16px;
         line-height: 1.8;
         padding: 24px;

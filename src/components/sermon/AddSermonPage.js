@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import styled from 'styled-components';
-import { Calendar as CalendarIcon } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 import { createSermon } from '../../services/APIService';
 import SermonEditor from '../Editor/SermonEditor';
 import { useUserState } from '../../recoil/utils';
@@ -21,6 +21,7 @@ const AddSermonPage = () => {
     });
     const editorRef = useRef(null);
     const [autoSaveStatus, setAutoSaveStatus] = useState('');
+    const [isMetaSectionOpen, setIsMetaSectionOpen] = useState(true);
 
     useEffect(() => {
         window.scrollTo(0, 0);
@@ -104,6 +105,10 @@ const AddSermonPage = () => {
         }
     };
 
+    const toggleMetaSection = () => {
+        setIsMetaSectionOpen(!isMetaSectionOpen);
+    };
+
     return (
         <Container>
             <PageHeader>
@@ -111,109 +116,114 @@ const AddSermonPage = () => {
                 <Description>새로운 설교를 기록해보세요.</Description>
             </PageHeader>
 
-            <FormContainer onSubmit={handleSubmit}>
-                <MetaSection>
-                    <FormSection>
-                        <Label>설교 날짜</Label>
-                        <DateInputWrapper>
-                            <CalendarIcon size={20} />
-                            <DateInput
-                                type="date"
-                                name="sermonDate"
-                                value={sermonData.sermonDate}
-                                onChange={handleInputChange}
-                                required
-                            />
-                        </DateInputWrapper>
-                    </FormSection>
-
-                    <FormSection>
-                        <Label>예배 종류</Label>
-                        <Input
-                            type="text"
-                            name="worshipType"
-                            value={sermonData.worshipType}
-                            onChange={handleInputChange}
-                            placeholder="예) 주일-새벽, 주일오전, 수요저녁, 금요철야"
-                            required
-                        />
-                    </FormSection>
-
-                    <FormSection>
-                        <Label>설교 제목</Label>
-                        <Input
-                            type="text"
-                            name="sermonTitle"
-                            value={sermonData.sermonTitle}
-                            onChange={handleInputChange}
-                            placeholder="설교 제목을 입력하세요"
-                            required
-                        />
-                    </FormSection>
-
-                    <FormGrid>
+            <FormContainer onSubmit={handleSubmit} isMetaOpen={isMetaSectionOpen}>
+                <MetaSectionWrapper isOpen={isMetaSectionOpen}>
+                    <ToggleButton onClick={toggleMetaSection} type="button">
+                        {isMetaSectionOpen ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
+                    </ToggleButton>
+                    <MetaSection isOpen={isMetaSectionOpen}>
                         <FormSection>
-                            <Label>주 성경 본문</Label>
+                            <Label>설교 날짜</Label>
+                            <DateInputWrapper>
+                                <CalendarIcon size={20} />
+                                <DateInput
+                                    type="date"
+                                    name="sermonDate"
+                                    value={sermonData.sermonDate}
+                                    onChange={handleInputChange}
+                                    required
+                                />
+                            </DateInputWrapper>
+                        </FormSection>
+
+                        <FormSection>
+                            <Label>예배 종류</Label>
                             <Input
                                 type="text"
-                                name="mainScripture"
-                                value={sermonData.mainScripture}
+                                name="worshipType"
+                                value={sermonData.worshipType}
                                 onChange={handleInputChange}
-                                placeholder="예) 요한복음 3:16"
+                                placeholder="예) 주일-새벽, 주일오전, 수요저녁, 금요철야"
                                 required
                             />
                         </FormSection>
 
                         <FormSection>
-                            <Label>추가 성경 본문</Label>
+                            <Label>설교 제목</Label>
                             <Input
                                 type="text"
-                                name="additionalScripture"
-                                value={sermonData.additionalScripture}
+                                name="sermonTitle"
+                                value={sermonData.sermonTitle}
                                 onChange={handleInputChange}
-                                placeholder="예) 로마서 8:28"
+                                placeholder="설교 제목을 입력하세요"
+                                required
                             />
                         </FormSection>
-                    </FormGrid>
 
-                    <FormSection>
-                        <Label>설교 요약</Label>
-                        <TextArea
-                            name="summary"
-                            value={sermonData.summary}
-                            onChange={handleInputChange}
-                            placeholder="설교의 주요 내용을 요약해서 입력하세요"
-                            rows={4}
-                            required
-                        />
-                    </FormSection>
+                        <FormGrid>
+                            <FormSection>
+                                <Label>주 성경 본문</Label>
+                                <Input
+                                    type="text"
+                                    name="mainScripture"
+                                    value={sermonData.mainScripture}
+                                    onChange={handleInputChange}
+                                    placeholder="예) 요한복음 3:16"
+                                    required
+                                />
+                            </FormSection>
 
-                    <FormSection>
-                        <Label>노트</Label>
-                        <TextArea
-                            name="notes"
-                            value={sermonData.notes}
-                            onChange={handleInputChange}
-                            placeholder="추가 노트를 입력하세요"
-                            rows={3}
-                        />
-                    </FormSection>
+                            <FormSection>
+                                <Label>추가 성경 본문</Label>
+                                <Input
+                                    type="text"
+                                    name="additionalScripture"
+                                    value={sermonData.additionalScripture}
+                                    onChange={handleInputChange}
+                                    placeholder="예) 로마서 8:28"
+                                />
+                            </FormSection>
+                        </FormGrid>
 
-                    <FormSection>
-                        <Label>설교록 정보</Label>
-                        <Input
-                            type="text"
-                            name="recordInfo"
-                            value={sermonData.recordInfo}
-                            onChange={handleInputChange}
-                            placeholder="예) 234호 308쪽"
-                        />
-                    </FormSection>
+                        <FormSection>
+                            <Label>설교 요약</Label>
+                            <TextArea
+                                name="summary"
+                                value={sermonData.summary}
+                                onChange={handleInputChange}
+                                placeholder="설교의 주요 내용을 요약해서 입력하세요"
+                                rows={4}
+                                required
+                            />
+                        </FormSection>
 
-                    <SubmitButton type="submit">설교 등록하기</SubmitButton>
-                </MetaSection>
+                        <FormSection>
+                            <Label>노트</Label>
+                            <TextArea
+                                name="notes"
+                                value={sermonData.notes}
+                                onChange={handleInputChange}
+                                placeholder="추가 노트를 입력하세요"
+                                rows={3}
+                            />
+                        </FormSection>
 
-                <EditorContainer className="editor-container">
+                        <FormSection>
+                            <Label>설교록 정보</Label>
+                            <Input
+                                type="text"
+                                name="recordInfo"
+                                value={sermonData.recordInfo}
+                                onChange={handleInputChange}
+                                placeholder="예) 234호 308쪽"
+                            />
+                        </FormSection>
+
+                        <SubmitButton type="submit">설교 등록하기</SubmitButton>
+                    </MetaSection>
+                </MetaSectionWrapper>
+
+                <EditorContainer className="editor-container" isMetaOpen={isMetaSectionOpen}>
                     <Label>설교 내용</Label>
                     <SermonEditor ref={editorRef} onChange={handleEditorChange} style={{ flex: 1 }} />
                 </EditorContainer>
@@ -255,16 +265,24 @@ const Description = styled.p`
 
 const FormContainer = styled.form`
     display: grid;
-    grid-template-columns: 400px 1fr;
+    grid-template-columns: ${(props) => (props.isMetaOpen ? '400px 1fr' : '50px 1fr')};
     gap: 32px;
     max-width: 1200px;
     margin: 0 auto;
     margin-bottom: 40px;
+    transition: all 0.3s ease;
+    align-items: start;
 
     @media (max-width: 1200px) {
         grid-template-columns: 1fr;
         padding: 0 20px;
     }
+`;
+
+const MetaSectionWrapper = styled.div`
+    position: relative;
+    min-width: ${(props) => (props.isOpen ? '400px' : '50px')};
+    transition: all 0.3s ease;
 `;
 
 const MetaSection = styled.div`
@@ -273,6 +291,42 @@ const MetaSection = styled.div`
     border-radius: 16px;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
     height: fit-content;
+    transform: translateX(${(props) => (props.isOpen ? '0' : '-100%')});
+    opacity: ${(props) => (props.isOpen ? 1 : 0)};
+    visibility: ${(props) => (props.isOpen ? 'visible' : 'hidden')};
+    transition: all 0.3s ease;
+`;
+
+const ToggleButton = styled.button`
+    position: absolute;
+    right: -16px;
+    top: 20px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: white;
+    border: 2px solid #eee;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 10;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    color: #4f3296;
+
+    &:hover {
+        background: #4f3296;
+        border-color: #4f3296;
+        color: white;
+        transform: scale(1.1);
+    }
+
+    svg {
+        width: 18px;
+        height: 18px;
+        transition: all 0.2s ease;
+    }
 `;
 
 const EditorContainer = styled.div`
@@ -280,9 +334,11 @@ const EditorContainer = styled.div`
     padding: 32px;
     border-radius: 16px;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
-    min-height: 400px;
+    min-height: 950px;
     display: flex;
     flex-direction: column;
+    position: sticky;
+    top: 40px;
 `;
 
 const FormGrid = styled.div`
