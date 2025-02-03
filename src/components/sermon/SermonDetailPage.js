@@ -86,39 +86,42 @@ const SermonDetailPage = () => {
                             </ActionButtons>
                         )}
                     </TopBar>
-                        <MetaInfo>
-                            <AuthorDate>
-                                <Author>{sermon.ownerName}</Author>
-                                <DateInfo>
-                                    <SermonDate>
-                                        {new Date(sermon.sermonDate).toLocaleDateString('ko-KR', {
-                                            year: 'numeric',
-                                            month: 'long',
-                                            day: 'numeric',
-                                        })}
-                                    </SermonDate>
-                                    <CreatedDate>
-                                        작성일:{' '}
-                                        {new Date(sermon.createdAt).toLocaleDateString('ko-KR', {
-                                            year: 'numeric',
-                                            month: 'long',
-                                            day: 'numeric',
-                                        })}
-                                    </CreatedDate>
-                                </DateInfo>
-                            </AuthorDate>
-                            <Badge>{sermon.worshipType}</Badge>
-                        </MetaInfo>
-                        <Title>{sermon.sermonTitle}</Title>
-                        <Scripture>
-                            <MainScripture>{sermon.mainScripture}</MainScripture>
-                            {sermon.additionalScripture && (
-                                <AdditionalScripture>{sermon.additionalScripture}</AdditionalScripture>
-                            )}
-                        </Scripture>
                 </Header>
+                        <Header2>
+                            <MetaInfo>
+                                <AuthorDate>
+                                    <Author>{sermon.ownerName}</Author>
+                                    <DateInfo>
+                                        <SermonDate>
+                                            {new Date(sermon.sermonDate).toLocaleDateString('ko-KR', {
+                                                year: 'numeric',
+                                                month: 'long',
+                                                day: 'numeric',
+                                            })}
+                                        </SermonDate>
+                                        <CreatedDate>
+                                            작성일:{' '}
+                                            {new Date(sermon.createdAt).toLocaleDateString('ko-KR', {
+                                                year: 'numeric',
+                                                month: 'long',
+                                                day: 'numeric',
+                                            })}
+                                        </CreatedDate>
+                                    </DateInfo>
+                                </AuthorDate>
+                                <Badge>{sermon.worshipType}</Badge>
+                            </MetaInfo>
+                            <Title>{sermon.sermonTitle}</Title>
+                            <Scripture>
+                                <MainScripture>{sermon.mainScripture}</MainScripture>
+                                {sermon.additionalScripture && (
+                                    <AdditionalScripture>{sermon.additionalScripture}</AdditionalScripture>
+                                )}
+                            </Scripture>
 
-                <BottomBar>
+                </Header2>
+
+                <ScrollableSection>
                     <Section>
                         <SectionTitle>요약</SectionTitle>
                         <SummaryText>{sermon.summary}</SummaryText>
@@ -167,7 +170,7 @@ const SermonDetailPage = () => {
                             </MetaValue>
                         </MetaItem>
                     </MetaSection>
-                </BottomBar>
+                </ScrollableSection>
             </ContentWrapper>
         </Container>
     );
@@ -214,8 +217,19 @@ const Header = styled.div`
   //margin-bottom: 24px;
 `;
 
+const Header2 = styled.div`
+  position: sticky;
+  top: 0;
+  background: white;
+  z-index: 100;
+  width: 100%;
+  padding: 24px 48px 24px 48px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  //margin-bottom: 24px;
+`;
 
-const BottomBar = styled.div`
+
+const ScrollableSection = styled.div`
   background: white;
   width: 100%;
   padding: 24px 48px 24px 48px;
