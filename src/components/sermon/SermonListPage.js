@@ -380,7 +380,6 @@ const ScriptureContainer = styled.div`
     margin-bottom: 16px;
 `;
 
-
 const Scripture = styled.span`
     font-family: 'Inter';
     font-weight: 500;
