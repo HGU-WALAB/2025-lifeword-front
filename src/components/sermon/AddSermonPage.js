@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, X } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, X, Lock, Unlock } from 'lucide-react';
 import { createSermon } from '../../services/APIService';
 import SermonEditor from '../Editor/SermonEditor';
 import { useUserState } from '../../recoil/utils';
@@ -20,6 +21,7 @@ const WORSHIP_TYPES = [
 ];
 
 const AddSermonPage = () => {
+    const navigate = useNavigate();
     const { userId } = useUserState();
     const [sermonData, setSermonData] = useState({
         sermonDate: '',
@@ -109,38 +111,26 @@ const AddSermonPage = () => {
 
             const submitData = {
                 ...sermonData,
+                // 예배 종류가 '기타'일 경우 customWorshipType을 사용
                 worshipType: sermonData.worshipType === '기타' ? sermonData.customWorshipType : sermonData.worshipType,
                 contentText: cleanContent,
                 userId,
+                createdAt: new Date().toISOString(),
             };
 
             delete submitData.customWorshipType;
 
             const response = await createSermon(submitData);
 
-            if (response) {
+            if (response && response.sermonId) {
                 alert('설교가 성공적으로 등록되었습니다.');
-                setSermonData({
-                    sermonDate: '',
-                    worshipType: '',
-                    customWorshipType: '',
-                    mainScripture: '',
-                    additionalScripture: '',
-                    sermonTitle: '',
-                    summary: '',
-                    notes: '',
-                    contentText: '',
-                    public: true,
-                });
-
-                if (editorRef.current) {
-                    editorRef.current.clearEditor();
-                }
+                localStorage.removeItem('sermon_draft');
+                navigate('/main/sermon-list');
             } else {
-                alert('설교 등록에 실패했습니다.');
+                throw new Error('설교 등록에 실패했습니다.');
             }
         } catch (error) {
-            alert('설교 등록 중 오류가 발생했습니다.');
+            alert(`설교 등록 중 오류가 발생했습니다: ${error.message}`);
         }
     };
 
@@ -282,6 +272,38 @@ const AddSermonPage = () => {
                                 placeholder="추가 노트를 입력하세요"
                                 rows={3}
                             />
+                        </FormSection>
+
+                        <FormSection>
+                            <Label>공개 설정</Label>
+                            <PrivacyToggle>
+                                <ToggleSwitch>
+                                    <input
+                                        type="checkbox"
+                                        checked={sermonData.public}
+                                        onChange={(e) =>
+                                            setSermonData((prev) => ({
+                                                ...prev,
+                                                public: e.target.checked,
+                                            }))
+                                        }
+                                    />
+                                    <span />
+                                </ToggleSwitch>
+                                <PrivacyLabel>
+                                    {sermonData.public ? (
+                                        <>
+                                            <Unlock size={16} />
+                                            전체 공개
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Lock size={16} />
+                                            비공개
+                                        </>
+                                    )}
+                                </PrivacyLabel>
+                            </PrivacyToggle>
                         </FormSection>
 
                         <SubmitButton type="submit">설교 등록하기</SubmitButton>
@@ -587,6 +609,69 @@ const CustomInputWrapper = styled.div`
             opacity: 1;
             transform: translateY(0);
         }
+    }
+`;
+
+const PrivacyToggle = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 12px;
+`;
+
+const ToggleSwitch = styled.label`
+    position: relative;
+    display: inline-block;
+    width: 48px;
+    height: 24px;
+
+    input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+
+        &:checked + span {
+            background-color: #4f3296;
+        }
+
+        &:checked + span:before {
+            transform: translateX(24px);
+        }
+    }
+
+    span {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: 0.4s;
+        border-radius: 34px;
+
+        &:before {
+            position: absolute;
+            content: '';
+            height: 20px;
+            width: 20px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            transition: 0.4s;
+            border-radius: 50%;
+        }
+    }
+`;
+
+const PrivacyLabel = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #666;
+    font-size: 0.9rem;
+
+    svg {
+        color: #4f3296;
     }
 `;
 
