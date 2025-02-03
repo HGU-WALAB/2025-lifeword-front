@@ -86,110 +86,111 @@ const SermonDetailPage = () => {
                             </ActionButtons>
                         )}
                     </TopBar>
-                    <MetaInfo>
-                        <AuthorDate>
-                            <Author>{sermon.ownerName}</Author>
-                            <DateInfo>
-                                <SermonDate>
-                                    {new Date(sermon.sermonDate).toLocaleDateString('ko-KR', {
-                                        year: 'numeric',
-                                        month: 'long',
-                                        day: 'numeric',
-                                    })}
-                                </SermonDate>
-                                <CreatedDate>
-                                    작성일:{' '}
-                                    {new Date(sermon.createdAt).toLocaleDateString('ko-KR', {
-                                        year: 'numeric',
-                                        month: 'long',
-                                        day: 'numeric',
-                                    })}
-                                </CreatedDate>
-                            </DateInfo>
-                        </AuthorDate>
-                        <Badge>{sermon.worshipType}</Badge>
-                    </MetaInfo>
-                    <Title>{sermon.sermonTitle}</Title>
-                    <Scripture>
-                        <MainScripture>{sermon.mainScripture}</MainScripture>
-                        {sermon.additionalScripture && (
-                            <AdditionalScripture>{sermon.additionalScripture}</AdditionalScripture>
-                        )}
-                    </Scripture>
+                        <MetaInfo>
+                            <AuthorDate>
+                                <Author>{sermon.ownerName}</Author>
+                                <DateInfo>
+                                    <SermonDate>
+                                        {new Date(sermon.sermonDate).toLocaleDateString('ko-KR', {
+                                            year: 'numeric',
+                                            month: 'long',
+                                            day: 'numeric',
+                                        })}
+                                    </SermonDate>
+                                    <CreatedDate>
+                                        작성일:{' '}
+                                        {new Date(sermon.createdAt).toLocaleDateString('ko-KR', {
+                                            year: 'numeric',
+                                            month: 'long',
+                                            day: 'numeric',
+                                        })}
+                                    </CreatedDate>
+                                </DateInfo>
+                            </AuthorDate>
+                            <Badge>{sermon.worshipType}</Badge>
+                        </MetaInfo>
+                        <Title>{sermon.sermonTitle}</Title>
+                        <Scripture>
+                            <MainScripture>{sermon.mainScripture}</MainScripture>
+                            {sermon.additionalScripture && (
+                                <AdditionalScripture>{sermon.additionalScripture}</AdditionalScripture>
+                            )}
+                        </Scripture>
                 </Header>
 
-                <Section>
-                    <SectionTitle>요약</SectionTitle>
-                    <SummaryText>{sermon.summary}</SummaryText>
-                </Section>
-
-                {sermon.notes && (
+                <BottomBar>
                     <Section>
-                        <SectionTitle>노트</SectionTitle>
-                        <NotesText>{sermon.notes}</NotesText>
+                        <SectionTitle>요약</SectionTitle>
+                        <SummaryText>{sermon.summary}</SummaryText>
                     </Section>
-                )}
 
-                {sermon.recordInfo && (
+                    {sermon.notes && (
+                        <Section>
+                            <SectionTitle>노트</SectionTitle>
+                            <NotesText>{sermon.notes}</NotesText>
+                        </Section>
+                    )}
+
+                    {sermon.recordInfo && (
+                        <Section>
+                            <SectionTitle>설교록 정보</SectionTitle>
+                            <RecordInfo>{sermon.recordInfo}</RecordInfo>
+                        </Section>
+                    )}
+
                     <Section>
-                        <SectionTitle>설교록 정보</SectionTitle>
-                        <RecordInfo>{sermon.recordInfo}</RecordInfo>
+                        <SectionTitle>설교 내용</SectionTitle>
+                        <ContentView
+                            dangerouslySetInnerHTML={{
+                                __html: sermon.contents[0]?.contentText || '',
+                            }}
+                        />
                     </Section>
-                )}
 
-                <Section>
-                    <SectionTitle>설교 내용</SectionTitle>
-                    <ContentView
-                        dangerouslySetInnerHTML={{
-                            __html: sermon.contents[0]?.contentText || '',
-                        }}
-                    />
-                </Section>
-
-                <MetaSection>
-                    <MetaItem>
-                        <MetaLabel>파일 코드</MetaLabel>
-                        <MetaValue>{sermon.fileCode}</MetaValue>
-                    </MetaItem>
-                    <MetaItem>
-                        <MetaLabel>공개 여부</MetaLabel>
-                        <MetaValue>{sermon.public ? '공개' : '비공개'}</MetaValue>
-                    </MetaItem>
-                    <MetaItem>
-                        <MetaLabel>최종 수정일</MetaLabel>
-                        <MetaValue>
-                            {new Date(sermon.updatedAt).toLocaleDateString('ko-KR', {
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric',
-                            })}
-                        </MetaValue>
-                    </MetaItem>
-                </MetaSection>
+                    <MetaSection>
+                        <MetaItem>
+                            <MetaLabel>파일 코드</MetaLabel>
+                            <MetaValue>{sermon.fileCode}</MetaValue>
+                        </MetaItem>
+                        <MetaItem>
+                            <MetaLabel>공개 여부</MetaLabel>
+                            <MetaValue>{sermon.public ? '공개' : '비공개'}</MetaValue>
+                        </MetaItem>
+                        <MetaItem>
+                            <MetaLabel>최종 수정일</MetaLabel>
+                            <MetaValue>
+                                {new Date(sermon.updatedAt).toLocaleDateString('ko-KR', {
+                                    year: 'numeric',
+                                    month: 'long',
+                                    day: 'numeric',
+                                })}
+                            </MetaValue>
+                        </MetaItem>
+                    </MetaSection>
+                </BottomBar>
             </ContentWrapper>
         </Container>
     );
 };
 
 const Container = styled.div`
-    margin-left: 320px;
-    padding: 40px;
-    width: calc(100vw - 400px);
-    min-height: 91vh;
-    background-color: #f5f5f5;
-    overflow-y: auto;
+  margin-left: 320px;
+  padding: 48px;
+  width: calc(100vw - 400px);
+  min-height: 91vh;
+  background-color: #f5f5f5;
 
-    @media (max-width: 1024px) {
-        margin-left: 280px;
-        width: calc(100vw - 320px);
-        padding: 32px;
-    }
+  @media (max-width: 1024px) {
+    margin-left: 280px;
+    width: calc(100vw - 320px);
+    padding: 32px;
+  }
 
-    @media (max-width: 768px) {
-        margin-left: 0;
-        width: 100%;
-        padding: 24px;
-    }
+  @media (max-width: 768px) {
+    margin-left: 0;
+    width: 100%;
+    padding: 24px;
+  }
 `;
 
 const ContentWrapper = styled.div`
@@ -198,14 +199,28 @@ const ContentWrapper = styled.div`
     background: white;
     border-radius: 16px;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
-    padding: 48px;
+    //padding: 48px;
 `;
 
 const Header = styled.div`
-    margin-bottom: 48px;
-    border-bottom: 2px solid #f3f4f6;
-    padding-bottom: 24px;
+  position: sticky;
+  top: 0;
+  background: white;
+  z-index: 100;
+  width: 100%;
+  padding: 24px 48px 24px 48px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 16px 16px 0 0;
+  //margin-bottom: 24px;
 `;
+
+
+const BottomBar = styled.div`
+  background: white;
+  width: 100%;
+  padding: 24px 48px 24px 48px;
+`;
+
 
 const MetaInfo = styled.div`
     display: flex;
