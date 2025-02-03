@@ -1,27 +1,42 @@
 import React, { useState, useRef, useEffect } from 'react';
 import styled from 'styled-components';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, X } from 'lucide-react';
 import { createSermon } from '../../services/APIService';
 import SermonEditor from '../Editor/SermonEditor';
 import { useUserState } from '../../recoil/utils';
+
+const WORSHIP_TYPES = [
+    '새벽예배',
+    '수요예배',
+    '금요성령집회',
+    '주일1부예배',
+    '주일2부예배',
+    '주일3부예배',
+    '주일청년예배',
+    '주일오후예배',
+    '특별집회',
+    '부흥회',
+    '기타',
+];
 
 const AddSermonPage = () => {
     const { userId } = useUserState();
     const [sermonData, setSermonData] = useState({
         sermonDate: '',
         worshipType: '',
+        customWorshipType: '',
         mainScripture: '',
         additionalScripture: '',
         sermonTitle: '',
         summary: '',
         notes: '',
-        recordInfo: '',
         contentText: '',
         public: true,
     });
     const editorRef = useRef(null);
     const [autoSaveStatus, setAutoSaveStatus] = useState('');
     const [isMetaSectionOpen, setIsMetaSectionOpen] = useState(true);
+    const [showAdditionalScripture, setShowAdditionalScripture] = useState(false);
 
     useEffect(() => {
         window.scrollTo(0, 0);
@@ -42,10 +57,31 @@ const AddSermonPage = () => {
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        setSermonData((prev) => ({
-            ...prev,
-            [name]: value,
-        }));
+
+        // 예배 종류가 변경될 때
+        if (name === 'worshipType') {
+            setSermonData((prev) => ({
+                ...prev,
+                worshipType: value,
+                // 기타가 아닐 때는 customWorshipType 초기화
+                ...(value !== '기타' && { customWorshipType: '' }),
+            }));
+        }
+        // 기타 예배 종류를 직접 입력할 때
+        else if (name === 'customWorshipType') {
+            setSermonData((prev) => ({
+                ...prev,
+                customWorshipType: value,
+                worshipType: '기타',
+            }));
+        }
+        // 다른 필드들의 변경
+        else {
+            setSermonData((prev) => ({
+                ...prev,
+                [name]: value,
+            }));
+        }
     };
 
     const handleEditorChange = (content) => {
@@ -73,9 +109,12 @@ const AddSermonPage = () => {
 
             const submitData = {
                 ...sermonData,
+                worshipType: sermonData.worshipType === '기타' ? sermonData.customWorshipType : sermonData.worshipType,
                 contentText: cleanContent,
                 userId,
             };
+
+            delete submitData.customWorshipType;
 
             const response = await createSermon(submitData);
 
@@ -84,12 +123,12 @@ const AddSermonPage = () => {
                 setSermonData({
                     sermonDate: '',
                     worshipType: '',
+                    customWorshipType: '',
                     mainScripture: '',
                     additionalScripture: '',
                     sermonTitle: '',
                     summary: '',
                     notes: '',
-                    recordInfo: '',
                     contentText: '',
                     public: true,
                 });
@@ -138,14 +177,31 @@ const AddSermonPage = () => {
 
                         <FormSection>
                             <Label>예배 종류</Label>
-                            <Input
-                                type="text"
+                            <Select
                                 name="worshipType"
                                 value={sermonData.worshipType}
                                 onChange={handleInputChange}
-                                placeholder="예) 주일-새벽, 주일오전, 수요저녁, 금요철야"
                                 required
-                            />
+                            >
+                                <option value="">예배 종류 선택</option>
+                                {WORSHIP_TYPES.map((type) => (
+                                    <option key={type} value={type}>
+                                        {type}
+                                    </option>
+                                ))}
+                            </Select>
+                            {sermonData.worshipType === '기타' && (
+                                <CustomInputWrapper>
+                                    <Input
+                                        type="text"
+                                        name="customWorshipType"
+                                        value={sermonData.customWorshipType}
+                                        onChange={handleInputChange}
+                                        placeholder="예배 종류를 직접 입력하세요"
+                                        required
+                                    />
+                                </CustomInputWrapper>
+                            )}
                         </FormSection>
 
                         <FormSection>
@@ -160,9 +216,17 @@ const AddSermonPage = () => {
                             />
                         </FormSection>
 
-                        <FormGrid>
-                            <FormSection>
-                                <Label>주 성경 본문</Label>
+                        <FormSection>
+                            <ScriptureHeader>
+                                <Label>성경 본문</Label>
+                                {!showAdditionalScripture && (
+                                    <AddScriptureButton type="button" onClick={() => setShowAdditionalScripture(true)}>
+                                        <Plus size={16} />
+                                        추가
+                                    </AddScriptureButton>
+                                )}
+                            </ScriptureHeader>
+                            <ScriptureContainer>
                                 <Input
                                     type="text"
                                     name="mainScripture"
@@ -171,19 +235,31 @@ const AddSermonPage = () => {
                                     placeholder="예) 요한복음 3:16"
                                     required
                                 />
-                            </FormSection>
-
-                            <FormSection>
-                                <Label>추가 성경 본문</Label>
-                                <Input
-                                    type="text"
-                                    name="additionalScripture"
-                                    value={sermonData.additionalScripture}
-                                    onChange={handleInputChange}
-                                    placeholder="예) 로마서 8:28"
-                                />
-                            </FormSection>
-                        </FormGrid>
+                                {showAdditionalScripture && (
+                                    <AdditionalScriptureWrapper>
+                                        <Input
+                                            type="text"
+                                            name="additionalScripture"
+                                            value={sermonData.additionalScripture}
+                                            onChange={handleInputChange}
+                                            placeholder="예) 로마서 8:28"
+                                        />
+                                        <RemoveScriptureButton
+                                            type="button"
+                                            onClick={() => {
+                                                setShowAdditionalScripture(false);
+                                                setSermonData((prev) => ({
+                                                    ...prev,
+                                                    additionalScripture: '',
+                                                }));
+                                            }}
+                                        >
+                                            <X size={16} />
+                                        </RemoveScriptureButton>
+                                    </AdditionalScriptureWrapper>
+                                )}
+                            </ScriptureContainer>
+                        </FormSection>
 
                         <FormSection>
                             <Label>설교 요약</Label>
@@ -205,17 +281,6 @@ const AddSermonPage = () => {
                                 onChange={handleInputChange}
                                 placeholder="추가 노트를 입력하세요"
                                 rows={3}
-                            />
-                        </FormSection>
-
-                        <FormSection>
-                            <Label>설교록 정보</Label>
-                            <Input
-                                type="text"
-                                name="recordInfo"
-                                value={sermonData.recordInfo}
-                                onChange={handleInputChange}
-                                placeholder="예) 234호 308쪽"
                             />
                         </FormSection>
 
@@ -334,22 +399,11 @@ const EditorContainer = styled.div`
     padding: 32px;
     border-radius: 16px;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
-    min-height: 950px;
+    min-height: 600px;
     display: flex;
     flex-direction: column;
     position: sticky;
     top: 40px;
-`;
-
-const FormGrid = styled.div`
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-    margin-bottom: 32px;
-
-    @media (max-width: 500px) {
-        grid-template-columns: 1fr;
-    }
 `;
 
 const FormSection = styled.div`
@@ -369,7 +423,7 @@ const Label = styled.label`
 `;
 
 const Input = styled.input`
-    width: 100%;
+    width: 90%;
     padding: 12px 16px;
     border: 2px solid #eee;
     border-radius: 8px;
@@ -405,7 +459,7 @@ const DateInput = styled(Input)`
 `;
 
 const TextArea = styled.textarea`
-    width: 100%;
+    width: 90%;
     padding: 16px;
     border: 2px solid #eee;
     border-radius: 8px;
@@ -448,6 +502,92 @@ const AutoSaveStatus = styled.div`
     opacity: ${(props) => (props.visible ? 1 : 0)};
     transition: opacity 0.3s ease;
     z-index: 1000;
+`;
+
+const Select = styled.select`
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #eee;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+    background-color: white;
+    cursor: pointer;
+
+    &:focus {
+        outline: none;
+        border-color: #4f3296;
+        box-shadow: 0 0 0 3px rgba(79, 50, 150, 0.1);
+    }
+`;
+
+const ScriptureHeader = styled.div`
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+`;
+
+const AddScriptureButton = styled.button`
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border: none;
+    background: none;
+    color: #4f3296;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+        color: #3a2570;
+    }
+`;
+
+const ScriptureContainer = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+`;
+
+const AdditionalScriptureWrapper = styled.div`
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+`;
+
+const RemoveScriptureButton = styled.button`
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    border: none;
+    background: none;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+        color: #ff4444;
+    }
+`;
+
+const CustomInputWrapper = styled.div`
+    margin-top: 8px;
+    animation: slideDown 0.3s ease;
+
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
 `;
 
 export default AddSermonPage;
