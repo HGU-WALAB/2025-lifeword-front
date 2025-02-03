@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+    import React, { useState, useEffect, useCallback } from 'react';
 import styled from 'styled-components';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
@@ -17,6 +17,7 @@ const SermonListPage = () => {
     const [searchType, setSearchType] = useState('title');
     const [searchValue, setSearchValue] = useState('');
     const { userId } = useUserState();
+    const [viewType, setViewType] = useState('list'); // 'list' (기본값) 또는 'carousel'
 
     // URL 파라미터에서 필터 상태 읽기
     const filterType = searchParams.get('type') || 'public';
@@ -160,49 +161,93 @@ const SermonListPage = () => {
                             </SubFilterContainer>
                         )}
                     </MySermonFilterContainer>
+
+                    {/* view 선택 버튼 추가 */}
+                    <ViewToggleContainer>
+                        <ViewToggleButton active={viewType === 'list'} onClick={() => setViewType('list')}>
+                            View 1
+                        </ViewToggleButton>
+                        <ViewToggleButton active={viewType === 'carousel'} onClick={() => setViewType('carousel')}>
+                            View 2
+                        </ViewToggleButton>
+                    </ViewToggleContainer>
+
                 </FilterContainer>
             </PageHeader>
             <ContentWrapper>
                 <SermonList>
                     {loading ? (
                         <LoadingText>로딩 중...</LoadingText>
-                    ) : currentSermons.length > 0 ? (
-                        currentSermons.map((sermon) => (
-                            <SermonCard
-                                key={sermon.sermonId}
-                                onClick={() => {
-                                    navigate(`detail/${sermon.sermonId}?type=${filterType}`);
-                                }}
-                            >
-                                <WorshipType>{sermon.worshipType}</WorshipType>
-                                <div>
-                                    <AuthorName>{sermon.ownerName}</AuthorName>
-                                    <SermonDate>
-                                        {new Date(sermon.sermonDate).toLocaleDateString('ko-KR', {
-                                            year: 'numeric',
-                                            month: 'long',
-                                            day: 'numeric',
-                                        })}
-                                    </SermonDate>
-                                </div>
-                                <SermonTitle>{sermon.sermonTitle}</SermonTitle>
-                                <ScriptureContainer>
-                                    <Scripture>{sermon.mainScripture}</Scripture>
-                                    {sermon.additionalScripture && (
-                                        <AdditionalScripture>{sermon.additionalScripture}</AdditionalScripture>
-                                    )}
-                                </ScriptureContainer>
-                                <SermonSummary>{sermon.summary}</SermonSummary>
-                                {filterType === 'my' && (
-                                    <PublicBadge isPublic={sermon.public}>
-                                        {sermon.public ? '공개' : '비공개'}
-                                    </PublicBadge>
-                                )}
-                            </SermonCard>
-                        ))
+                    ) : sermons.length > 0 ? (
+                        viewType === 'carousel' ? (
+                            <SermonGrid>
+                                {currentSermons.map((sermon) => (
+                                    <SermonCardSecondView key={sermon.sermonId}
+                                                onClick={() => navigate(`detail/${sermon.sermonId}?type=${filterType}`)}>
+                                        <WorshipType>{sermon.worshipType}</WorshipType>
+                                        <div>
+                                            <AuthorName>{sermon.ownerName}</AuthorName>
+                                            <SermonDate>
+                                                {new Date(sermon.sermonDate).toLocaleDateString('ko-KR', {
+                                                    year: 'numeric',
+                                                    month: 'long',
+                                                    day: 'numeric',
+                                                })}
+                                            </SermonDate>
+                                        </div>
+                                        <SermonTitleSecondView>{sermon.sermonTitle}</SermonTitleSecondView>
+                                        <ScriptureContainer>
+                                            <Scripture>{sermon.mainScripture}</Scripture>
+                                            {sermon.additionalScripture && (
+                                                <AdditionalScripture>{sermon.additionalScripture}</AdditionalScripture>
+                                            )}
+                                        </ScriptureContainer>
+                                        <SermonSummary>{sermon.summary}</SermonSummary>
+                                        {filterType === 'my' && (
+                                            <PublicBadge isPublic={sermon.public}>
+                                                {sermon.public ? '공개' : '비공개'}
+                                            </PublicBadge>
+                                        )}
+                                    </SermonCardSecondView>
+                                ))}
+                            </SermonGrid>
+                        ) : (
+                            <SermonList>
+                                {currentSermons.map((sermon) => (
+                                    <SermonCard key={sermon.sermonId}
+                                                onClick={() => navigate(`detail/${sermon.sermonId}?type=${filterType}`)}>
+                                        <WorshipType>{sermon.worshipType}</WorshipType>
+                                        <div>
+                                            <AuthorName>{sermon.ownerName}</AuthorName>
+                                            <SermonDate>
+                                                {new Date(sermon.sermonDate).toLocaleDateString('ko-KR', {
+                                                    year: 'numeric',
+                                                    month: 'long',
+                                                    day: 'numeric',
+                                                })}
+                                            </SermonDate>
+                                        </div>
+                                        <SermonTitle>{sermon.sermonTitle}</SermonTitle>
+                                        <ScriptureContainer>
+                                            <Scripture>{sermon.mainScripture}</Scripture>
+                                            {sermon.additionalScripture && (
+                                                <AdditionalScripture>{sermon.additionalScripture}</AdditionalScripture>
+                                            )}
+                                        </ScriptureContainer>
+                                        <SermonSummary>{sermon.summary}</SermonSummary>
+                                        {filterType === 'my' && (
+                                            <PublicBadge isPublic={sermon.public}>
+                                                {sermon.public ? '공개' : '비공개'}
+                                            </PublicBadge>
+                                        )}
+                                    </SermonCard>
+                                ))}
+                            </SermonList>
+                        )
                     ) : (
                         <EmptyText>등록된 설교가 없습니다.</EmptyText>
                     )}
+
                 </SermonList>
                 {!loading && sermons.length > 0 && (
                     <PaginationContainer>
@@ -331,7 +376,14 @@ const SermonTitle = styled.h2`
 const ScriptureContainer = styled.div`
     display: flex;
     align-items: center;
-    gap: 12px;
+  //gap: 1px;
+    margin-bottom: 16px;
+`;
+
+const ScriptureContainerViewSecond = styled.div`
+    display: block;
+    float: right;
+    //gap: 1px;
     margin-bottom: 16px;
 `;
 
@@ -563,5 +615,122 @@ const SearchButton = styled.button`
         background-color: #3b2570;
     }
 `;
+
+
+
+
+//서원 추가
+const SermonCarousel = styled.div`
+    display: flex;
+    gap: 15px;
+    overflow-x: auto;
+    padding: 10px;
+    scroll-behavior: smooth;
+
+    &::-webkit-scrollbar {
+        height: 6px;
+    }
+    &::-webkit-scrollbar-thumb {
+        background-color: #888;
+        border-radius: 3px;
+    }
+`;
+
+const ViewToggleContainer = styled.div`
+    display: flex;
+    gap: 10px;
+    margin-left:auto;
+    //margin-left:400px;
+
+`;
+
+const ViewToggleButton = styled.button`
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    background-color: ${(props) => (props.active ? '#4F3296' : '#ddd')};
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s;
+
+    &:hover {
+        background-color: ${(props) => (props.active ? '#3b2570' : '#bbb')};
+    }
+`;
+
+const SermonCardSecondView = styled.div`
+    box-sizing: border-box;
+    position: relative;
+    width: 100%;
+    max-width: 800px;
+    min-height: 180px;
+    margin: 0 auto;
+    padding: 24px;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s ease;
+    cursor: pointer;
+
+    &:hover {
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        transform: translateY(-2px);
+    }
+`;
+
+    const SermonGrid = styled.div`
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: 20px;
+        padding: 20px;
+    `;
+
+    const SermonTitleSecondView = styled.h2`
+    font-family: 'Inter';
+    font-weight: 800;
+    font-size: 24px;
+    color: #212a3e;
+    margin: 16px 0;
+    padding-right: 60px;
+`;
+    const SermonCardGrid = styled.div`
+        background: #fff;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s;
+        cursor: pointer;
+
+        &:hover {
+            transform: scale(1.05);
+        }
+    `;
+
+    const SermonImage = styled.img`
+        width: 100%;
+        height: 150px;
+        object-fit: cover;
+    `;
+
+    const SermonInfo = styled.div`
+        padding: 10px;
+        text-align: center;
+    `;
+
+    const SermonTitleHorizontal = styled.h3`
+        font-size: 16px;
+        color: #333;
+        margin-bottom: 5px;
+    `;
+
+    const AuthorNameHorizontal = styled.p`
+    display : block;
+    font-size: 14px;
+    color: #666;
+`;
+
+
 
 export default SermonListPage;
