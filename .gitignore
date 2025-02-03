@@ -44,3 +44,6 @@ sketch
 .env.development
 .env.example
 .env.production
+
+#intelliJ
+.idea
