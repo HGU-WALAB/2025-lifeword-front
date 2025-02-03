@@ -19,6 +19,7 @@ class SermonEditor extends Component {
         super(props);
         this.state = {
             editorHtml: props.value || '',
+            initialHeight: 0, // 초기 높이 저장
         };
         this.quillRef = null;
     }
@@ -34,10 +35,36 @@ class SermonEditor extends Component {
             const editor = this.quillRef.getEditor();
             editor.root.style.fontSize = '14px';
             editor.format('size', '14px');
-
-            // 에디터 자동 포커스 방지 및 blur 처리
             editor.blur();
             editor.root.blur();
+
+            // 초기 높이 저장
+            this.setState({
+                initialHeight: editor.root.clientHeight,
+            });
+
+            // 에디터 높이 변화 감지를 위한 ResizeObserver 설정
+            this.resizeObserver = new ResizeObserver((entries) => {
+                for (let entry of entries) {
+                    if (entry.target === editor.root) {
+                        // 현재 높이가 초기 높이보다 클 때만 스크롤
+                        if (entry.target.clientHeight > this.state.initialHeight) {
+                            window.scrollTo({
+                                top: document.documentElement.scrollHeight,
+                                behavior: 'smooth',
+                            });
+                        }
+                    }
+                }
+            });
+
+            this.resizeObserver.observe(editor.root);
+        }
+    }
+
+    componentWillUnmount() {
+        if (this.resizeObserver) {
+            this.resizeObserver.disconnect();
         }
     }
 
@@ -75,7 +102,14 @@ class SermonEditor extends Component {
     ];
 
     handleChange = (content) => {
-        this.setState({ editorHtml: content });
+        this.setState({ editorHtml: content }, () => {
+            if (this.quillRef) {
+                const editor = this.quillRef.getEditor();
+                const length = editor.getLength();
+                editor.setSelection(length, 0);
+            }
+        });
+
         if (this.props.onChange) {
             this.props.onChange(content);
         }
@@ -105,7 +139,6 @@ class SermonEditor extends Component {
                     onChange={this.handleChange}
                     value={this.state.editorHtml}
                     placeholder="설교 내용을 입력하세요..."
-                    style={{ fontSize: '16px' }}
                 />
             </EditorWrapper>
         );
@@ -113,23 +146,69 @@ class SermonEditor extends Component {
 }
 
 const EditorWrapper = styled.div`
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 60%;
+
     .ql-editor {
-        min-height: 400px;
-        font-size: 16px !important;
-        line-height: 1.5;
+        min-height: 300px;
+        font-size: 16px;
+        line-height: 1.8;
+        padding: 24px;
+        overflow: hidden;
+    }
+
+    .ql-container {
+        border: 2px solid #eee;
+        border-top: none;
+        height: auto !important;
+        overflow: visible;
+    }
+
+    .ql-toolbar {
+        position: sticky;
+        top: 32px;
+        background: white;
+        z-index: 10;
+        border: 2px solid #eee;
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+    }
+
+    .ql-editor::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .ql-editor::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 4px;
+    }
+
+    .ql-editor::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 4px;
+    }
+
+    .ql-editor::-webkit-scrollbar-thumb:hover {
+        background: #555;
+    }
+
+    .ql-editor p {
+        margin-bottom: 1.5em;
+    }
+
+    .ql-editor h1,
+    .ql-editor h2,
+    .ql-editor h3 {
+        margin-top: 1.5em;
+        margin-bottom: 0.5em;
     }
 
     .ql-container {
         border-bottom-left-radius: 8px;
         border-bottom-right-radius: 8px;
         background: white;
-    }
-
-    .ql-toolbar {
-        border-top-left-radius: 8px;
-        border-top-right-radius: 8px;
-        background: #f8f9fa;
-        border-color: #eee;
     }
 
     /* 폰트 스타일 */
@@ -333,23 +412,12 @@ const EditorWrapper = styled.div`
 `;
 
 const StyledQuill = styled(ReactQuill)`
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+
     .ql-container {
-        border: 2px solid #eee;
-        border-top: none;
-    }
-
-    .ql-toolbar {
-        border: 2px solid #eee;
-    }
-
-    .ql-toolbar button:hover,
-    .ql-toolbar button:focus {
-        color: #4f3296;
-    }
-
-    .ql-toolbar button.ql-active,
-    .ql-toolbar .ql-picker-label.ql-active {
-        color: #4f3296;
+        flex: 1;
     }
 `;
 

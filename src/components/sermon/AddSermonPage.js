@@ -20,10 +20,24 @@ const AddSermonPage = () => {
         public: true,
     });
     const editorRef = useRef(null);
+    const [autoSaveStatus, setAutoSaveStatus] = useState('');
 
     useEffect(() => {
         window.scrollTo(0, 0);
     }, []);
+
+    useEffect(() => {
+        const autoSaveTimer = setTimeout(() => {
+            if (sermonData.contentText) {
+                localStorage.setItem('sermon_draft', JSON.stringify(sermonData));
+                setAutoSaveStatus('임시저장됨');
+
+                setTimeout(() => setAutoSaveStatus(''), 2000);
+            }
+        }, 30000);
+
+        return () => clearTimeout(autoSaveTimer);
+    }, [sermonData]);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -98,7 +112,7 @@ const AddSermonPage = () => {
             </PageHeader>
 
             <FormContainer onSubmit={handleSubmit}>
-                <FormGrid>
+                <MetaSection>
                     <FormSection>
                         <Label>설교 날짜</Label>
                         <DateInputWrapper>
@@ -124,104 +138,88 @@ const AddSermonPage = () => {
                             required
                         />
                     </FormSection>
-                </FormGrid>
 
-                <FormSection>
-                    <Label>설교 제목</Label>
-                    <Input
-                        type="text"
-                        name="sermonTitle"
-                        value={sermonData.sermonTitle}
-                        onChange={handleInputChange}
-                        placeholder="설교 제목을 입력하세요"
-                        required
-                    />
-                </FormSection>
-
-                <FormGrid>
                     <FormSection>
-                        <Label>주 성경 본문</Label>
+                        <Label>설교 제목</Label>
                         <Input
                             type="text"
-                            name="mainScripture"
-                            value={sermonData.mainScripture}
+                            name="sermonTitle"
+                            value={sermonData.sermonTitle}
                             onChange={handleInputChange}
-                            placeholder="예) 요한복음 3:16"
+                            placeholder="설교 제목을 입력하세요"
+                            required
+                        />
+                    </FormSection>
+
+                    <FormGrid>
+                        <FormSection>
+                            <Label>주 성경 본문</Label>
+                            <Input
+                                type="text"
+                                name="mainScripture"
+                                value={sermonData.mainScripture}
+                                onChange={handleInputChange}
+                                placeholder="예) 요한복음 3:16"
+                                required
+                            />
+                        </FormSection>
+
+                        <FormSection>
+                            <Label>추가 성경 본문</Label>
+                            <Input
+                                type="text"
+                                name="additionalScripture"
+                                value={sermonData.additionalScripture}
+                                onChange={handleInputChange}
+                                placeholder="예) 로마서 8:28"
+                            />
+                        </FormSection>
+                    </FormGrid>
+
+                    <FormSection>
+                        <Label>설교 요약</Label>
+                        <TextArea
+                            name="summary"
+                            value={sermonData.summary}
+                            onChange={handleInputChange}
+                            placeholder="설교의 주요 내용을 요약해서 입력하세요"
+                            rows={4}
                             required
                         />
                     </FormSection>
 
                     <FormSection>
-                        <Label>추가 성경 본문</Label>
-                        <Input
-                            type="text"
-                            name="additionalScripture"
-                            value={sermonData.additionalScripture}
+                        <Label>노트</Label>
+                        <TextArea
+                            name="notes"
+                            value={sermonData.notes}
                             onChange={handleInputChange}
-                            placeholder="예) 로마서 8:28"
+                            placeholder="추가 노트를 입력하세요"
+                            rows={3}
                         />
                     </FormSection>
-                </FormGrid>
 
-                <FormSection>
-                    <Label>설교 요약</Label>
-                    <TextArea
-                        name="summary"
-                        value={sermonData.summary}
-                        onChange={handleInputChange}
-                        placeholder="설교의 주요 내용을 요약해서 입력하세요"
-                        rows={4}
-                        required
-                    />
-                </FormSection>
-
-                <FormSection>
-                    <Label>노트</Label>
-                    <TextArea
-                        name="notes"
-                        value={sermonData.notes}
-                        onChange={handleInputChange}
-                        placeholder="추가 노트를 입력하세요"
-                        rows={3}
-                    />
-                </FormSection>
-
-                <FormSection>
-                    <Label>설교록 정보</Label>
-                    <Input
-                        type="text"
-                        name="recordInfo"
-                        value={sermonData.recordInfo}
-                        onChange={handleInputChange}
-                        placeholder="예) 234호 308쪽"
-                    />
-                </FormSection>
-
-                <EditorSection>
-                    <Label>설교 내용</Label>
-                    <SermonEditor ref={editorRef} onChange={handleEditorChange} />
-                </EditorSection>
-
-                <FormSection>
-                    <Label>공개 설정</Label>
-                    <CheckboxWrapper>
-                        <Checkbox
-                            type="checkbox"
-                            name="public"
-                            checked={sermonData.public}
-                            onChange={(e) =>
-                                setSermonData((prev) => ({
-                                    ...prev,
-                                    public: e.target.checked,
-                                }))
-                            }
+                    <FormSection>
+                        <Label>설교록 정보</Label>
+                        <Input
+                            type="text"
+                            name="recordInfo"
+                            value={sermonData.recordInfo}
+                            onChange={handleInputChange}
+                            placeholder="예) 234호 308쪽"
                         />
-                        <CheckboxLabel>공개 설정</CheckboxLabel>
-                    </CheckboxWrapper>
-                </FormSection>
+                    </FormSection>
 
-                <SubmitButton type="submit">설교 등록하기</SubmitButton>
+                    <SubmitButton type="submit">설교 등록하기</SubmitButton>
+                </MetaSection>
+
+                <EditorContainer className="editor-container">
+                    <Label>설교 내용</Label>
+                    <SermonEditor ref={editorRef} onChange={handleEditorChange} style={{ flex: 1 }} />
+                </EditorContainer>
             </FormContainer>
+
+            <AutoSaveStatus visible={!!autoSaveStatus}>{autoSaveStatus}</AutoSaveStatus>
         </Container>
     );
 };
@@ -231,15 +229,16 @@ const Container = styled.div`
     padding: 40px;
     width: calc(100vw - 360px);
     background-color: #f5f5f5;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    min-height: 100vh;
+    overflow-y: auto;
 `;
 
 const PageHeader = styled.div`
     margin-bottom: 40px;
     width: 100%;
-    max-width: 800px;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
 `;
 
 const Title = styled.h1`
@@ -255,32 +254,51 @@ const Description = styled.p`
 `;
 
 const FormContainer = styled.form`
+    display: grid;
+    grid-template-columns: 400px 1fr;
+    gap: 32px;
+    max-width: 1200px;
+    margin: 0 auto;
+    margin-bottom: 40px;
+
+    @media (max-width: 1200px) {
+        grid-template-columns: 1fr;
+        padding: 0 20px;
+    }
+`;
+
+const MetaSection = styled.div`
     background: white;
-    padding: 48px;
+    padding: 32px;
     border-radius: 16px;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
-    width: 100%;
-    max-width: 800px;
+    height: fit-content;
+`;
+
+const EditorContainer = styled.div`
+    background: white;
+    padding: 32px;
+    border-radius: 16px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+    min-height: 400px;
+    display: flex;
+    flex-direction: column;
 `;
 
 const FormGrid = styled.div`
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 40px;
+    gap: 20px;
     margin-bottom: 32px;
+
+    @media (max-width: 500px) {
+        grid-template-columns: 1fr;
+    }
 `;
 
 const FormSection = styled.div`
     margin-bottom: 32px;
-    padding-right: 35px;
-
-    &:last-child {
-        margin-bottom: 0;
-    }
-`;
-
-const EditorSection = styled.div`
-    margin-bottom: 32px;
+    padding-right: 20px;
 
     &:last-child {
         margin-bottom: 0;
@@ -301,10 +319,16 @@ const Input = styled.input`
     border-radius: 8px;
     font-size: 1rem;
     transition: all 0.2s ease;
+    background-color: white;
 
     &:focus {
         outline: none;
         border-color: #4f3296;
+        box-shadow: 0 0 0 3px rgba(79, 50, 150, 0.1);
+    }
+
+    &::placeholder {
+        color: #aaa;
     }
 `;
 
@@ -339,23 +363,6 @@ const TextArea = styled.textarea`
     }
 `;
 
-const CheckboxWrapper = styled.div`
-    display: flex;
-    align-items: center;
-    gap: 8px;
-`;
-
-const Checkbox = styled.input`
-    width: 20px;
-    height: 20px;
-    cursor: pointer;
-`;
-
-const CheckboxLabel = styled.label`
-    font-size: 1rem;
-    color: #333;
-`;
-
 const SubmitButton = styled.button`
     width: 100%;
     padding: 16px;
@@ -371,6 +378,20 @@ const SubmitButton = styled.button`
     &:hover {
         background: #3a2570;
     }
+`;
+
+const AutoSaveStatus = styled.div`
+    position: fixed;
+    bottom: 40px;
+    right: 40px;
+    padding: 8px 16px;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    border-radius: 8px;
+    font-size: 14px;
+    opacity: ${(props) => (props.visible ? 1 : 0)};
+    transition: opacity 0.3s ease;
+    z-index: 1000;
 `;
 
 export default AddSermonPage;
