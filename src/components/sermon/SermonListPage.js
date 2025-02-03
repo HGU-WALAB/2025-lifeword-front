@@ -367,6 +367,7 @@ const SermonDate = styled.span`
 const SermonTitle = styled.h2`
     font-family: 'Inter';
     font-weight: 800;
+    
     font-size: 24px;
     color: #212a3e;
     margin: 16px 0;
