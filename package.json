@@ -5,6 +5,7 @@
     "dependencies": {
         "@react-spring/parallax": "^9.7.5",
         "axios": "^1.7.9",
+        "bibly_fe": "file:",
         "cra-template": "1.2.0",
         "firebase": "^11.1.0",
         "lucide-react": "^0.469.0",
