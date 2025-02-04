@@ -14,6 +14,8 @@ import {
     ChevronRight,
 } from 'lucide-react';
 import { useUserState } from '../../recoil/utils';
+import { useRecoilValue } from 'recoil';
+import { isNavExpandedState } from '../../recoil/atoms';
 
 const SermonDetailPage = () => {
     const { id } = useParams();
@@ -24,6 +26,7 @@ const SermonDetailPage = () => {
     const currentPath = window.location.pathname;
     const isAdminPage = currentPath.includes('/admin/sermons');
     const [isMetaSectionOpen, setIsMetaSectionOpen] = useState(true);
+    const isExpanded = useRecoilValue(isNavExpandedState);
 
     useEffect(() => {
         const fetchSermonDetail = async () => {
@@ -73,7 +76,7 @@ const SermonDetailPage = () => {
     }
 
     return (
-        <Container>
+        <Container isExpanded={isExpanded}>
             <PageHeader>
                 <TopBar>
                     <BackButton onClick={() => navigate(-1)}>
@@ -186,12 +189,12 @@ const SermonDetailPage = () => {
 };
 
 const Container = styled.div`
-    margin-left: 280px;
     padding: 40px;
-    width: calc(100vw - 360px);
+    width: 100vw;
     background-color: #f5f5f5;
     min-height: 100vh;
     overflow-y: auto;
+    transition: all 0.3s ease;
 `;
 
 const PageHeader = styled.div`

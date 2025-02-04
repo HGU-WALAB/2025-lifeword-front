@@ -166,8 +166,6 @@ const VerseItem = ({ verse }) => {
 
 const Container = styled.div`
     padding: 40px;
-    margin-left: 280px;
-    width: calc(100vw - 360px);
     display: flex;
     flex-direction: column;
     align-items: center;

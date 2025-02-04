@@ -235,16 +235,15 @@ const UserManagementPage = () => {
 };
 
 const Container = styled.div`
-    margin-left: 320px;
     padding: 40px;
-    width: calc(100vw - 400px);
+    width: 100vw;
     min-height: 92vh;
     background-color: #f5f5f5;
 `;
 
 const ContentWrapper = styled.div`
+    margin-left: 150px;
     max-width: 1200px;
-    margin: 0 auto;
     background: white;
     border-radius: 16px;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);

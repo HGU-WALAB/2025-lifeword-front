@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
-import PasswordModal from './PasswordModal';
 import { setUserPassword } from '../../services/APIService';
 import { useUserState } from '../../recoil/utils';
 import { User, Mail, Shield, Award, Lock } from 'lucide-react';
@@ -8,44 +7,58 @@ import { User, Mail, Shield, Award, Lock } from 'lucide-react';
 const MyPage = () => {
     const [newPassword, setNewPassword] = useState('');
     const [newPasswordConfirm, setNewPasswordConfirm] = useState('');
-    const [showPasswordModal, setShowPasswordModal] = useState(false);
+    const [showPasswordChange, setShowPasswordChange] = useState(false);
     const [passwordMatchMessage, setPasswordMatchMessage] = useState('');
     const { userEmail, userJob: job, isAdmin } = useUserState();
 
     const handlePasswordChange = async () => {
-        if (!newPassword) {
-            alert('새로운 비밀번호를 입력해주세요.');
-            return;
-        }
+        try {
+            if (!newPassword) {
+                alert('새로운 비밀번호를 입력해주세요.');
+                return;
+            }
 
-        // 비밀번호 변경 API 호출
-        const response = await setUserPassword(userEmail, newPassword);
-        if (response.success) {
-            alert('비밀번호가 성공적으로 변경되었습니다.');
-            setShowPasswordModal(false);
-            setNewPassword('');
-            setNewPasswordConfirm('');
-        } else {
-            alert('기존 비밀번호와 동일한 비밀번호 입니다.');
+            const response = await setUserPassword(userEmail, newPassword);
+
+            if (response.success) {
+                alert('비밀번호가 성공적으로 변경되었습니다.');
+                setNewPassword('');
+                setNewPasswordConfirm('');
+                setShowPasswordChange(false);
+            } else {
+                alert('기존 비밀번호와 동일한 비밀번호 입니다.');
+            }
+        } catch (error) {
+            console.error('Error changing password:', error);
+            alert('비밀번호 변경 중 오류가 발생했습니다.');
         }
     };
-
     const handlePasswordCheckChange = (value) => {
         setNewPassword(value);
         if (!newPasswordConfirm) {
             setPasswordMatchMessage('');
             return;
         }
-        setPasswordMatchMessage(value === newPasswordConfirm ? '비밀번호가 일치합니다.' : '비밀번호가 일치하지 않습니다.');
+
+        if (value === newPasswordConfirm) {
+            setPasswordMatchMessage('비밀번호가 일치합니다.');
+        } else {
+            setPasswordMatchMessage('비밀번호가 일치하지 않습니다.');
+        }
     };
 
     const handlePasswordConfirmChange = (value) => {
         setNewPasswordConfirm(value);
-        if (!newPassword) {
+        if (!newPassword || !newPasswordConfirm) {
             setPasswordMatchMessage('');
             return;
         }
-        setPasswordMatchMessage(value === newPassword ? '비밀번호가 일치합니다.' : '비밀번호가 일치하지 않습니다.');
+
+        if (value === newPassword) {
+            setPasswordMatchMessage('비밀번호가 일치합니다.');
+        } else {
+            setPasswordMatchMessage('비밀번호가 일치하지 않습니다.');
+        }
     };
 
     return (
@@ -57,57 +70,93 @@ const MyPage = () => {
                 <Title>마이페이지</Title>
             </PageHeader>
 
-            <InfoSection>
-                <InfoCard>
-                    <InfoHeader>
-                        <Mail size={20} />
-                        <Label>이메일</Label>
-                    </InfoHeader>
-                    <Value>{userEmail}</Value>
-                </InfoCard>
-                <InfoCard>
-                    <InfoHeader>
-                        <Award size={20} />
-                        <Label>직분</Label>
-                    </InfoHeader>
-                    <Value>{job}</Value>
-                </InfoCard>
-                <InfoCard>
-                    <InfoHeader>
-                        <Shield size={20} />
-                        <Label>권한</Label>
-                    </InfoHeader>
-                    <Value>{isAdmin ? '관리자' : '일반 사용자'}</Value>
-                </InfoCard>
-            </InfoSection>
+            <ContentWrapper>
+                <InfoSection>
+                    <InfoCard>
+                        <InfoHeader>
+                            <CardIcon>
+                                <Mail size={20} />
+                            </CardIcon>
+                            <Label>이메일</Label>
+                        </InfoHeader>
+                        <Value>{userEmail}</Value>
+                    </InfoCard>
 
-            <PasswordSection>
-                <SectionTitle>
-                    <Lock size={20} /> 비밀번호 관리
-                </SectionTitle>
-                <ChangePasswordButton onClick={() => setShowPasswordModal(true)}>
-                    비밀번호 변경하기
-                </ChangePasswordButton>
-            </PasswordSection>
+                    <InfoCard>
+                        <InfoHeader>
+                            <CardIcon>
+                                <Award size={20} />
+                            </CardIcon>
+                            <Label>직분</Label>
+                        </InfoHeader>
+                        <Value>{job}</Value>
+                    </InfoCard>
 
-            {showPasswordModal && (
-                <PasswordModal
-                    newPassword={newPassword}
-                    setNewPassword={setNewPassword}
-                    newPasswordConfirm={newPasswordConfirm}
-                    setNewPasswordConfirm={setNewPasswordConfirm}
-                    passwordMatchMessage={passwordMatchMessage}
-                    handlePasswordCheckChange={handlePasswordCheckChange}
-                    handlePasswordConfirmChange={handlePasswordConfirmChange}
-                    handlePasswordChange={handlePasswordChange}
-                    onClose={() => setShowPasswordModal(false)}
-                />
-            )}
+                    <InfoCard>
+                        <InfoHeader>
+                            <CardIcon>
+                                <Shield size={20} />
+                            </CardIcon>
+                            <Label>권한</Label>
+                        </InfoHeader>
+                        <Value>{isAdmin ? '관리자' : '일반 사용자'}</Value>
+                    </InfoCard>
+                </InfoSection>
+
+                <PasswordSection>
+                    <SectionTitle>
+                        <Lock size={20} />
+                        비밀번호 관리
+                    </SectionTitle>
+                    {!showPasswordChange ? (
+                        <ChangePasswordButton onClick={() => setShowPasswordChange(true)}>
+                            비밀번호 변경하기
+                        </ChangePasswordButton>
+                    ) : (
+                        <PasswordChangeForm>
+                            <Input
+                                type="password"
+                                value={newPassword}
+                                onChange={(e) => handlePasswordCheckChange(e.target.value)}
+                                placeholder="새로운 비밀번호 입력"
+                            />
+                            <Input
+                                type="password"
+                                value={newPasswordConfirm}
+                                onChange={(e) => handlePasswordConfirmChange(e.target.value)}
+                                placeholder="새로운 비밀번호 확인"
+                            />
+                            <PasswordMessage
+                                isMatch={newPasswordConfirm && newPassword && newPassword === newPasswordConfirm}
+                            >
+                                {newPassword && newPasswordConfirm && passwordMatchMessage}
+                            </PasswordMessage>
+                            <ButtonGroup>
+                                <SubmitButton
+                                    onClick={handlePasswordChange}
+                                    disabled={newPassword !== newPasswordConfirm || !newPassword || !newPasswordConfirm}
+                                >
+                                    변경하기
+                                </SubmitButton>
+                                <CancelButton
+                                    onClick={() => {
+                                        setShowPasswordChange(false);
+                                        setNewPassword('');
+                                        setNewPasswordConfirm('');
+                                        setPasswordMatchMessage('');
+                                    }}
+                                >
+                                    취소
+                                </CancelButton>
+                            </ButtonGroup>
+                        </PasswordChangeForm>
+                    )}
+                </PasswordSection>
+            </ContentWrapper>
         </Container>
     );
 };
 
-// 스타일 컴포넌트 추가 부분
 const PasswordMessage = styled.div`
     font-size: 0.9rem;
     color: ${(props) => (props.isMatch ? 'green' : 'red')};
@@ -116,9 +165,9 @@ const PasswordMessage = styled.div`
 `;
 
 const Container = styled.div`
-    margin-left: 320px;
+    margin-left: 100px;
     padding: 40px;
-    width: calc(100vw - 400px);
+    width: 100vw;
     min-height: 92vh;
     background-color: #f5f5f5;
 
@@ -133,7 +182,6 @@ const Container = styled.div`
         width: calc(100vw - 280px);
     }
 `;
-
 
 const PageHeader = styled.div`
     display: flex;
