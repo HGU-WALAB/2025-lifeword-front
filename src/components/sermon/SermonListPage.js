@@ -510,7 +510,7 @@ const WorshipType = styled.span`
     font-family: 'Inter';
     font-weight: 500;
     font-size: 12px;
-    color: #4f3296;
+    color: grey;
 `;
 
 const SermonSummary = styled.p`
@@ -550,22 +550,7 @@ const MySermonFilterContainer = styled.div`
     align-items: center;
 `;
 
-const FilterButton = styled.button`
-    padding: 12px 24px;
-    border-radius: 8px;
-    border: none;
-    background-color: ${(props) => (props.active ? '#4f3296' : '#fff')};
-    color: ${(props) => (props.active ? '#fff' : '#4f3296')};
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    border: 1px solid ${(props) => (props.active ? '#4f3296' : '#eee')};
 
-    &:hover {
-        background-color: ${(props) => (props.active ? '#3a2570' : '#f8f5ff')};
-    }
-`;
 
 const SubFilterContainer = styled.div`
     display: flex;
@@ -579,7 +564,7 @@ const SubFilterButton = styled.button`
     padding: 8px 16px;
     border-radius: 6px;
     border: none;
-    background-color: ${(props) => (props.active ? '#4f3296' : 'transparent')};
+    background-color: ${(props) => (props.active ? '#4F3296' : '#ddd')};
     color: ${(props) => (props.active ? '#fff' : '#666')};
     font-size: 0.9rem;
     font-weight: 500;
@@ -731,7 +716,7 @@ const ViewToggleButton = styled.button`
     border: none;
     border-radius: 6px;
     background-color: ${(props) => (props.active ? '#4F3296' : '#ddd')};
-    color: white;
+    color: ${(props) => (props.active ? '#fff' : '#666')};
     font-weight: bold;
     cursor: pointer;
     transition: 0.3s;
@@ -740,7 +725,22 @@ const ViewToggleButton = styled.button`
         background-color: ${(props) => (props.active ? '#3b2570' : '#bbb')};
     }
 `;
+    const FilterButton = styled.button`
+    padding: 12px 24px;
+    border-radius: 8px;
+    border: none;
+        background-color: ${(props) => (props.active ? '#4F3296' : '#ddd')};
+        color: ${(props) => (props.active ? '#fff' : '#666')};
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    border: 1px solid ${(props) => (props.active ? '#4f3296' : '#eee')};
 
+    &:hover {
+        background-color: ${(props) => (props.active ? '#3b2570' : '#bbb')};
+    }
+`;
 const SermonCardSecondView = styled.div`
     box-sizing: border-box;
     position: relative;
@@ -791,7 +791,7 @@ const SortButton = styled.button`
     border: none;
     border-radius: 6px;
     background-color: ${(props) => (props.active ? '#4F3296' : '#ddd')};
-    color: white;
+    color: ${(props) => (props.active ? '#fff' : '#666')};
     font-weight: bold;
     cursor: pointer;
     transition: 0.3s;
