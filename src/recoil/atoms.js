@@ -50,3 +50,8 @@ export const userState = atom({
         admin: false,
     },
 });
+
+export const isNavExpandedState = atom({
+    key: 'isNavExpandedState',
+    default: true,
+});

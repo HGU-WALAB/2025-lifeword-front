@@ -14,14 +14,17 @@ import UserManagementPage from '../components/admin/UserManagementPage';
 import SermonManagementPage from '../components/admin/SermonManagementPage';
 import MyPage from '../components/mypage/MyPage';
 import { useUserState } from '../recoil/utils';
+import { useRecoilValue } from 'recoil';
+import { isNavExpandedState } from '../recoil/atoms';
 
 const MainPage = () => {
     const { isAdmin } = useUserState();
+    const isExpanded = useRecoilValue(isNavExpandedState);
 
     return (
         <Container>
             <MainNavbar />
-            <MainContent>
+            <MainContent isExpanded={isExpanded}>
                 <Routes>
                     <Route path="/" element={<Navigate to="/main/quick-reading" replace />} />
                     <Route path="/quick-reading" element={<QuickReadingPage />} />
@@ -71,10 +74,17 @@ const Container = styled.div`
     display: flex;
     min-height: 100vh;
     background-color: #ffffff;
+    overflow-x: hidden;
 `;
 
 const MainContent = styled.div`
     flex: 1;
+    position: relative;
+    margin-left: ${(props) => (props.isExpanded ? '280px' : '80px')};
+    width: ${(props) => (props.isExpanded ? 'calc(100vw - 280px)' : 'calc(100vw - 80px)')};
+    transition: all 0.3s ease;
+    background-color: #f5f5f5;
+    min-height: 100vh;
 `;
 
 const SermonListContainer = styled.div`
