@@ -2,12 +2,13 @@ import React, { useState } from 'react';
 import styled from 'styled-components';
 import { setUserPassword } from '../../services/APIService';
 import { useUserState } from '../../recoil/utils';
+import PasswordModal from "./PasswordModal";
 import { User, Mail, Shield, Award, Lock } from 'lucide-react';
 
 const MyPage = () => {
     const [newPassword, setNewPassword] = useState('');
     const [newPasswordConfirm, setNewPasswordConfirm] = useState('');
-    const [showPasswordChange, setShowPasswordChange] = useState(false);
+    const [showPasswordModal, setShowPasswordModal] = useState(false);
     const [passwordMatchMessage, setPasswordMatchMessage] = useState('');
     const { userEmail, userJob: job, isAdmin } = useUserState();
 
@@ -22,9 +23,9 @@ const MyPage = () => {
 
             if (response.success) {
                 alert('비밀번호가 성공적으로 변경되었습니다.');
+                setShowPasswordModal(false);
                 setNewPassword('');
                 setNewPasswordConfirm('');
-                setShowPasswordChange(false);
             } else {
                 alert('기존 비밀번호와 동일한 비밀번호 입니다.');
             }
@@ -39,26 +40,16 @@ const MyPage = () => {
             setPasswordMatchMessage('');
             return;
         }
-
-        if (value === newPasswordConfirm) {
-            setPasswordMatchMessage('비밀번호가 일치합니다.');
-        } else {
-            setPasswordMatchMessage('비밀번호가 일치하지 않습니다.');
-        }
+        setPasswordMatchMessage(value === newPasswordConfirm ? '비밀번호가 일치합니다.' : '비밀번호가 일치하지 않습니다.');
     };
 
     const handlePasswordConfirmChange = (value) => {
         setNewPasswordConfirm(value);
-        if (!newPassword || !newPasswordConfirm) {
+        if (!newPassword) {
             setPasswordMatchMessage('');
             return;
         }
-
-        if (value === newPassword) {
-            setPasswordMatchMessage('비밀번호가 일치합니다.');
-        } else {
-            setPasswordMatchMessage('비밀번호가 일치하지 않습니다.');
-        }
+        setPasswordMatchMessage(value === newPassword ? '비밀번호가 일치합니다.' : '비밀번호가 일치하지 않습니다.');
     };
 
     return (
@@ -105,53 +96,28 @@ const MyPage = () => {
 
                 <PasswordSection>
                     <SectionTitle>
-                        <Lock size={20} />
-                        비밀번호 관리
+                        <Lock size={20} /> 비밀번호 관리
                     </SectionTitle>
-                    {!showPasswordChange ? (
-                        <ChangePasswordButton onClick={() => setShowPasswordChange(true)}>
-                            비밀번호 변경하기
-                        </ChangePasswordButton>
-                    ) : (
-                        <PasswordChangeForm>
-                            <Input
-                                type="password"
-                                value={newPassword}
-                                onChange={(e) => handlePasswordCheckChange(e.target.value)}
-                                placeholder="새로운 비밀번호 입력"
-                            />
-                            <Input
-                                type="password"
-                                value={newPasswordConfirm}
-                                onChange={(e) => handlePasswordConfirmChange(e.target.value)}
-                                placeholder="새로운 비밀번호 확인"
-                            />
-                            <PasswordMessage
-                                isMatch={newPasswordConfirm && newPassword && newPassword === newPasswordConfirm}
-                            >
-                                {newPassword && newPasswordConfirm && passwordMatchMessage}
-                            </PasswordMessage>
-                            <ButtonGroup>
-                                <SubmitButton
-                                    onClick={handlePasswordChange}
-                                    disabled={newPassword !== newPasswordConfirm || !newPassword || !newPasswordConfirm}
-                                >
-                                    변경하기
-                                </SubmitButton>
-                                <CancelButton
-                                    onClick={() => {
-                                        setShowPasswordChange(false);
-                                        setNewPassword('');
-                                        setNewPasswordConfirm('');
-                                        setPasswordMatchMessage('');
-                                    }}
-                                >
-                                    취소
-                                </CancelButton>
-                            </ButtonGroup>
-                        </PasswordChangeForm>
-                    )}
+                    <ChangePasswordButton onClick={() => setShowPasswordModal(true)}>
+                        비밀번호 변경하기
+                    </ChangePasswordButton>
                 </PasswordSection>
+
+                {showPasswordModal && (
+                    <PasswordModal
+                        newPassword={newPassword}
+                        setNewPassword={setNewPassword}
+                        newPasswordConfirm={newPasswordConfirm}
+                        setNewPasswordConfirm={setNewPasswordConfirm}
+                        passwordMatchMessage={passwordMatchMessage}
+                        handlePasswordCheckChange={handlePasswordCheckChange}
+                        handlePasswordConfirmChange={handlePasswordConfirmChange}
+                        handlePasswordChange={handlePasswordChange}
+                        onClose={() => setShowPasswordModal(false)}
+                    />
+                )}
+
+
             </ContentWrapper>
         </Container>
     );
