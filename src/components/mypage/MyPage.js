@@ -6,7 +6,9 @@ import { User, Mail, Shield, Award, Lock } from 'lucide-react';
 
 const MyPage = () => {
     const [newPassword, setNewPassword] = useState('');
+    const [newPasswordConfirm, setNewPasswordConfirm] = useState('');
     const [showPasswordChange, setShowPasswordChange] = useState(false);
+    const [passwordMatchMessage, setPasswordMatchMessage] = useState('');
     const { userEmail, userJob: job, isAdmin } = useUserState();
 
     const handlePasswordChange = async () => {
@@ -21,14 +23,45 @@ const MyPage = () => {
             if (response.success) {
                 alert('비밀번호가 성공적으로 변경되었습니다.');
                 setNewPassword('');
+                setNewPasswordConfirm('');
                 setShowPasswordChange(false);
             } else {
-                alert('비밀번호 변경에 실패했습니다.');
+                alert('기존 비밀번호와 동일한 비밀번호 입니다.');
             }
         } catch (error) {
             console.error('Error changing password:', error);
             alert('비밀번호 변경 중 오류가 발생했습니다.');
         }
+    };
+    const handlePasswordCheckChange = (value) => {
+        setNewPassword(value);
+        if(!newPasswordConfirm ){
+            setPasswordMatchMessage('');
+            return;
+        }
+
+        if (value === newPasswordConfirm) {
+            setPasswordMatchMessage('비밀번호가 일치합니다.');
+        } else {
+            setPasswordMatchMessage('비밀번호가 일치하지 않습니다.');
+        }
+
+    };
+
+
+    const handlePasswordConfirmChange = (value) => {
+        setNewPasswordConfirm(value);
+        if(!newPassword || !newPasswordConfirm){
+            setPasswordMatchMessage('');
+            return;
+        }
+
+        if (value === newPassword) {
+            setPasswordMatchMessage('비밀번호가 일치합니다.');
+        } else {
+            setPasswordMatchMessage('비밀번호가 일치하지 않습니다.');
+        }
+
     };
 
     return (
@@ -87,15 +120,31 @@ const MyPage = () => {
                             <Input
                                 type="password"
                                 value={newPassword}
-                                onChange={(e) => setNewPassword(e.target.value)}
+                                onChange={(e) => handlePasswordCheckChange(e.target.value)}
                                 placeholder="새로운 비밀번호 입력"
                             />
+                            <Input
+                                type="password"
+                                value={newPasswordConfirm}
+                                onChange={(e) => handlePasswordConfirmChange(e.target.value)}
+                                placeholder="새로운 비밀번호 확인"
+                            />
+                            <PasswordMessage isMatch={ newPasswordConfirm && newPassword && newPassword === newPasswordConfirm}>
+                                {newPassword && newPasswordConfirm && passwordMatchMessage}
+                            </PasswordMessage>
                             <ButtonGroup>
-                                <SubmitButton onClick={handlePasswordChange}>변경하기</SubmitButton>
+                                <SubmitButton
+                                    onClick={handlePasswordChange}
+                                    disabled={newPassword !== newPasswordConfirm || !newPassword || !newPasswordConfirm}
+                                >
+                                    변경하기
+                                </SubmitButton>
                                 <CancelButton
                                     onClick={() => {
                                         setShowPasswordChange(false);
                                         setNewPassword('');
+                                        setNewPasswordConfirm('');
+                                        setPasswordMatchMessage('');
                                     }}
                                 >
                                     취소
@@ -108,6 +157,14 @@ const MyPage = () => {
         </Container>
     );
 };
+
+// 스타일 컴포넌트 추가 부분
+const PasswordMessage = styled.div`
+    font-size: 0.9rem;
+    color: ${(props) => (props.isMatch ? 'green' : 'red')};
+    margin-top: -0.5rem;
+    margin-bottom: 1rem;
+`;
 
 const Container = styled.div`
     margin-left: 320px;
@@ -127,6 +184,7 @@ const Container = styled.div`
         width: calc(100vw - 280px);
     }
 `;
+
 
 const PageHeader = styled.div`
     display: flex;
