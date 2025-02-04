@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+    import React, { useState, useEffect, useCallback } from 'react';
 import styled from 'styled-components';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
@@ -17,6 +17,11 @@ const SermonListPage = () => {
     const [searchType, setSearchType] = useState('title');
     const [searchValue, setSearchValue] = useState('');
     const { userId } = useUserState();
+    const [viewType, setViewType] = useState('list'); // 'list' (기본값)
+    const [sortOrder, setSortOrder] = useState('newest'); // 'newest' (최신순) 또는 'oldest' (오래된 순)
+    const [filteredSermons, setFilteredSermons] = useState([]);
+    const [selectedWorshipType, setSelectedWorshipType] = useState('all'); // 기본값: 전체 보기
+
 
     // URL 파라미터에서 필터 상태 읽기
     const filterType = searchParams.get('type') || 'public';
@@ -34,23 +39,60 @@ const SermonListPage = () => {
         setSearchParams(newParams);
         setCurrentPage(1);
     };
+    const handleWorshipTypeChange = (event) => {
+
+
+        const newType = event.target.value;
+        setSelectedWorshipType(newType);
+
+
+        // 🔹 검색 중이면 검색 결과에서 예배 유형 필터링
+        if (isSearching) {
+            handleSearch();
+        } else {
+            fetchSermons();
+        }
+    };
 
     const fetchSermons = useCallback(async () => {
         try {
             setLoading(true);
+            let data = [];
+
             if (filterType === 'public') {
-                const data = await getPublicSermons();
-                setSermons(data);
+                data = await getPublicSermons();
             } else {
-                const data = await getUserSermons(userId, mySermonFilter);
-                setSermons(data);
+                data = await getUserSermons(userId, mySermonFilter);
             }
+
+            // 🔹 검색 결과 유지
+            if (filteredSermons.length > 0) {
+                data = [...filteredSermons];
+            }
+
+            // 🔹 선택된 worshipType이 있으면 필터링
+            if (selectedWorshipType !== 'all') {
+                data = data.filter((sermon) => sermon.worshipType === selectedWorshipType);
+            }
+
+            // 🔹 최신순 / 오래된 순 정렬
+            data.sort((a, b) => {
+                if (sortOrder === 'newest') {
+                    return new Date(b.sermonDate) - new Date(a.sermonDate);
+                } else {
+                    return new Date(a.sermonDate) - new Date(b.sermonDate);
+                }
+            });
+
+            setSermons(data);
         } catch (error) {
             console.error('Error fetching sermons:', error);
         } finally {
             setLoading(false);
         }
-    }, [filterType, userId, mySermonFilter]);
+    }, [filterType, userId, mySermonFilter, sortOrder, filteredSermons, selectedWorshipType]);
+
+
 
     useEffect(() => {
         fetchSermons();
@@ -86,24 +128,52 @@ const SermonListPage = () => {
         return pages;
     };
 
+    const handleSortChange = (order) => {
+        setSortOrder(order);
+        if (isSearching) {
+            handleSearch(); // 검색된 상태에서 정렬을 바꾸면 검색 결과 유지
+        } else {
+            fetchSermons(); // 전체 데이터를 불러올 때 정렬 적용
+        }
+    };
+
     const handleSearch = async () => {
         if (!searchValue.trim()) {
-            fetchSermons();
+            fetchSermons(); // 검색어가 없으면 전체 데이터 로드
             return;
         }
+
         setLoading(true);
         setIsSearching(true);
+
         try {
             const results = await searchSermons(searchValue, userId, searchType);
-            setSermons(Array.isArray(results) ? results : []);
+            let sortedResults = Array.isArray(results) ? results : [];
+
+            // 🔹 선택된 예배 유형(worshipType)이 있으면 필터 적용
+            if (selectedWorshipType !== 'all') {
+                sortedResults = sortedResults.filter((sermon) => sermon.worshipType === selectedWorshipType);
+            }
+
+            // 🔹 최신 순 / 오래된 순 정렬
+            sortedResults.sort((a, b) => {
+                if (sortOrder === 'newest') {
+                    return new Date(b.sermonDate) - new Date(a.sermonDate);
+                } else {
+                    return new Date(a.sermonDate) - new Date(b.sermonDate);
+                }
+            });
+
+            setFilteredSermons(sortedResults);
             setCurrentPage(1);
         } catch (error) {
             console.error('Search failed:', error);
-            setSermons([]);
+            setFilteredSermons([]);
         } finally {
             setLoading(false);
         }
     };
+
 
     return (
         <Container>
@@ -160,49 +230,126 @@ const SermonListPage = () => {
                             </SubFilterContainer>
                         )}
                     </MySermonFilterContainer>
+                    {/* 🔹 정렬 버튼 추가 */}
+                    <SortButtonContainer>
+
+                    </SortButtonContainer>
+                    {/* 🔹 Worship Type 선택 드롭다운 추가 */}
+                    <SelectContainer>
+
+                    </SelectContainer>
+                    {/* view 선택 버튼 추가 */}
+                    <ViewToggleContainer>
+
+                        <SortButton active={sortOrder === 'newest'} onClick={() => handleSortChange('newest')}>
+                            최신 순
+                        </SortButton>
+                        <SortButton active={sortOrder === 'oldest'} onClick={() => handleSortChange('oldest')}>
+                            오래된 순
+                        </SortButton>
+                        <ViewToggleButton active={viewType === 'list'} onClick={() => setViewType('list')}>
+                            View 1
+                        </ViewToggleButton>
+                        <ViewToggleButton active={viewType === 'carousel'} onClick={() => setViewType('carousel')}>
+                            View 2
+                        </ViewToggleButton>
+                        <StyledSelect
+                            id="worshipType"
+                            value={selectedWorshipType}
+                            onChange={(e) => handleWorshipTypeChange(e)}
+                        >
+                            <option value="all">예배 유형</option>
+                            <option value="새벽예배">새벽예배</option>
+                            <option value="수요예배">수요예배</option>
+                            <option value="금요성령집회">금요성령집회</option>
+                            <option value="주일1부예배">주일1부예배</option>
+                            <option value="주일2부예배">주일2부예배</option>
+                            <option value="주일3부예배">주일3부예배</option>
+                            <option value="주일청년예배">주일청년예배</option>
+                            <option value="주일오후예배">주일오후예배</option>
+                            <option value="특별집회">특별집회</option>
+                            <option value="부흥회">부흥회</option>
+                            <option value="월-새벽">월-새벽</option>
+                            <option value="기타">기타</option>
+                        </StyledSelect>
+                    </ViewToggleContainer>
+
                 </FilterContainer>
             </PageHeader>
             <ContentWrapper>
                 <SermonList>
                     {loading ? (
                         <LoadingText>로딩 중...</LoadingText>
-                    ) : currentSermons.length > 0 ? (
-                        currentSermons.map((sermon) => (
-                            <SermonCard
-                                key={sermon.sermonId}
-                                onClick={() => {
-                                    navigate(`detail/${sermon.sermonId}?type=${filterType}`);
-                                }}
-                            >
-                                <WorshipType>{sermon.worshipType}</WorshipType>
-                                <div>
-                                    <AuthorName>{sermon.ownerName}</AuthorName>
-                                    <SermonDate>
-                                        {new Date(sermon.sermonDate).toLocaleDateString('ko-KR', {
-                                            year: 'numeric',
-                                            month: 'long',
-                                            day: 'numeric',
-                                        })}
-                                    </SermonDate>
-                                </div>
-                                <SermonTitle>{sermon.sermonTitle}</SermonTitle>
-                                <ScriptureContainer>
-                                    <Scripture>{sermon.mainScripture}</Scripture>
-                                    {sermon.additionalScripture && (
-                                        <AdditionalScripture>{sermon.additionalScripture}</AdditionalScripture>
-                                    )}
-                                </ScriptureContainer>
-                                <SermonSummary>{sermon.summary}</SermonSummary>
-                                {filterType === 'my' && (
-                                    <PublicBadge isPublic={sermon.public}>
-                                        {sermon.public ? '공개' : '비공개'}
-                                    </PublicBadge>
-                                )}
-                            </SermonCard>
-                        ))
+                    ) : sermons.length > 0 ? (
+                        viewType === 'carousel' ? (
+                            <SermonGrid>
+                                {currentSermons.map((sermon) => (
+                                    <SermonCardSecondView key={sermon.sermonId}
+                                                onClick={() => navigate(`detail/${sermon.sermonId}?type=${filterType}`)}>
+                                        <WorshipType>{sermon.worshipType}</WorshipType>
+                                        <div>
+                                            <AuthorName>{sermon.ownerName}</AuthorName>
+                                            <SermonDate>
+                                                {new Date(sermon.sermonDate).toLocaleDateString('ko-KR', {
+                                                    year: 'numeric',
+                                                    month: 'long',
+                                                    day: 'numeric',
+                                                })}
+                                            </SermonDate>
+                                        </div>
+                                        <SermonTitleSecondView>{sermon.sermonTitle}</SermonTitleSecondView>
+                                        <ScriptureContainer>
+                                            <Scripture>{sermon.mainScripture}</Scripture>
+                                            {sermon.additionalScripture && (
+                                                <AdditionalScripture>{sermon.additionalScripture}</AdditionalScripture>
+                                            )}
+                                        </ScriptureContainer>
+                                        <SermonSummary>{sermon.summary}</SermonSummary>
+                                        {filterType === 'my' && (
+                                            <PublicBadge isPublic={sermon.public}>
+                                                {sermon.public ? '공개' : '비공개'}
+                                            </PublicBadge>
+                                        )}
+                                    </SermonCardSecondView>
+                                ))}
+                            </SermonGrid>
+                        ) : (
+                            <SermonList>
+                                {currentSermons.map((sermon) => (
+                                    <SermonCard key={sermon.sermonId}
+                                                onClick={() => navigate(`detail/${sermon.sermonId}?type=${filterType}`)}>
+                                        <WorshipType>{sermon.worshipType}</WorshipType>
+                                        <div>
+                                            <AuthorName>{sermon.ownerName}</AuthorName>
+                                            <SermonDate>
+                                                {new Date(sermon.sermonDate).toLocaleDateString('ko-KR', {
+                                                    year: 'numeric',
+                                                    month: 'long',
+                                                    day: 'numeric',
+                                                })}
+                                            </SermonDate>
+                                        </div>
+                                        <SermonTitle>{sermon.sermonTitle}</SermonTitle>
+                                        <ScriptureContainer>
+                                            <Scripture>{sermon.mainScripture}</Scripture>
+                                            {sermon.additionalScripture && (
+                                                <AdditionalScripture>{sermon.additionalScripture}</AdditionalScripture>
+                                            )}
+                                        </ScriptureContainer>
+                                        <SermonSummary>{sermon.summary}</SermonSummary>
+                                        {filterType === 'my' && (
+                                            <PublicBadge isPublic={sermon.public}>
+                                                {sermon.public ? '공개' : '비공개'}
+                                            </PublicBadge>
+                                        )}
+                                    </SermonCard>
+                                ))}
+                            </SermonList>
+                        )
                     ) : (
                         <EmptyText>등록된 설교가 없습니다.</EmptyText>
                     )}
+
                 </SermonList>
                 {!loading && sermons.length > 0 && (
                     <PaginationContainer>
@@ -322,6 +469,7 @@ const SermonDate = styled.span`
 const SermonTitle = styled.h2`
     font-family: 'Inter';
     font-weight: 800;
+    
     font-size: 24px;
     color: #212a3e;
     margin: 16px 0;
@@ -331,7 +479,7 @@ const SermonTitle = styled.h2`
 const ScriptureContainer = styled.div`
     display: flex;
     align-items: center;
-    gap: 12px;
+  //gap: 1px;
     margin-bottom: 16px;
 `;
 
@@ -362,7 +510,7 @@ const WorshipType = styled.span`
     font-family: 'Inter';
     font-weight: 500;
     font-size: 12px;
-    color: #4f3296;
+    color: grey;
 `;
 
 const SermonSummary = styled.p`
@@ -402,22 +550,7 @@ const MySermonFilterContainer = styled.div`
     align-items: center;
 `;
 
-const FilterButton = styled.button`
-    padding: 12px 24px;
-    border-radius: 8px;
-    border: none;
-    background-color: ${(props) => (props.active ? '#4f3296' : '#fff')};
-    color: ${(props) => (props.active ? '#fff' : '#4f3296')};
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    border: 1px solid ${(props) => (props.active ? '#4f3296' : '#eee')};
 
-    &:hover {
-        background-color: ${(props) => (props.active ? '#3a2570' : '#f8f5ff')};
-    }
-`;
 
 const SubFilterContainer = styled.div`
     display: flex;
@@ -431,7 +564,7 @@ const SubFilterButton = styled.button`
     padding: 8px 16px;
     border-radius: 6px;
     border: none;
-    background-color: ${(props) => (props.active ? '#4f3296' : 'transparent')};
+    background-color: ${(props) => (props.active ? '#4F3296' : '#ddd')};
     color: ${(props) => (props.active ? '#fff' : '#666')};
     font-size: 0.9rem;
     font-weight: 500;
@@ -564,4 +697,137 @@ const SearchButton = styled.button`
     }
 `;
 
-export default SermonListPage;
+
+
+
+//서원 추가
+
+
+const ViewToggleContainer = styled.div`
+    display: flex;
+    gap: 10px;
+    margin-left:auto;
+    //margin-left:400px;
+
+`;
+
+const ViewToggleButton = styled.button`
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    background-color: ${(props) => (props.active ? '#4F3296' : '#ddd')};
+    color: ${(props) => (props.active ? '#fff' : '#666')};
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s;
+
+    &:hover {
+        background-color: ${(props) => (props.active ? '#3b2570' : '#bbb')};
+    }
+`;
+    const FilterButton = styled.button`
+    padding: 12px 24px;
+    border-radius: 8px;
+    border: none;
+        background-color: ${(props) => (props.active ? '#4F3296' : '#ddd')};
+        color: ${(props) => (props.active ? '#fff' : '#666')};
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    border: 1px solid ${(props) => (props.active ? '#4f3296' : '#eee')};
+
+    &:hover {
+        background-color: ${(props) => (props.active ? '#3b2570' : '#bbb')};
+    }
+`;
+const SermonCardSecondView = styled.div`
+    box-sizing: border-box;
+    position: relative;
+    width: 100%;
+    max-width: 800px;
+    min-height: 180px;
+    margin: 0 auto;
+    padding: 24px;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s ease;
+    cursor: pointer;
+
+    &:hover {
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        transform: translateY(-2px);
+    }
+`;
+
+const SermonGrid = styled.div`
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: 20px;
+        padding: 20px;
+    `;
+
+const SermonTitleSecondView = styled.h2`
+    font-family: 'Inter';
+    font-weight: 800;
+    font-size: 24px;
+    color: #212a3e;
+    margin: 16px 0;
+    padding-right: 60px;
+`;
+
+const SortButtonContainer = styled.div`
+    display: flex;
+    gap: 10px;
+    //margin-left:auto;
+
+    margin-right: auto;
+`;
+
+const SortButton = styled.button`
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    background-color: ${(props) => (props.active ? '#4F3296' : '#ddd')};
+    color: ${(props) => (props.active ? '#fff' : '#666')};
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s;
+
+    &:hover {
+        background-color: ${(props) => (props.active ? '#3b2570' : '#bbb')};
+    }
+`;
+
+
+    const SelectContainer = styled.div`
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    `;
+
+    const StyledSelect = styled.select`
+        padding: 8px 16px;
+        
+        border: thin;
+        border-radius: 6px;
+        background-color: white;
+        color: black;
+        font-weight: bold;
+        cursor: pointer;
+        transition: 0.3s;
+        font-size: 14px;
+        outline: 3px solid #4F3296; 
+        text-align: left;
+        text-align-last:center;
+        -ms-text-align-last: center;
+        -moz-text-align-last: center;
+        
+    `;
+
+
+
+
+    export default SermonListPage;
