@@ -10,6 +10,7 @@ const BookmarkPage = () => {
     const [bookmarks, setBookmarks] = useState([]);
     const [loading, setLoading] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
+    const [isSermonView, setIsSermonView] = useState(false);
     const { userId } = useUserState();
 
     const fetchBookmarks = async () => {
@@ -80,7 +81,13 @@ const BookmarkPage = () => {
         <Container>
             <TitleContainer>
                 <SmallText>북마크</SmallText>
-                <StrongText>즐겨찾기한 말씀</StrongText>
+                <TitleRow>
+                    <StrongText>{isSermonView ? '즐겨찾는 설교' : '즐겨찾는 구절'}</StrongText>
+                    <ButtonGroup>
+                        <ToggleButton onClick={() => setIsSermonView(false)} active={!isSermonView}>성경 구절</ToggleButton>
+                        <ToggleButton onClick={() => setIsSermonView(true)} active={isSermonView}>설교</ToggleButton>
+                    </ButtonGroup>
+                </TitleRow>
             </TitleContainer>
 
             <ResultsContainer>
@@ -157,6 +164,32 @@ const TitleContainer = styled.div`
     display: flex;
     flex-direction: column;
     gap: 4px;
+`;
+
+const TitleRow = styled.div`
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+`;
+
+const ButtonGroup = styled.div`
+    display: flex;
+    gap: 10px;
+`;
+
+const ToggleButton = styled.button`
+    background: ${(props) => (props.active ? '#4f3296' : '#e9ecef')};
+    color: ${(props) => (props.active ? 'white' : '#495057')};
+    padding: 10px 15px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.2s ease;
+
+    &:hover {
+        background: ${(props) => (props.active ? '#3a2570' : '#d6d6d6')};
+    }
 `;
 
 const SmallText = styled.div`
@@ -287,9 +320,9 @@ const PageButton = styled.button`
 
     &:hover {
         background-color: ${(props) => {
-            if (props.disabled) return '#f5f5f5';
-            return props.active ? '#3a2570' : '#e5e5e5';
-        }};
+    if (props.disabled) return '#f5f5f5';
+    return props.active ? '#3a2570' : '#e5e5e5';
+}};
     }
 `;
 
