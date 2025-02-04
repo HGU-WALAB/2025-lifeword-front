@@ -333,9 +333,8 @@ const EditSermonPage = () => {
 };
 
 const Container = styled.div`
-    margin-left: 280px;
     padding: 40px;
-    width: calc(100vw - 360px);
+    width: 100vw;
     background-color: #f5f5f5;
     min-height: 100vh;
     overflow-y: auto;
