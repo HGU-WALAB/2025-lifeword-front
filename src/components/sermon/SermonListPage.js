@@ -39,19 +39,25 @@ const SermonListPage = () => {
     const fetchSermons = useCallback(async () => {
         try {
             setLoading(true);
+            let data = [];
+
             if (filterType === 'public') {
-                const data = await getPublicSermons();
-                setSermons(data);
+                data = await getPublicSermons();
             } else {
-                const data = await getUserSermons(userId, mySermonFilter);
-                setSermons(data);
+                data = await getUserSermons(userId, mySermonFilter);
             }
+
+            // 🔹 sermonDate 기준 최신순(내림차순) 정렬
+            data.sort((a, b) => new Date(b.sermonDate) - new Date(a.sermonDate));
+
+            setSermons(data);
         } catch (error) {
             console.error('Error fetching sermons:', error);
         } finally {
             setLoading(false);
         }
     }, [filterType, userId, mySermonFilter]);
+
 
     useEffect(() => {
         fetchSermons();
