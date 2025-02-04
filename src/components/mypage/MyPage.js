@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
-import { User, Lock, Bookmark } from 'lucide-react';
+import { User, Mail, Bookmark, Shield, Award, Lock } from 'lucide-react';
 import PasswordModal from "./PasswordModal";
 import BookmarkPage from './BookmarkPage';
 import { useUserState } from '../../recoil/utils';
@@ -48,7 +48,12 @@ const MyPage = () => {
                         </InfoCard>
 
                         <InfoCard>
-                            <Label>권한</Label>
+                            <InfoHeader>
+                                <CardIcon>
+                                    <Shield size={20} />
+                                </CardIcon>
+                                <Label>권한</Label>
+                            </InfoHeader>
                             <Value>{isAdmin ? '관리자' : '일반 사용자'}</Value>
                         </InfoCard>
                     </InfoSection>
@@ -183,6 +188,19 @@ const SectionTitle = styled.h2`
     font-size: 1.2rem;
     color: #333;
     margin-bottom: 1.5rem;
+`;
+
+const InfoHeader = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+`;
+
+const CardIcon = styled.div`
+    color: #4f3296;
+    display: flex;
+    align-items: center;
 `;
 
 const ChangePasswordButton = styled.button`
