@@ -2,8 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { getSermonDetail, deleteSermon } from '../../services/APIService';
-import { ArrowLeft, Pencil, Trash2 } from 'lucide-react';
-import { useUserState, useOriginalUserId } from '../../recoil/utils';
+import {
+    ArrowLeft,
+    Pencil,
+    Trash2,
+    ChevronDown,
+    ChevronUp,
+    Lock,
+    Unlock,
+    ChevronLeft,
+    ChevronRight,
+} from 'lucide-react';
+import { useUserState } from '../../recoil/utils';
 
 const SermonDetailPage = () => {
     const { id } = useParams();
@@ -11,9 +21,9 @@ const SermonDetailPage = () => {
     const [sermon, setSermon] = useState(null);
     const [loading, setLoading] = useState(true);
     const { userId: currentUserId, isAdmin } = useUserState();
-    const [originalUserId, setOriginalUserId] = useOriginalUserId();
     const currentPath = window.location.pathname;
     const isAdminPage = currentPath.includes('/admin/sermons');
+    const [isMetaSectionOpen, setIsMetaSectionOpen] = useState(true);
 
     useEffect(() => {
         const fetchSermonDetail = async () => {
@@ -47,10 +57,6 @@ const SermonDetailPage = () => {
     };
 
     const handleEdit = () => {
-        if (isAdminPage) {
-            setOriginalUserId(sermon.userId);
-        }
-
         if (currentPath.includes('/admin/sermons')) {
             navigate(`/main/admin/sermons/edit/${id}`);
         } else {
@@ -68,187 +74,295 @@ const SermonDetailPage = () => {
 
     return (
         <Container>
-            <ContentWrapper>
-                <Header>
-                    <TopBar>
-                        <BackButton onClick={() => navigate(-1)}>
-                            <ArrowLeft size={20} />
-                            <span>뒤로 가기</span>
-                        </BackButton>
-                        {(sermon?.userId === currentUserId || (isAdmin && isAdminPage)) && (
-                            <ActionButtons>
-                                <ActionButton onClick={handleEdit}>
-                                    <Pencil size={16} />
-                                </ActionButton>
-                                <ActionButton onClick={handleDelete} isDelete>
-                                    <Trash2 size={16} />
-                                </ActionButton>
-                            </ActionButtons>
-                        )}
-                    </TopBar>
-                </Header>
-                        <Header2>
-                            <MetaInfo>
-                                <AuthorDate>
-                                    <Author>{sermon.ownerName}</Author>
-                                    <DateInfo>
-                                        <SermonDate>
-                                            {new Date(sermon.sermonDate).toLocaleDateString('ko-KR', {
-                                                year: 'numeric',
-                                                month: 'long',
-                                                day: 'numeric',
-                                            })}
-                                        </SermonDate>
-                                        <CreatedDate>
-                                            작성일:{' '}
-                                            {new Date(sermon.createdAt).toLocaleDateString('ko-KR', {
-                                                year: 'numeric',
-                                                month: 'long',
-                                                day: 'numeric',
-                                            })}
-                                        </CreatedDate>
-                                    </DateInfo>
-                                </AuthorDate>
-                                <Badge>{sermon.worshipType}</Badge>
-                            </MetaInfo>
+            <PageHeader>
+                <TopBar>
+                    <BackButton onClick={() => navigate(-1)}>
+                        <ArrowLeft size={20} />
+                        <span>뒤로 가기</span>
+                    </BackButton>
+                    {(sermon?.userId === currentUserId || (isAdmin && isAdminPage)) && (
+                        <ActionButtons>
+                            <ActionButton onClick={handleEdit}>
+                                <Pencil size={16} />
+                            </ActionButton>
+                            <ActionButton onClick={handleDelete} isDelete>
+                                <Trash2 size={16} />
+                            </ActionButton>
+                        </ActionButtons>
+                    )}
+                </TopBar>
+                <Title>{sermon.sermonTitle}</Title>
+                <Description>
+                    {sermon.worshipType} | {new Date(sermon.sermonDate).toLocaleDateString('ko-KR')}
+                </Description>
+            </PageHeader>
+
+            <FormContainer isMetaOpen={isMetaSectionOpen}>
+                <MetaSectionWrapper isOpen={isMetaSectionOpen}>
+                    <ToggleButton onClick={() => setIsMetaSectionOpen(!isMetaSectionOpen)} type="button">
+                        {isMetaSectionOpen ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
+                    </ToggleButton>
+                    <MetaSection isOpen={isMetaSectionOpen}>
+                        <FormSection>
+                            <Label>작성자</Label>
+                            <AuthorInfo>
+                                <Author>{sermon.ownerName}</Author>
+                                <DateInfo>
+                                    <SermonDate>
+                                        {new Date(sermon.sermonDate).toLocaleDateString('ko-KR', {
+                                            year: 'numeric',
+                                            month: 'long',
+                                            day: 'numeric',
+                                        })}
+                                    </SermonDate>
+                                    <CreatedDate>
+                                        작성일:{' '}
+                                        {new Date(sermon.createdAt).toLocaleDateString('ko-KR', {
+                                            year: 'numeric',
+                                            month: 'long',
+                                            day: 'numeric',
+                                        })}
+                                    </CreatedDate>
+                                </DateInfo>
+                            </AuthorInfo>
+                        </FormSection>
+
+                        <FormSection>
+                            <Label>예배 종류</Label>
+                            <Badge>{sermon.worshipType}</Badge>
+                        </FormSection>
+
+                        <FormSection>
+                            <Label>설교 제목</Label>
                             <Title>{sermon.sermonTitle}</Title>
-                            <Scripture>
-                                <MainScripture>{sermon.mainScripture}</MainScripture>
-                                {sermon.additionalScripture && (
-                                    <AdditionalScripture>{sermon.additionalScripture}</AdditionalScripture>
+                        </FormSection>
+
+                        <FormSection>
+                            <Label>성경 구절</Label>
+                            <ScriptureContainer>
+                                <Scripture>{sermon.mainScripture}</Scripture>
+                                {sermon.additionalScripture && <Scripture>{sermon.additionalScripture}</Scripture>}
+                            </ScriptureContainer>
+                        </FormSection>
+
+                        <FormSection>
+                            <Label>설교 요약</Label>
+                            <Summary>{sermon.summary}</Summary>
+                        </FormSection>
+
+                        {sermon.notes && (
+                            <FormSection>
+                                <Label>노트</Label>
+                                <Notes>{sermon.notes}</Notes>
+                            </FormSection>
+                        )}
+
+                        <FormSection>
+                            <Label>공개 설정</Label>
+                            <PrivacyStatus>
+                                {sermon.public ? (
+                                    <>
+                                        <Unlock size={16} />
+                                        전체 공개
+                                    </>
+                                ) : (
+                                    <>
+                                        <Lock size={16} />
+                                        비공개
+                                    </>
                                 )}
-                            </Scripture>
-
-                </Header2>
-
-                <ScrollableSection>
-                    <Section>
-                        <SectionTitle>요약</SectionTitle>
-                        <SummaryText>{sermon.summary}</SummaryText>
-                    </Section>
-
-                    {sermon.notes && (
-                        <Section>
-                            <SectionTitle>노트</SectionTitle>
-                            <NotesText>{sermon.notes}</NotesText>
-                        </Section>
-                    )}
-
-                    {sermon.recordInfo && (
-                        <Section>
-                            <SectionTitle>설교록 정보</SectionTitle>
-                            <RecordInfo>{sermon.recordInfo}</RecordInfo>
-                        </Section>
-                    )}
-
-                    <Section>
-                        <SectionTitle>설교 내용</SectionTitle>
-                        <ContentView
-                            dangerouslySetInnerHTML={{
-                                __html: sermon.contents[0]?.contentText || '',
-                            }}
-                        />
-                    </Section>
-
-                    <MetaSection>
-                        <MetaItem>
-                            <MetaLabel>파일 코드</MetaLabel>
-                            <MetaValue>{sermon.fileCode}</MetaValue>
-                        </MetaItem>
-                        <MetaItem>
-                            <MetaLabel>공개 여부</MetaLabel>
-                            <MetaValue>{sermon.public ? '공개' : '비공개'}</MetaValue>
-                        </MetaItem>
-                        <MetaItem>
-                            <MetaLabel>최종 수정일</MetaLabel>
-                            <MetaValue>
-                                {new Date(sermon.updatedAt).toLocaleDateString('ko-KR', {
-                                    year: 'numeric',
-                                    month: 'long',
-                                    day: 'numeric',
-                                })}
-                            </MetaValue>
-                        </MetaItem>
+                            </PrivacyStatus>
+                        </FormSection>
                     </MetaSection>
-                </ScrollableSection>
-            </ContentWrapper>
+                </MetaSectionWrapper>
+
+                <ContentSection className="editor-container" isMetaOpen={isMetaSectionOpen}>
+                    <Label>설교 내용</Label>
+                    <Content dangerouslySetInnerHTML={{ __html: sermon.contents[0]?.contentText || '' }} />
+                </ContentSection>
+            </FormContainer>
         </Container>
     );
 };
 
 const Container = styled.div`
-  margin-left: 320px;
-  padding: 48px;
-  width: calc(100vw - 400px);
-  min-height: 91vh;
-  background-color: #f5f5f5;
-
-  @media (max-width: 1024px) {
     margin-left: 280px;
-    width: calc(100vw - 320px);
-    padding: 32px;
-  }
+    padding: 40px;
+    width: calc(100vw - 360px);
+    background-color: #f5f5f5;
+    min-height: 100vh;
+    overflow-y: auto;
+`;
 
-  @media (max-width: 768px) {
-    margin-left: 0;
+const PageHeader = styled.div`
+    margin-bottom: 40px;
     width: 100%;
-    padding: 24px;
-  }
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
 `;
 
-const ContentWrapper = styled.div`
-    max-width: 800px;
-    margin: 0 auto;
-    background: white;
-    border-radius: 16px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
-    //padding: 48px;
-`;
-
-const Header = styled.div`
-  position: sticky;
-  top: 0;
-  background: white;
-  z-index: 100;
-  width: 100%;
-  padding: 24px 48px 24px 48px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  border-radius: 16px 16px 0 0;
-  //margin-bottom: 24px;
-`;
-
-const Header2 = styled.div`
-  position: sticky;
-  top: 0;
-  background: white;
-  z-index: 100;
-  width: 100%;
-  padding: 24px 48px 24px 48px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  //margin-bottom: 24px;
-`;
-
-
-const ScrollableSection = styled.div`
-  background: white;
-  width: 100%;
-  padding: 24px 48px 24px 48px;
-`;
-
-
-const MetaInfo = styled.div`
+const TopBar = styled.div`
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: center;
     margin-bottom: 24px;
+`;
 
-    @media (max-width: 480px) {
-        flex-direction: column;
-        gap: 16px;
+const BackButton = styled.button`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: transparent;
+    border: none;
+    color: #4f3296;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-bottom: 24px;
+    border-radius: 8px;
+
+    &:hover {
+        background: #f3f4f6;
+    }
+
+    svg {
+        transition: transform 0.2s ease;
+    }
+
+    &:hover svg {
+        transform: translateX(-4px);
     }
 `;
 
-const AuthorDate = styled.div`
+const ActionButtons = styled.div`
+    display: flex;
+    gap: 8px;
+`;
+
+const ActionButton = styled.button`
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: none;
+    background: ${(props) => (props.isDelete ? '#fee2e2' : '#f3f4f6')};
+    color: ${(props) => (props.isDelete ? '#dc2626' : '#4f3296')};
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+        background: ${(props) => (props.isDelete ? '#fecaca' : '#e5e7eb')};
+        color: ${(props) => (props.isDelete ? '#b91c1c' : '#3a2570')};
+    }
+`;
+
+const Title = styled.h1`
+    font-size: 2.5rem;
+    color: #333;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+`;
+
+const Description = styled.p`
+    color: #666;
+    font-size: 1.1rem;
+`;
+
+const FormContainer = styled.div`
+    display: grid;
+    grid-template-columns: ${(props) => (props.isMetaOpen ? '400px 1fr' : '50px 1fr')};
+    gap: 32px;
+    max-width: 1200px;
+    margin: 0 auto;
+    margin-bottom: 40px;
+    transition: all 0.3s ease;
+    align-items: start;
+
+    @media (max-width: 1200px) {
+        grid-template-columns: 1fr;
+        padding: 0 20px;
+    }
+`;
+
+const ToggleButton = styled.button`
+    position: absolute;
+    right: -16px;
+    top: 20px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: white;
+    border: 2px solid #eee;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 10;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    color: #4f3296;
+
+    &:hover {
+        background: #4f3296;
+        border-color: #4f3296;
+        color: white;
+        transform: scale(1.1);
+    }
+
+    svg {
+        width: 18px;
+        height: 18px;
+        transition: all 0.2s ease;
+    }
+`;
+
+const MetaSectionWrapper = styled.div`
+    position: relative;
+    min-width: ${(props) => (props.isOpen ? '400px' : '50px')};
+    transition: all 0.3s ease;
+`;
+
+const MetaSection = styled.div`
+    background: white;
+    padding: 32px;
+    border-radius: 16px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+    height: fit-content;
+    transform: translateX(${(props) => (props.isOpen ? '0' : '-100%')});
+    opacity: ${(props) => (props.isOpen ? 1 : 0)};
+    visibility: ${(props) => (props.isOpen ? 'visible' : 'hidden')};
+    transition: all 0.3s ease;
+`;
+
+const ContentSection = styled.div`
+    background: white;
+    padding: 32px;
+    border-radius: 16px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+    min-height: 600px;
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 40px;
+`;
+
+const FormSection = styled.div`
+    margin-bottom: 24px;
+`;
+
+const Label = styled.div`
+    font-size: 14px;
+    font-weight: 600;
+    color: #4f3296;
+    margin-bottom: 8px;
+`;
+
+const AuthorInfo = styled.div`
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -286,23 +400,7 @@ const Badge = styled.span`
     font-weight: 500;
 `;
 
-const Title = styled.h1`
-    font-size: 32px;
-    color: #212a3e;
-    margin-bottom: 16px;
-    font-weight: 800;
-    line-height: 1.3;
-
-    @media (max-width: 768px) {
-        font-size: 28px;
-    }
-
-    @media (max-width: 480px) {
-        font-size: 24px;
-    }
-`;
-
-const Scripture = styled.div`
+const ScriptureContainer = styled.div`
     display: flex;
     gap: 16px;
     font-size: 16px;
@@ -314,45 +412,11 @@ const Scripture = styled.div`
     }
 `;
 
-const MainScripture = styled.span`
+const Scripture = styled.span`
     font-weight: 500;
 `;
 
-const AdditionalScripture = styled.span`
-    color: #666;
-    &:before {
-        content: '|';
-        margin-right: 16px;
-        color: #ddd;
-    }
-
-    @media (max-width: 480px) {
-        &:before {
-            content: '';
-            margin-right: 0;
-        }
-    }
-`;
-
-const Section = styled.section`
-    margin-bottom: 40px;
-    padding-bottom: 32px;
-    border-bottom: 1px solid #f3f4f6;
-
-    &:last-child {
-        margin-bottom: 0;
-        border-bottom: none;
-    }
-`;
-
-const SectionTitle = styled.h2`
-    font-size: 20px;
-    color: #212a3e;
-    margin-bottom: 16px;
-    font-weight: 600;
-`;
-
-const SummaryText = styled.p`
+const Summary = styled.p`
     font-size: 16px;
     line-height: 1.8;
     color: #4b5563;
@@ -362,19 +426,20 @@ const SummaryText = styled.p`
     border-radius: 8px;
 `;
 
-const NotesText = styled(SummaryText)`
+const Notes = styled(Summary)`
     white-space: pre-wrap;
 `;
 
-const RecordInfo = styled.p`
+const PrivacyStatus = styled.span`
+    padding: 8px 16px;
+    background: #f3f4f6;
+    border-radius: 20px;
     font-size: 14px;
-    color: #666;
-    padding: 16px;
-    background: #f8f9fa;
-    border-radius: 8px;
+    color: #4f3296;
+    font-weight: 500;
 `;
 
-const ContentView = styled.div`
+const Content = styled.div`
     font-size: 16px;
     line-height: 1.8;
     color: #333;
@@ -659,101 +724,6 @@ const LoadingText = styled.div`
 
 const EmptyText = styled(LoadingText)`
     color: #999;
-`;
-
-const MetaSection = styled.div`
-    margin-top: 40px;
-    padding-top: 24px;
-    border-top: 2px solid #f3f4f6;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 24px;
-
-    @media (max-width: 768px) {
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    }
-
-    @media (max-width: 480px) {
-        grid-template-columns: 1fr;
-        gap: 16px;
-    }
-`;
-
-const MetaItem = styled.div`
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-`;
-
-const MetaLabel = styled.span`
-    font-size: 12px;
-    color: #888;
-    text-transform: uppercase;
-`;
-
-const MetaValue = styled.span`
-    font-size: 14px;
-    color: #333;
-    font-weight: 500;
-`;
-
-const BackButton = styled.button`
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 16px;
-    background: transparent;
-    border: none;
-    color: #4f3296;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    margin-bottom: 24px;
-    border-radius: 8px;
-
-    &:hover {
-        background: #f3f4f6;
-    }
-
-    svg {
-        transition: transform 0.2s ease;
-    }
-
-    &:hover svg {
-        transform: translateX(-4px);
-    }
-`;
-
-const TopBar = styled.div`
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 24px;
-`;
-
-const ActionButtons = styled.div`
-    display: flex;
-    gap: 8px;
-`;
-
-const ActionButton = styled.button`
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    border: none;
-    background: ${(props) => (props.isDelete ? '#fee2e2' : '#f3f4f6')};
-    color: ${(props) => (props.isDelete ? '#dc2626' : '#4f3296')};
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.2s ease;
-
-    &:hover {
-        background: ${(props) => (props.isDelete ? '#fecaca' : '#e5e7eb')};
-        color: ${(props) => (props.isDelete ? '#b91c1c' : '#3a2570')};
-    }
 `;
 
 export default SermonDetailPage;
