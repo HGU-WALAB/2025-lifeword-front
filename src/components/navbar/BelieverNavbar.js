@@ -1,14 +1,17 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Zap, Search, Bookmark, LogOut, BookOpen, User } from 'lucide-react';
+import { Zap, Search, Bookmark, LogOut, BookOpen, User, ChevronLeft } from 'lucide-react';
 import LogoWhite from '../../assets/LogoWhite.png';
-import { NavContainer, LogoContainer, Logo, NavItems, NavItem, LogoutButton } from './NavbarStyles';
+import { NavContainer, LogoContainer, Logo, NavItems, NavItem, LogoutButton, ToggleButton } from './NavbarStyles';
 import { useLogout } from './navbarUtils';
+import { useRecoilState } from 'recoil';
+import { isNavExpandedState } from '../../recoil/atoms';
 
 const BelieverNavbar = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const logout = useLogout();
+    const [isExpanded, setIsExpanded] = useRecoilState(isNavExpandedState);
 
     const isActive = (path) => {
         if (path === '/sermon-list') {
@@ -18,33 +21,48 @@ const BelieverNavbar = () => {
     };
 
     return (
-        <NavContainer>
+        <NavContainer isExpanded={isExpanded}>
+            <ToggleButton isExpanded={isExpanded} onClick={() => setIsExpanded(!isExpanded)}>
+                <ChevronLeft />
+            </ToggleButton>
             <LogoContainer>
-                <Logo src={LogoWhite} alt="Bibly Logo" onClick={() => navigate('/main')} />
+                <Logo src={LogoWhite} alt="Bibly Logo" onClick={() => navigate('/main')} isExpanded={isExpanded} />
             </LogoContainer>
             <NavItems>
-                <NavItem onClick={() => navigate('/main/quick-reading')} active={isActive('/quick-reading')}>
+                <NavItem
+                    onClick={() => navigate('/main/quick-reading')}
+                    active={isActive('/quick-reading')}
+                    isExpanded={isExpanded}
+                >
                     <Zap size={24} />
                     <span>빠른 성경 읽기</span>
                 </NavItem>
-                <NavItem onClick={() => navigate('/main/search')} active={isActive('/search')}>
+                <NavItem onClick={() => navigate('/main/search')} active={isActive('/search')} isExpanded={isExpanded}>
                     <Search size={24} />
                     <span>검색</span>
                 </NavItem>
-                <NavItem onClick={() => navigate('/main/bookmarks')} active={isActive('/bookmarks')}>
+                <NavItem
+                    onClick={() => navigate('/main/bookmarks')}
+                    active={isActive('/bookmarks')}
+                    isExpanded={isExpanded}
+                >
                     <Bookmark size={24} />
                     <span>북마크</span>
                 </NavItem>
-                <NavItem onClick={() => navigate('/main/sermon-list')} active={isActive('/sermon-list')}>
+                <NavItem
+                    onClick={() => navigate('/main/sermon-list')}
+                    active={isActive('/sermon-list')}
+                    isExpanded={isExpanded}
+                >
                     <BookOpen size={24} />
                     <span>설교 목록</span>
                 </NavItem>
-                <NavItem onClick={() => navigate('/main/mypage')} active={isActive('/mypage')}>
+                <NavItem onClick={() => navigate('/main/mypage')} active={isActive('/mypage')} isExpanded={isExpanded}>
                     <User size={24} />
                     <span>마이페이지</span>
                 </NavItem>
             </NavItems>
-            <LogoutButton onClick={() => logout()}>
+            <LogoutButton onClick={logout} isExpanded={isExpanded}>
                 <LogOut size={24} />
                 <span>로그아웃</span>
             </LogoutButton>

@@ -181,9 +181,8 @@ const SermonManagementPage = () => {
 };
 
 const Container = styled.div`
-    margin-left: 320px;
     padding: 40px;
-    width: calc(100vw - 400px);
+    width: 100vw;
     min-height: 92vh;
     background-color: #f5f5f5;
 `;

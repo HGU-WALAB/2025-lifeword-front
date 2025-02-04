@@ -35,7 +35,7 @@ const MyPage = () => {
     };
     const handlePasswordCheckChange = (value) => {
         setNewPassword(value);
-        if(!newPasswordConfirm ){
+        if (!newPasswordConfirm) {
             setPasswordMatchMessage('');
             return;
         }
@@ -45,13 +45,11 @@ const MyPage = () => {
         } else {
             setPasswordMatchMessage('비밀번호가 일치하지 않습니다.');
         }
-
     };
-
 
     const handlePasswordConfirmChange = (value) => {
         setNewPasswordConfirm(value);
-        if(!newPassword || !newPasswordConfirm){
+        if (!newPassword || !newPasswordConfirm) {
             setPasswordMatchMessage('');
             return;
         }
@@ -61,7 +59,6 @@ const MyPage = () => {
         } else {
             setPasswordMatchMessage('비밀번호가 일치하지 않습니다.');
         }
-
     };
 
     return (
@@ -129,7 +126,9 @@ const MyPage = () => {
                                 onChange={(e) => handlePasswordConfirmChange(e.target.value)}
                                 placeholder="새로운 비밀번호 확인"
                             />
-                            <PasswordMessage isMatch={ newPasswordConfirm && newPassword && newPassword === newPasswordConfirm}>
+                            <PasswordMessage
+                                isMatch={newPasswordConfirm && newPassword && newPassword === newPasswordConfirm}
+                            >
                                 {newPassword && newPasswordConfirm && passwordMatchMessage}
                             </PasswordMessage>
                             <ButtonGroup>
@@ -158,7 +157,6 @@ const MyPage = () => {
     );
 };
 
-// 스타일 컴포넌트 추가 부분
 const PasswordMessage = styled.div`
     font-size: 0.9rem;
     color: ${(props) => (props.isMatch ? 'green' : 'red')};
@@ -167,9 +165,9 @@ const PasswordMessage = styled.div`
 `;
 
 const Container = styled.div`
-    margin-left: 320px;
+    margin-left: 100px;
     padding: 40px;
-    width: calc(100vw - 400px);
+    width: 100vw;
     min-height: 92vh;
     background-color: #f5f5f5;
 
@@ -184,7 +182,6 @@ const Container = styled.div`
         width: calc(100vw - 280px);
     }
 `;
-
 
 const PageHeader = styled.div`
     display: flex;
