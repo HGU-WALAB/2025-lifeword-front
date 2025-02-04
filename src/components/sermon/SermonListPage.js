@@ -17,7 +17,9 @@ const SermonListPage = () => {
     const [searchType, setSearchType] = useState('title');
     const [searchValue, setSearchValue] = useState('');
     const { userId } = useUserState();
-    const [viewType, setViewType] = useState('list'); // 'list' (기본값) 또는 'carousel'
+    const [viewType, setViewType] = useState('list'); // 'list' (기본값)
+    const [sortOrder, setSortOrder] = useState('newest'); // 'newest' (최신순) 또는 'oldest' (오래된 순)
+
 
     // URL 파라미터에서 필터 상태 읽기
     const filterType = searchParams.get('type') || 'public';
@@ -47,8 +49,14 @@ const SermonListPage = () => {
                 data = await getUserSermons(userId, mySermonFilter);
             }
 
-            // 🔹 sermonDate 기준 최신순(내림차순) 정렬
-            data.sort((a, b) => new Date(b.sermonDate) - new Date(a.sermonDate));
+            // 🔹 sortOrder에 따라 정렬 방식 변경
+            data.sort((a, b) => {
+                if (sortOrder === 'newest') {
+                    return new Date(b.sermonDate) - new Date(a.sermonDate); // 최신순
+                } else {
+                    return new Date(a.sermonDate) - new Date(b.sermonDate); // 오래된 순
+                }
+            });
 
             setSermons(data);
         } catch (error) {
@@ -56,7 +64,8 @@ const SermonListPage = () => {
         } finally {
             setLoading(false);
         }
-    }, [filterType, userId, mySermonFilter]);
+    }, [filterType, userId, mySermonFilter, sortOrder]);
+
 
 
     useEffect(() => {
@@ -167,9 +176,18 @@ const SermonListPage = () => {
                             </SubFilterContainer>
                         )}
                     </MySermonFilterContainer>
+                    {/* 🔹 정렬 버튼 추가 */}
+                    <SortButtonContainer>
 
+                    </SortButtonContainer>
                     {/* view 선택 버튼 추가 */}
                     <ViewToggleContainer>
+                        <SortButton active={sortOrder === 'newest'} onClick={() => setSortOrder('newest')}>
+                            최신 순
+                        </SortButton>
+                        <SortButton active={sortOrder === 'oldest'} onClick={() => setSortOrder('oldest')}>
+                            오래된 순
+                        </SortButton>
                         <ViewToggleButton active={viewType === 'list'} onClick={() => setViewType('list')}>
                             View 1
                         </ViewToggleButton>
@@ -666,14 +684,14 @@ const SermonCardSecondView = styled.div`
     }
 `;
 
-    const SermonGrid = styled.div`
+const SermonGrid = styled.div`
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
         gap: 20px;
         padding: 20px;
     `;
 
-    const SermonTitleSecondView = styled.h2`
+const SermonTitleSecondView = styled.h2`
     font-family: 'Inter';
     font-weight: 800;
     font-size: 24px;
@@ -682,6 +700,28 @@ const SermonCardSecondView = styled.div`
     padding-right: 60px;
 `;
 
+const SortButtonContainer = styled.div`
+    display: flex;
+    gap: 10px;
+    //margin-left:auto;
+
+    margin-right: auto;
+`;
+
+const SortButton = styled.button`
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    background-color: ${(props) => (props.active ? '#4F3296' : '#ddd')};
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s;
+
+    &:hover {
+        background-color: ${(props) => (props.active ? '#3b2570' : '#bbb')};
+    }
+`;
 
 
 export default SermonListPage;
