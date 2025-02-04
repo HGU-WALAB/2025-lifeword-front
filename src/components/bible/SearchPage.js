@@ -151,8 +151,6 @@ const SearchPage = () => {
 };
 
 const Container = styled.div`
-    margin-left: 280px;
-    width: calc(100vw - 280px);
     height: 100vh;
     display: flex;
     flex-direction: column;

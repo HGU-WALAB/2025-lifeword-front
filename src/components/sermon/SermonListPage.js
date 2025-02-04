@@ -240,9 +240,9 @@ const SermonListPage = () => {
 };
 
 const Container = styled.div`
-    margin-left: 320px;
+    margin-left: 100px;
     padding: 40px;
-    width: calc(100vw - 400px);
+    width: calc(100vw);
     min-height: 91vh;
     background-color: #f5f5f5;
 `;
