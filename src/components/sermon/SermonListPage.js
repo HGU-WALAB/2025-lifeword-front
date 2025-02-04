@@ -19,6 +19,8 @@ const SermonListPage = () => {
     const { userId } = useUserState();
     const [viewType, setViewType] = useState('list'); // 'list' (기본값)
     const [sortOrder, setSortOrder] = useState('newest'); // 'newest' (최신순) 또는 'oldest' (오래된 순)
+    const [filteredSermons, setFilteredSermons] = useState([]);
+    const [selectedWorshipType, setSelectedWorshipType] = useState('all'); // 기본값: 전체 보기
 
 
     // URL 파라미터에서 필터 상태 읽기
@@ -37,6 +39,20 @@ const SermonListPage = () => {
         setSearchParams(newParams);
         setCurrentPage(1);
     };
+    const handleWorshipTypeChange = (event) => {
+
+
+        const newType = event.target.value;
+        setSelectedWorshipType(newType);
+
+
+        // 🔹 검색 중이면 검색 결과에서 예배 유형 필터링
+        if (isSearching) {
+            handleSearch();
+        } else {
+            fetchSermons();
+        }
+    };
 
     const fetchSermons = useCallback(async () => {
         try {
@@ -49,12 +65,22 @@ const SermonListPage = () => {
                 data = await getUserSermons(userId, mySermonFilter);
             }
 
-            // 🔹 sortOrder에 따라 정렬 방식 변경
+            // 🔹 검색 결과 유지
+            if (filteredSermons.length > 0) {
+                data = [...filteredSermons];
+            }
+
+            // 🔹 선택된 worshipType이 있으면 필터링
+            if (selectedWorshipType !== 'all') {
+                data = data.filter((sermon) => sermon.worshipType === selectedWorshipType);
+            }
+
+            // 🔹 최신순 / 오래된 순 정렬
             data.sort((a, b) => {
                 if (sortOrder === 'newest') {
-                    return new Date(b.sermonDate) - new Date(a.sermonDate); // 최신순
+                    return new Date(b.sermonDate) - new Date(a.sermonDate);
                 } else {
-                    return new Date(a.sermonDate) - new Date(b.sermonDate); // 오래된 순
+                    return new Date(a.sermonDate) - new Date(b.sermonDate);
                 }
             });
 
@@ -64,7 +90,7 @@ const SermonListPage = () => {
         } finally {
             setLoading(false);
         }
-    }, [filterType, userId, mySermonFilter, sortOrder]);
+    }, [filterType, userId, mySermonFilter, sortOrder, filteredSermons, selectedWorshipType]);
 
 
 
@@ -102,24 +128,52 @@ const SermonListPage = () => {
         return pages;
     };
 
+    const handleSortChange = (order) => {
+        setSortOrder(order);
+        if (isSearching) {
+            handleSearch(); // 검색된 상태에서 정렬을 바꾸면 검색 결과 유지
+        } else {
+            fetchSermons(); // 전체 데이터를 불러올 때 정렬 적용
+        }
+    };
+
     const handleSearch = async () => {
         if (!searchValue.trim()) {
-            fetchSermons();
+            fetchSermons(); // 검색어가 없으면 전체 데이터 로드
             return;
         }
+
         setLoading(true);
         setIsSearching(true);
+
         try {
             const results = await searchSermons(searchValue, userId, searchType);
-            setSermons(Array.isArray(results) ? results : []);
+            let sortedResults = Array.isArray(results) ? results : [];
+
+            // 🔹 선택된 예배 유형(worshipType)이 있으면 필터 적용
+            if (selectedWorshipType !== 'all') {
+                sortedResults = sortedResults.filter((sermon) => sermon.worshipType === selectedWorshipType);
+            }
+
+            // 🔹 최신 순 / 오래된 순 정렬
+            sortedResults.sort((a, b) => {
+                if (sortOrder === 'newest') {
+                    return new Date(b.sermonDate) - new Date(a.sermonDate);
+                } else {
+                    return new Date(a.sermonDate) - new Date(b.sermonDate);
+                }
+            });
+
+            setFilteredSermons(sortedResults);
             setCurrentPage(1);
         } catch (error) {
             console.error('Search failed:', error);
-            setSermons([]);
+            setFilteredSermons([]);
         } finally {
             setLoading(false);
         }
     };
+
 
     return (
         <Container>
@@ -180,12 +234,17 @@ const SermonListPage = () => {
                     <SortButtonContainer>
 
                     </SortButtonContainer>
+                    {/* 🔹 Worship Type 선택 드롭다운 추가 */}
+                    <SelectContainer>
+
+                    </SelectContainer>
                     {/* view 선택 버튼 추가 */}
                     <ViewToggleContainer>
-                        <SortButton active={sortOrder === 'newest'} onClick={() => setSortOrder('newest')}>
+
+                        <SortButton active={sortOrder === 'newest'} onClick={() => handleSortChange('newest')}>
                             최신 순
                         </SortButton>
-                        <SortButton active={sortOrder === 'oldest'} onClick={() => setSortOrder('oldest')}>
+                        <SortButton active={sortOrder === 'oldest'} onClick={() => handleSortChange('oldest')}>
                             오래된 순
                         </SortButton>
                         <ViewToggleButton active={viewType === 'list'} onClick={() => setViewType('list')}>
@@ -194,6 +253,25 @@ const SermonListPage = () => {
                         <ViewToggleButton active={viewType === 'carousel'} onClick={() => setViewType('carousel')}>
                             View 2
                         </ViewToggleButton>
+                        <StyledSelect
+                            id="worshipType"
+                            value={selectedWorshipType}
+                            onChange={(e) => handleWorshipTypeChange(e)}
+                        >
+                            <option value="all">예배 유형</option>
+                            <option value="새벽예배">새벽예배</option>
+                            <option value="수요예배">수요예배</option>
+                            <option value="금요성령집회">금요성령집회</option>
+                            <option value="주일1부예배">주일1부예배</option>
+                            <option value="주일2부예배">주일2부예배</option>
+                            <option value="주일3부예배">주일3부예배</option>
+                            <option value="주일청년예배">주일청년예배</option>
+                            <option value="주일오후예배">주일오후예배</option>
+                            <option value="특별집회">특별집회</option>
+                            <option value="부흥회">부흥회</option>
+                            <option value="월-새벽">월-새벽</option>
+                            <option value="기타">기타</option>
+                        </StyledSelect>
                     </ViewToggleContainer>
 
                 </FilterContainer>
@@ -724,4 +802,32 @@ const SortButton = styled.button`
 `;
 
 
-export default SermonListPage;
+    const SelectContainer = styled.div`
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    `;
+
+    const StyledSelect = styled.select`
+        padding: 8px 16px;
+        
+        border: thin;
+        border-radius: 6px;
+        background-color: white;
+        color: black;
+        font-weight: bold;
+        cursor: pointer;
+        transition: 0.3s;
+        font-size: 14px;
+        outline: 3px solid #4F3296; 
+        text-align: left;
+        text-align-last:center;
+        -ms-text-align-last: center;
+        -moz-text-align-last: center;
+        
+    `;
+
+
+
+
+    export default SermonListPage;
