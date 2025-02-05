@@ -4,7 +4,6 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import MainNavbar from '../components/MainNavbar';
 import QuickReadingPage from '../components/bible/QuickReadingPage';
 import SearchPage from '../components/bible/SearchPage';
-import BookmarkPage from '../components/bible/BookmarkPage';
 import AddSermonPage from '../components/sermon/AddSermonPage';
 import EditSermonPage from '../components/sermon/EditSermonPage';
 import SermonListPage from '../components/sermon/SermonListPage';
