@@ -1,4 +1,4 @@
-    import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import styled from 'styled-components';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
@@ -14,14 +14,14 @@ const SermonListPage = () => {
     const [loading, setLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
     const [isSearching, setIsSearching] = useState(false);
-    const [searchType, setSearchType] = useState('title');
+    const {searchType} = useState('title');
     const [searchValue, setSearchValue] = useState('');
     const { userId } = useUserState();
     const [viewType, setViewType] = useState('list'); // 'list' (기본값)
     const [sortOrder, setSortOrder] = useState('newest'); // 'newest' (최신순) 또는 'oldest' (오래된 순)
     const [filteredSermons, setFilteredSermons] = useState([]);
     const [selectedWorshipType, setSelectedWorshipType] = useState('all'); // 기본값: 전체 보기
-
+    const [isMySermonExpanded, setIsMySermonExpanded] = useState(false); // 내 설교 버튼 활성화 상태.
 
     // URL 파라미터에서 필터 상태 읽기
     const filterType = searchParams.get('type') || 'public';
@@ -35,10 +35,12 @@ const SermonListPage = () => {
             newParams.set('filter', filter);
         } else {
             newParams.delete('filter');
+            setIsMySermonExpanded(false); // 🔹 "전체 공개 설교" 클릭 시 애니메이션 닫기
         }
         setSearchParams(newParams);
         setCurrentPage(1);
     };
+
     const handleWorshipTypeChange = (event) => {
 
 
@@ -173,17 +175,31 @@ const SermonListPage = () => {
             setLoading(false);
         }
     };
+    const handleMySermonToggle = () => {
+        setIsMySermonExpanded(!isMySermonExpanded);
+
+        // 🔹 내 설교 버튼을 클릭했을 때 색상 즉시 변경
+        if (!isMySermonExpanded) {
+            setSearchParams(new URLSearchParams({ type: "my", filter: "all" }));
+        }
+    };
 
 
     return (
         <Container>
             <Header>
+
+            </Header>
+            <PageHeader>
+                <Title>설교 목록</Title>
+                <Description>등록된 설교 목록을 확인하고 내용을 살펴보세요.</Description>
+
                 <SearchContainer>
-                    <Select value={searchType} onChange={(e) => setSearchType(e.target.value)}>
+                {/*    <Select value={searchType} onChange={(e) => setSearchType(e.target.value)}>
                         <option value="title">제목</option>
                         <option value="content">내용</option>
                         <option value="both">제목+내용</option>
-                    </Select>
+                    </Select>*/}
                     <SearchInput
                         type="text"
                         value={searchValue}
@@ -195,41 +211,37 @@ const SermonListPage = () => {
                         {loading ? '검색 중...' : <Search size={20} />}
                     </SearchButton>
                 </SearchContainer>
-            </Header>
-            <PageHeader>
-                <Title>설교 목록</Title>
-                <Description>등록된 설교 목록을 확인하고 내용을 살펴보세요.</Description>
                 <FilterContainer>
                     <FilterButton active={filterType === 'public'} onClick={() => handleFilterChange('public')}>
                         전체 공개 설교
                     </FilterButton>
-                    <MySermonFilterContainer>
-                        <FilterButton active={filterType === 'my'} onClick={() => handleFilterChange('my')}>
+                    <MySermonFilterContainer expanded={isMySermonExpanded}>
+                        <FilterButton active={filterType === 'my'} onClick={handleMySermonToggle}>
                             내 설교
                         </FilterButton>
-                        {filterType === 'my' && (
-                            <SubFilterContainer>
-                                <SubFilterButton
-                                    active={mySermonFilter === 'all'}
-                                    onClick={() => handleFilterChange('my', 'all')}
-                                >
-                                    전체
-                                </SubFilterButton>
-                                <SubFilterButton
-                                    active={mySermonFilter === 'public'}
-                                    onClick={() => handleFilterChange('my', 'public')}
-                                >
-                                    공개
-                                </SubFilterButton>
-                                <SubFilterButton
-                                    active={mySermonFilter === 'private'}
-                                    onClick={() => handleFilterChange('my', 'private')}
-                                >
-                                    비공개
-                                </SubFilterButton>
-                            </SubFilterContainer>
-                        )}
+
+                        <SubFilterContainer expanded={isMySermonExpanded}>
+                            <SubFilterButton
+                                active={mySermonFilter === 'all'}
+                                onClick={() => handleFilterChange('my', 'all')}
+                            >
+                                전체
+                            </SubFilterButton>
+                            <SubFilterButton
+                                active={mySermonFilter === 'public'}
+                                onClick={() => handleFilterChange('my', 'public')}
+                            >
+                                공개
+                            </SubFilterButton>
+                            <SubFilterButton
+                                active={mySermonFilter === 'private'}
+                                onClick={() => handleFilterChange('my', 'private')}
+                            >
+                                비공개
+                            </SubFilterButton>
+                        </SubFilterContainer>
                     </MySermonFilterContainer>
+
                     {/* 🔹 정렬 버튼 추가 */}
                     <SortButtonContainer>
 
@@ -546,10 +558,30 @@ const FilterContainer = styled.div`
 
 const MySermonFilterContainer = styled.div`
     display: flex;
+    align-items: center;
+    gap: ${(props) => (props.expanded ? "10px" : "0px")};
+    transition: gap 0.3s ease-in-out;
+    height: 40px;  /* 🔹 컨테이너 높이 고정 */
+`;
+
+
+
+
+const SubFilterContainer = styled.div`
+    display: flex;
+    gap: 8px;
+    overflow: hidden;
+    max-width: ${(props) => (props.expanded ? "300px" : "0px")}; /* 🔹 펼쳐질 때 max-width 조정 */
+    opacity: ${(props) => (props.expanded ? "1" : "0")};
+    transition: max-width 0.3s ease-in-out, opacity 0.3s ease-in-out;
+`;
+
+/*
+const MySermonFilterContainer = styled.div`
+    display: flex;
     gap: 16px;
     align-items: center;
 `;
-
 
 
 const SubFilterContainer = styled.div`
@@ -559,6 +591,11 @@ const SubFilterContainer = styled.div`
     background-color: #f5f5f5;
     border-radius: 8px;
 `;
+*/
+
+
+
+
 
 const SubFilterButton = styled.button`
     padding: 8px 16px;
@@ -570,6 +607,7 @@ const SubFilterButton = styled.button`
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s ease;
+    height: 35px;  /* 🔹 컨테이너 높이 고정 */
 
     &:hover {
         background-color: ${(props) => (props.active ? '#3a2570' : '#e5e5e5')};
@@ -662,6 +700,7 @@ const Header = styled.div`
 
 const SearchContainer = styled.div`
     display: flex;
+  //padding-left: 900px;
     gap: 10px;
 `;
 
@@ -670,14 +709,6 @@ const SearchInput = styled.input`
     border: 1px solid #ddd;
     border-radius: 6px;
     width: 250px;
-    font-size: 14px;
-`;
-
-const Select = styled.select`
-    padding: 8px 12px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    background-color: white;
     font-size: 14px;
 `;
 
@@ -725,7 +756,7 @@ const ViewToggleButton = styled.button`
         background-color: ${(props) => (props.active ? '#3b2570' : '#bbb')};
     }
 `;
-    const FilterButton = styled.button`
+const FilterButton = styled.button`
     padding: 12px 24px;
     border-radius: 8px;
     border: none;
@@ -764,7 +795,7 @@ const SermonCardSecondView = styled.div`
 
 const SermonGrid = styled.div`
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); 
         gap: 20px;
         padding: 20px;
     `;
@@ -826,8 +857,6 @@ const SortButton = styled.button`
         -moz-text-align-last: center;
         
     `;
-
-
 
 
     export default SermonListPage;
