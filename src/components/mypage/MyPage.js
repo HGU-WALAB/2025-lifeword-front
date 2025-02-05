@@ -211,9 +211,10 @@ const ContentWrapper = styled.div`
     padding: 2rem;
     border-radius: 12px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    max-width: 800px;
+    max-width: 900px;
+    width: 100%; // centre
 
-    @media (max-width: 768px) {
+    @media (max-width: 800px) {
         padding: 1.5rem;
     }
 `;

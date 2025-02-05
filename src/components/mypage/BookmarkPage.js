@@ -151,7 +151,7 @@ const Container = styled.div`
     display: flex;
     flex-direction: column;
     align-items: flex-start; /* 왼쪽 정렬로 변경 */
-    padding-left: 20px; /* 여백 조정 */
+    padding-left: 60px; /* 여백 조정 */
     background-color: #f5f5f5;
     overflow-y: hidden;
 `;
