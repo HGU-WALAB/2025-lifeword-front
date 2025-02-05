@@ -27,6 +27,7 @@ const SermonDetailPage = () => {
     const isAdminPage = currentPath.includes('/admin/sermons');
     const [isMetaSectionOpen, setIsMetaSectionOpen] = useState(true);
     const isExpanded = useRecoilValue(isNavExpandedState);
+    const [scrollPosition, setScrollPosition] = useState(0);
 
     useEffect(() => {
         const fetchSermonDetail = async () => {
@@ -44,6 +45,15 @@ const SermonDetailPage = () => {
             fetchSermonDetail();
         }
     }, [id]);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            setScrollPosition(window.scrollY);
+        };
+
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
 
     const handleDelete = async () => {
         if (window.confirm('정말로 이 설교를 삭제하시겠습니까?')) {
@@ -77,28 +87,6 @@ const SermonDetailPage = () => {
 
     return (
         <Container isExpanded={isExpanded}>
-            <PageHeader>
-                <TopBar>
-                    <BackButton onClick={() => navigate(-1)}>
-                        <ArrowLeft size={20} />
-                        <span>뒤로 가기</span>
-                    </BackButton>
-                    {(sermon?.userId === currentUserId || (isAdmin && isAdminPage)) && (
-                        <ActionButtons>
-                            <ActionButton onClick={handleEdit}>
-                                <Pencil size={16} />
-                            </ActionButton>
-                            <ActionButton onClick={handleDelete} isDelete>
-                                <Trash2 size={16} />
-                            </ActionButton>
-                        </ActionButtons>
-                    )}
-                </TopBar>
-                <Title>{sermon.sermonTitle}</Title>
-                <Description>
-                    {sermon.worshipType} | {new Date(sermon.sermonDate).toLocaleDateString('ko-KR')}
-                </Description>
-            </PageHeader>
 
             <FormContainer isMetaOpen={isMetaSectionOpen}>
                 <MetaSectionWrapper isOpen={isMetaSectionOpen}>
@@ -106,10 +94,25 @@ const SermonDetailPage = () => {
                         {isMetaSectionOpen ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
                     </ToggleButton>
                     <MetaSection isOpen={isMetaSectionOpen}>
-                        <FormSection>
-                            <Label>작성자</Label>
-                            <AuthorInfo>
-                                <Author>{sermon.ownerName}</Author>
+
+                        <TopBar>
+                            <BackButton onClick={() => navigate(-1)}>
+                                <ArrowLeft size={20} />
+                                <span>뒤로 가기</span>
+                            </BackButton>
+                            {(sermon?.userId === currentUserId || (isAdmin && isAdminPage)) && (
+                                <ActionButtons>
+                                    <ActionButton onClick={handleEdit}>
+                                        <Pencil size={16} />
+                                    </ActionButton>
+                                    <ActionButton onClick={handleDelete} isDelete>
+                                        <Trash2 size={16} />
+                                    </ActionButton>
+                                </ActionButtons>
+                            )}
+                        </TopBar>
+                        <FormSectionLong>
+                                <Author> 작성자: {sermon.ownerName}</Author>
                                 <DateInfo>
                                     <SermonDate>
                                         {new Date(sermon.sermonDate).toLocaleDateString('ko-KR', {
@@ -127,18 +130,17 @@ const SermonDetailPage = () => {
                                         })}
                                     </CreatedDate>
                                 </DateInfo>
-                            </AuthorInfo>
-                        </FormSection>
-
-                        <FormSection>
-                            <Label>예배 종류</Label>
-                            <Badge>{sermon.worshipType}</Badge>
-                        </FormSection>
+                        </FormSectionLong>
 
                         <FormSection>
                             <Label>설교 제목</Label>
                             <Title>{sermon.sermonTitle}</Title>
                         </FormSection>
+
+                        <FormSectionLong>
+                            <Label>예배 종류</Label>
+                            <Badge>{sermon.worshipType}</Badge>
+                        </FormSectionLong>
 
                         <FormSection>
                             <Label>성경 구절</Label>
@@ -160,7 +162,7 @@ const SermonDetailPage = () => {
                             </FormSection>
                         )}
 
-                        <FormSection>
+                        <FormSectionLong>
                             <Label>공개 설정</Label>
                             <PrivacyStatus>
                                 {sermon.public ? (
@@ -175,7 +177,7 @@ const SermonDetailPage = () => {
                                     </>
                                 )}
                             </PrivacyStatus>
-                        </FormSection>
+                        </FormSectionLong>
                     </MetaSection>
                 </MetaSectionWrapper>
 
@@ -189,27 +191,45 @@ const SermonDetailPage = () => {
 };
 
 const Container = styled.div`
-    padding: 40px;
+  padding: 40px;
     width: 100vw;
     background-color: #f5f5f5;
     min-height: 100vh;
-    overflow-y: auto;
     transition: all 0.3s ease;
 `;
 
-const PageHeader = styled.div`
-    margin-bottom: 40px;
+const ExpandableHeader = styled.div`
+    position: sticky;
+    top: 0;
     width: 100%;
-    max-width: 1200px;
-    margin-left: auto;
-    margin-right: auto;
+    z-index: 100;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    height: 60px; /* Collapsed */
+    transition: height 0.3s ease;
+  margin-bottom: 24px;
+
+    &:hover {
+        height: 200px;
+      
+    }
+`;
+
+const ExpandedContent = styled.div`
+    padding: 16px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+
+    ${ExpandableHeader}:hover & {
+        opacity: 1;
+    }
 `;
 
 const TopBar = styled.div`
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
 `;
 
 const BackButton = styled.button`
@@ -267,7 +287,6 @@ const ActionButton = styled.button`
 const Title = styled.h1`
     font-size: 2.5rem;
     color: #333;
-    margin-bottom: 0.5rem;
     font-weight: 600;
 `;
 
@@ -325,6 +344,7 @@ const ToggleButton = styled.button`
 `;
 
 const MetaSectionWrapper = styled.div`
+  
     position: relative;
     min-width: ${(props) => (props.isOpen ? '400px' : '50px')};
     transition: all 0.3s ease;
@@ -356,6 +376,12 @@ const ContentSection = styled.div`
 
 const FormSection = styled.div`
     margin-bottom: 24px;
+`;
+
+const FormSectionLong = styled.div`
+    margin-bottom: 24px;
+  display: flex;
+  justify-content: space-between;
 `;
 
 const Label = styled.div`
