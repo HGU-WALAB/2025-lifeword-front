@@ -18,7 +18,13 @@ const SearchPage = () => {
         try {
             const response = await searchBibles(keyword);
             if (response.success) {
-                setSearchResults(response.data);
+
+                const highlightedData = response.data.map((result)=>({
+                    ...result,
+                    highlightedSentence: highlightText(result.sentence, keyword),
+                }))
+
+                setSearchResults(highlightedData);
                 setCurrentPage(1);
             } else {
                 alert(response.message);
@@ -31,6 +37,23 @@ const SearchPage = () => {
             setLoading(false);
         }
     };
+
+    const highlightText = (text, keyword) => {
+        if (!keyword) return text;
+
+        const regex = new RegExp(`(${keyword})`, 'gi');
+        const parts = text.split(regex);
+
+        return parts.map((part, index) =>
+            part.toLowerCase() === keyword.toLowerCase() ? (
+                <HighlightedText key={index}>{part}</HighlightedText>
+            ) : (
+                part
+            )
+        );
+    };
+
+
 
     const totalPages = Math.ceil(searchResults.length / ITEMS_PER_PAGE);
     const currentResults = searchResults.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
@@ -216,11 +239,35 @@ const ResultItem = ({ result }) => {
             <ResultHeader>
                 {result.long_label} {result.chapter}장 {result.paragraph}절
             </ResultHeader>
-            <ResultContent>{result.sentence}</ResultContent>
+            <ResultContent>{result.highlightedSentence}</ResultContent>
             <VerseContextMenu targetRef={resultRef} verse={result} />
         </ResultItemContainer>
     );
 };
+
+const HighlightedText = styled.span`
+    font-weight: bold;
+    color: black;
+    background-image: linear-gradient(120deg, #dfce95, #ffea70, #dfce95);
+    background-size: 200% 200%;
+    animation: shimmer 2s infinite;
+    padding: 2px 4px;
+    border-radius: 4px;
+
+    @keyframes shimmer {
+        0% {
+            background-position: 0% 50%;
+        }
+        50% {
+            background-position: 100% 50%;
+        }
+        100% {
+            background-position: 0% 50%;
+        }
+    }
+`;
+
+
 
 const ResultItemContainer = styled.div`
     background-color: white;
