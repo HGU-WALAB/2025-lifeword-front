@@ -159,172 +159,172 @@ const EditSermonPage = () => {
             <FormContainer onSubmit={handleSubmit} isMetaOpen={isMetaSectionOpen}>
                 <StickyContainer>
 
-                
-                <MetaSectionWrapper isOpen={isMetaSectionOpen}>
-                <StickyContainer>
-                    <ToggleButton onClick={toggleMetaSection} type="button">
-                        {isMetaSectionOpen ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
-                    </ToggleButton>
-                    </StickyContainer>
-                    <MetaSection isOpen={isMetaSectionOpen}>
-                        <FormSection>
-                            <Label>설교 날짜</Label>
-                            <DateInputWrapper>
-                                <CalendarIcon size={20} />
-                                <DateInput
-                                    type="date"
-                                    name="sermonDate"
-                                    value={formData.sermonDate}
-                                    onChange={handleInputChange}
-                                    required
-                                />
-                            </DateInputWrapper>
-                        </FormSection>
 
-                        <FormSection>
-                            <Label>예배 종류</Label>
-                            <Select
-                                name="worshipType"
-                                value={formData.worshipType}
-                                onChange={handleInputChange}
-                                required
-                            >
-                                <option value="">예배 종류 선택</option>
-                                {WORSHIP_TYPES.map((type) => (
-                                    <option key={type} value={type}>
-                                        {type}
-                                    </option>
-                                ))}
-                            </Select>
-                            {formData.worshipType === '기타' && (
-                                <CustomInputWrapper>
-                                    <Input
-                                        type="text"
-                                        name="customWorshipType"
-                                        value={formData.customWorshipType}
+                    <MetaSectionWrapper isOpen={isMetaSectionOpen}>
+                        <StickyContainer>
+                            <ToggleButton onClick={toggleMetaSection} type="button">
+                                {isMetaSectionOpen ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
+                            </ToggleButton>
+                        </StickyContainer>
+                        <MetaSection isOpen={isMetaSectionOpen}>
+                            <FormSection>
+                                <Label>설교 날짜</Label>
+                                <DateInputWrapper>
+                                    <CalendarIcon size={20} />
+                                    <DateInput
+                                        type="date"
+                                        name="sermonDate"
+                                        value={formData.sermonDate}
                                         onChange={handleInputChange}
-                                        placeholder="예배 종류를 직접 입력하세요"
                                         required
                                     />
-                                </CustomInputWrapper>
-                            )}
-                        </FormSection>
+                                </DateInputWrapper>
+                            </FormSection>
 
-                        <FormSection>
-                            <Label>설교 제목</Label>
-                            <Input
-                                type="text"
-                                name="sermonTitle"
-                                value={formData.sermonTitle}
-                                onChange={handleInputChange}
-                                placeholder="설교 제목을 입력하세요"
-                                required
-                            />
-                        </FormSection>
-
-                        <FormSection>
-                            <ScriptureHeader>
-                                <Label>성경 본문</Label>
-                                {!showAdditionalScripture && (
-                                    <AddScriptureButton type="button" onClick={() => setShowAdditionalScripture(true)}>
-                                        <Plus size={16} />
-                                        추가
-                                    </AddScriptureButton>
-                                )}
-                            </ScriptureHeader>
-                            <ScriptureContainer>
-                                <Input
-                                    type="text"
-                                    name="mainScripture"
-                                    value={formData.mainScripture}
+                            <FormSection>
+                                <Label>예배 종류</Label>
+                                <Select
+                                    name="worshipType"
+                                    value={formData.worshipType}
                                     onChange={handleInputChange}
-                                    placeholder="예) 요한복음 3:16"
                                     required
-                                />
-                                {showAdditionalScripture && (
-                                    <AdditionalScriptureWrapper>
+                                >
+                                    <option value="">예배 종류 선택</option>
+                                    {WORSHIP_TYPES.map((type) => (
+                                        <option key={type} value={type}>
+                                            {type}
+                                        </option>
+                                    ))}
+                                </Select>
+                                {formData.worshipType === '기타' && (
+                                    <CustomInputWrapper>
                                         <Input
                                             type="text"
-                                            name="additionalScripture"
-                                            value={formData.additionalScripture}
+                                            name="customWorshipType"
+                                            value={formData.customWorshipType}
                                             onChange={handleInputChange}
-                                            placeholder="예) 로마서 8:28"
+                                            placeholder="예배 종류를 직접 입력하세요"
+                                            required
                                         />
-                                        <RemoveScriptureButton
-                                            type="button"
-                                            onClick={() => {
-                                                setShowAdditionalScripture(false);
+                                    </CustomInputWrapper>
+                                )}
+                            </FormSection>
+
+                            <FormSection>
+                                <Label>설교 제목</Label>
+                                <Input
+                                    type="text"
+                                    name="sermonTitle"
+                                    value={formData.sermonTitle}
+                                    onChange={handleInputChange}
+                                    placeholder="설교 제목을 입력하세요"
+                                    required
+                                />
+                            </FormSection>
+
+                            <FormSection>
+                                <ScriptureHeader>
+                                    <Label>성경 본문</Label>
+                                    {!showAdditionalScripture && (
+                                        <AddScriptureButton type="button" onClick={() => setShowAdditionalScripture(true)}>
+                                            <Plus size={16} />
+                                            추가
+                                        </AddScriptureButton>
+                                    )}
+                                </ScriptureHeader>
+                                <ScriptureContainer>
+                                    <Input
+                                        type="text"
+                                        name="mainScripture"
+                                        value={formData.mainScripture}
+                                        onChange={handleInputChange}
+                                        placeholder="예) 요한복음 3:16"
+                                        required
+                                    />
+                                    {showAdditionalScripture && (
+                                        <AdditionalScriptureWrapper>
+                                            <Input
+                                                type="text"
+                                                name="additionalScripture"
+                                                value={formData.additionalScripture}
+                                                onChange={handleInputChange}
+                                                placeholder="예) 로마서 8:28"
+                                            />
+                                            <RemoveScriptureButton
+                                                type="button"
+                                                onClick={() => {
+                                                    setShowAdditionalScripture(false);
+                                                    setFormData((prev) => ({
+                                                        ...prev,
+                                                        additionalScripture: '',
+                                                    }));
+                                                }}
+                                            >
+                                                <X size={16} />
+                                            </RemoveScriptureButton>
+                                        </AdditionalScriptureWrapper>
+                                    )}
+                                </ScriptureContainer>
+                            </FormSection>
+
+                            <FormSection>
+                                <Label>설교 요약</Label>
+                                <TextArea
+                                    name="summary"
+                                    value={formData.summary}
+                                    onChange={handleInputChange}
+                                    placeholder="설교의 주요 내용을 요약해서 입력하세요"
+                                    rows={4}
+                                    required
+                                />
+                            </FormSection>
+
+                            <FormSection>
+                                <Label>노트</Label>
+                                <TextArea
+                                    name="notes"
+                                    value={formData.notes}
+                                    onChange={handleInputChange}
+                                    placeholder="추가 노트를 입력하세요"
+                                    rows={3}
+                                />
+                            </FormSection>
+
+                            <FormSection>
+                                <Label>공개 설정</Label>
+                                <PrivacyToggle>
+                                    <ToggleSwitch>
+                                        <input
+                                            type="checkbox"
+                                            checked={formData.public}
+                                            onChange={(e) =>
                                                 setFormData((prev) => ({
                                                     ...prev,
-                                                    additionalScripture: '',
-                                                }));
-                                            }}
-                                        >
-                                            <X size={16} />
-                                        </RemoveScriptureButton>
-                                    </AdditionalScriptureWrapper>
-                                )}
-                            </ScriptureContainer>
-                        </FormSection>
+                                                    public: e.target.checked,
+                                                }))
+                                            }
+                                        />
+                                        <span />
+                                    </ToggleSwitch>
+                                    <PrivacyLabel>
+                                        {formData.public ? (
+                                            <>
+                                                <Unlock size={16} />
+                                                전체 공개
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Lock size={16} />
+                                                비공개
+                                            </>
+                                        )}
+                                    </PrivacyLabel>
+                                </PrivacyToggle>
+                            </FormSection>
 
-                        <FormSection>
-                            <Label>설교 요약</Label>
-                            <TextArea
-                                name="summary"
-                                value={formData.summary}
-                                onChange={handleInputChange}
-                                placeholder="설교의 주요 내용을 요약해서 입력하세요"
-                                rows={4}
-                                required
-                            />
-                        </FormSection>
-
-                        <FormSection>
-                            <Label>노트</Label>
-                            <TextArea
-                                name="notes"
-                                value={formData.notes}
-                                onChange={handleInputChange}
-                                placeholder="추가 노트를 입력하세요"
-                                rows={3}
-                            />
-                        </FormSection>
-
-                        <FormSection>
-                            <Label>공개 설정</Label>
-                            <PrivacyToggle>
-                                <ToggleSwitch>
-                                    <input
-                                        type="checkbox"
-                                        checked={formData.public}
-                                        onChange={(e) =>
-                                            setFormData((prev) => ({
-                                                ...prev,
-                                                public: e.target.checked,
-                                            }))
-                                        }
-                                    />
-                                    <span />
-                                </ToggleSwitch>
-                                <PrivacyLabel>
-                                    {formData.public ? (
-                                        <>
-                                            <Unlock size={16} />
-                                            전체 공개
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Lock size={16} />
-                                            비공개
-                                        </>
-                                    )}
-                                </PrivacyLabel>
-                            </PrivacyToggle>
-                        </FormSection>
-
-                        <SubmitButton type="submit">수정 완료</SubmitButton>
-                    </MetaSection>
-                </MetaSectionWrapper>
+                            <SubmitButton type="submit">수정 완료</SubmitButton>
+                        </MetaSection>
+                    </MetaSectionWrapper>
                 </StickyContainer>
                 <EditorContainer className="editor-container" isMetaOpen={isMetaSectionOpen}>
                     <Label>설교 내용</Label>

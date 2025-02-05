@@ -70,10 +70,10 @@ const SermonDetailPage = () => {
             <FormContainer isMetaOpen={isMetaSectionOpen}>
                 <StickyContainer>
                     <MetaSectionWrapper isOpen={isMetaSectionOpen}>
-                    <StickyContainer>
-                        <ToggleButton onClick={() => setIsMetaSectionOpen(!isMetaSectionOpen)} type="button">
-                            {isMetaSectionOpen ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
-                        </ToggleButton>
+                        <StickyContainer>
+                            <ToggleButton onClick={() => setIsMetaSectionOpen(!isMetaSectionOpen)} type="button">
+                                {isMetaSectionOpen ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
+                            </ToggleButton>
                         </StickyContainer>
                         <MetaSection isOpen={isMetaSectionOpen}>
                             <TopBar>
