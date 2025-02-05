@@ -29,7 +29,6 @@ const MainPage = () => {
                     <Route path="/" element={<Navigate to="/main/quick-reading" replace />} />
                     <Route path="/quick-reading" element={<QuickReadingPage />} />
                     <Route path="/search" element={<SearchPage />} />
-                    <Route path="/bookmarks" element={<BookmarkPage />} />
                     <Route path="/add-sermon" element={<AddSermonPage />} />
                     <Route path="/sermon-list/*" element={<SermonListLayout />} />
                     <Route path="/mypage" element={<MyPage />} />

@@ -1,4 +1,4 @@
-    import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import styled from 'styled-components';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
@@ -22,7 +22,6 @@ const SermonListPage = () => {
     const [filteredSermons, setFilteredSermons] = useState([]);
     const [selectedWorshipType, setSelectedWorshipType] = useState('all'); // 기본값: 전체 보기
 
-
     // URL 파라미터에서 필터 상태 읽기
     const filterType = searchParams.get('type') || 'public';
     const mySermonFilter = searchParams.get('filter') || 'all';
@@ -40,11 +39,8 @@ const SermonListPage = () => {
         setCurrentPage(1);
     };
     const handleWorshipTypeChange = (event) => {
-
-
         const newType = event.target.value;
         setSelectedWorshipType(newType);
-
 
         // 🔹 검색 중이면 검색 결과에서 예배 유형 필터링
         if (isSearching) {
@@ -91,8 +87,6 @@ const SermonListPage = () => {
             setLoading(false);
         }
     }, [filterType, userId, mySermonFilter, sortOrder, filteredSermons, selectedWorshipType]);
-
-
 
     useEffect(() => {
         fetchSermons();
@@ -174,7 +168,6 @@ const SermonListPage = () => {
         }
     };
 
-
     return (
         <Container>
             <Header>
@@ -231,16 +224,11 @@ const SermonListPage = () => {
                         )}
                     </MySermonFilterContainer>
                     {/* 🔹 정렬 버튼 추가 */}
-                    <SortButtonContainer>
-
-                    </SortButtonContainer>
+                    <SortButtonContainer></SortButtonContainer>
                     {/* 🔹 Worship Type 선택 드롭다운 추가 */}
-                    <SelectContainer>
-
-                    </SelectContainer>
+                    <SelectContainer></SelectContainer>
                     {/* view 선택 버튼 추가 */}
                     <ViewToggleContainer>
-
                         <SortButton active={sortOrder === 'newest'} onClick={() => handleSortChange('newest')}>
                             최신 순
                         </SortButton>
@@ -273,7 +261,6 @@ const SermonListPage = () => {
                             <option value="기타">기타</option>
                         </StyledSelect>
                     </ViewToggleContainer>
-
                 </FilterContainer>
             </PageHeader>
             <ContentWrapper>
@@ -284,8 +271,10 @@ const SermonListPage = () => {
                         viewType === 'carousel' ? (
                             <SermonGrid>
                                 {currentSermons.map((sermon) => (
-                                    <SermonCardSecondView key={sermon.sermonId}
-                                                onClick={() => navigate(`detail/${sermon.sermonId}?type=${filterType}`)}>
+                                    <SermonCardSecondView
+                                        key={sermon.sermonId}
+                                        onClick={() => navigate(`detail/${sermon.sermonId}?type=${filterType}`)}
+                                    >
                                         <WorshipType>{sermon.worshipType}</WorshipType>
                                         <div>
                                             <AuthorName>{sermon.ownerName}</AuthorName>
@@ -316,8 +305,10 @@ const SermonListPage = () => {
                         ) : (
                             <SermonList>
                                 {currentSermons.map((sermon) => (
-                                    <SermonCard key={sermon.sermonId}
-                                                onClick={() => navigate(`detail/${sermon.sermonId}?type=${filterType}`)}>
+                                    <SermonCard
+                                        key={sermon.sermonId}
+                                        onClick={() => navigate(`detail/${sermon.sermonId}?type=${filterType}`)}
+                                    >
                                         <WorshipType>{sermon.worshipType}</WorshipType>
                                         <div>
                                             <AuthorName>{sermon.ownerName}</AuthorName>
@@ -349,7 +340,6 @@ const SermonListPage = () => {
                     ) : (
                         <EmptyText>등록된 설교가 없습니다.</EmptyText>
                     )}
-
                 </SermonList>
                 {!loading && sermons.length > 0 && (
                     <PaginationContainer>
@@ -469,7 +459,7 @@ const SermonDate = styled.span`
 const SermonTitle = styled.h2`
     font-family: 'Inter';
     font-weight: 800;
-    
+
     font-size: 24px;
     color: #212a3e;
     margin: 16px 0;
@@ -479,7 +469,7 @@ const SermonTitle = styled.h2`
 const ScriptureContainer = styled.div`
     display: flex;
     align-items: center;
-  //gap: 1px;
+    //gap: 1px;
     margin-bottom: 16px;
 `;
 
@@ -549,8 +539,6 @@ const MySermonFilterContainer = styled.div`
     gap: 16px;
     align-items: center;
 `;
-
-
 
 const SubFilterContainer = styled.div`
     display: flex;
@@ -697,18 +685,13 @@ const SearchButton = styled.button`
     }
 `;
 
-
-
-
 //서원 추가
-
 
 const ViewToggleContainer = styled.div`
     display: flex;
     gap: 10px;
-    margin-left:auto;
+    margin-left: auto;
     //margin-left:400px;
-
 `;
 
 const ViewToggleButton = styled.button`
@@ -725,12 +708,12 @@ const ViewToggleButton = styled.button`
         background-color: ${(props) => (props.active ? '#3b2570' : '#bbb')};
     }
 `;
-    const FilterButton = styled.button`
+const FilterButton = styled.button`
     padding: 12px 24px;
     border-radius: 8px;
     border: none;
-        background-color: ${(props) => (props.active ? '#4F3296' : '#ddd')};
-        color: ${(props) => (props.active ? '#fff' : '#666')};
+    background-color: ${(props) => (props.active ? '#4F3296' : '#ddd')};
+    color: ${(props) => (props.active ? '#fff' : '#666')};
     font-weight: bold;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -763,11 +746,11 @@ const SermonCardSecondView = styled.div`
 `;
 
 const SermonGrid = styled.div`
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-        gap: 20px;
-        padding: 20px;
-    `;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 20px;
+    padding: 20px;
+`;
 
 const SermonTitleSecondView = styled.h2`
     font-family: 'Inter';
@@ -801,33 +784,28 @@ const SortButton = styled.button`
     }
 `;
 
+const SelectContainer = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 10px;
+`;
 
-    const SelectContainer = styled.div`
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    `;
+const StyledSelect = styled.select`
+    padding: 8px 16px;
 
-    const StyledSelect = styled.select`
-        padding: 8px 16px;
-        
-        border: thin;
-        border-radius: 6px;
-        background-color: white;
-        color: black;
-        font-weight: bold;
-        cursor: pointer;
-        transition: 0.3s;
-        font-size: 14px;
-        outline: 3px solid #4F3296; 
-        text-align: left;
-        text-align-last:center;
-        -ms-text-align-last: center;
-        -moz-text-align-last: center;
-        
-    `;
+    border: thin;
+    border-radius: 6px;
+    background-color: white;
+    color: black;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s;
+    font-size: 14px;
+    outline: 3px solid #4f3296;
+    text-align: left;
+    text-align-last: center;
+    -ms-text-align-last: center;
+    -moz-text-align-last: center;
+`;
 
-
-
-
-    export default SermonListPage;
+export default SermonListPage;
