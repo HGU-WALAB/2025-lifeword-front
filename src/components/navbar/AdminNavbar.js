@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Zap, Search, Bookmark, LogOut, PlusCircle, BookOpen, Settings, User, ChevronLeft } from 'lucide-react';
+import { Zap, Search, LogOut, PlusCircle, BookOpen, Settings, User, ChevronLeft } from 'lucide-react';
 import LogoWhite from '../../assets/LogoWhite.png';
 import { NavContainer, LogoContainer, Logo, NavItems, NavItem, LogoutButton, ToggleButton } from './NavbarStyles';
 import { useLogout } from './navbarUtils';
@@ -49,14 +49,6 @@ const AdminNavbar = () => {
                 <NavItem onClick={() => navigate('/main/search')} active={isActive('/search')} isExpanded={isExpanded}>
                     <Search size={24} />
                     <span>검색</span>
-                </NavItem>
-                <NavItem
-                    onClick={() => navigate('/main/bookmarks')}
-                    active={isActive('/bookmarks')}
-                    isExpanded={isExpanded}
-                >
-                    <Bookmark size={24} />
-                    <span>북마크</span>
                 </NavItem>
                 <NavItem
                     onClick={() => navigate('/main/add-sermon')}

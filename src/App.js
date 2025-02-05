@@ -2,12 +2,27 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ParallaxProvider } from 'react-scroll-parallax';
 import { RecoilRoot, useRecoilValue } from 'recoil';
+import { createGlobalStyle } from 'styled-components';
 import { isLoggedInState } from './recoil/atoms';
 import Onboarding from './Onboarding/Onboarding';
 import MainPage from './pages/MainPage';
 import AuthCallback from './components/login/AuthCallback';
 import SignUpPageSocial from './components/login/SignUpPageSocial';
 import SignUpPageBibly from './components/login/SignUpPageBibly';
+
+const GlobalStyle = createGlobalStyle`
+  body {
+    cursor: url('http://www.rw-designer.com/cursor-extern.php?id=50627'), auto;
+  }
+  
+  a {
+    cursor: url('http://www.rw-designer.com/cursor-extern.php?id=50627'), pointer;
+  }
+  
+  button {
+    cursor: url('http://www.rw-designer.com/cursor-extern.php?id=50627'), pointer;
+  }
+`;
 
 const ProtectedRoute = ({ children }) => {
     const isLoggedIn = useRecoilValue(isLoggedInState);
@@ -22,6 +37,7 @@ const ProtectedRoute = ({ children }) => {
 function App() {
     return (
         <RecoilRoot>
+            <GlobalStyle />
             <ParallaxProvider>
                 <Router basename="/eax9952">
                     <Routes>

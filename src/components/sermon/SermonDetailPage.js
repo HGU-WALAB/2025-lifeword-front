@@ -2,15 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { getSermonDetail, deleteSermon } from '../../services/APIService';
-import {
-    ArrowLeft,
-    Pencil,
-    Trash2,
-    Lock,
-    Unlock,
-    ChevronLeft,
-    ChevronRight,
-} from 'lucide-react';
+import { ArrowLeft, Pencil, Trash2, Lock, Unlock, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useUserState } from '../../recoil/utils';
 import { useRecoilValue } from 'recoil';
 import { isNavExpandedState } from '../../recoil/atoms';
@@ -73,11 +65,8 @@ const SermonDetailPage = () => {
         return <EmptyText>설교를 찾을 수 없습니다.</EmptyText>;
     }
 
-    
-
     return (
         <Container isExpanded={isExpanded}>
-
             <FormContainer isMetaOpen={isMetaSectionOpen}>
                 <StickyContainer>
                     <MetaSectionWrapper isOpen={isMetaSectionOpen}>
@@ -85,7 +74,6 @@ const SermonDetailPage = () => {
                             {isMetaSectionOpen ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
                         </ToggleButton>
                         <MetaSection isOpen={isMetaSectionOpen}>
-
                             <TopBar>
                                 <BackButton onClick={() => navigate(-1)}>
                                     <ArrowLeft size={20} />
@@ -181,9 +169,8 @@ const SermonDetailPage = () => {
     );
 };
 
-
 const Container = styled.div`
-  padding: 40px;
+    padding: 40px;
     width: 100vw;
     background-color: #f5f5f5;
     min-height: 100vh;
@@ -191,13 +178,13 @@ const Container = styled.div`
 `;
 
 const FormContainer = styled.div`
-  display: grid;
-  grid-template-columns: ${(props) => (props.isMetaOpen ? '400px 1fr' : '50px 1fr')};
-  gap: 32px;
-  max-width: 1200px;
-  margin: 0 auto;
-  align-items: start;
-  overflow: visible;
+    display: grid;
+    grid-template-columns: ${(props) => (props.isMetaOpen ? '400px 1fr' : '50px 1fr')};
+    gap: 32px;
+    max-width: 1200px;
+    margin: 0 auto;
+    align-items: start;
+    overflow: visible;
 `;
 
 const StickyContainer = styled.div`
@@ -209,10 +196,10 @@ const StickyContainer = styled.div`
 `;
 
 const TopBar = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
 `;
 
 const BackButton = styled.button`
@@ -273,8 +260,6 @@ const Title = styled.h1`
     font-weight: 600;
 `;
 
-
-
 const ToggleButton = styled.button`
     position: absolute;
     right: -16px;
@@ -307,9 +292,7 @@ const ToggleButton = styled.button`
     }
 `;
 
-
 const MetaSectionWrapper = styled.div`
-  
     position: relative;
     min-width: ${(props) => (props.isOpen ? '400px' : '50px')};
     transition: all 0.3s ease;
@@ -343,8 +326,8 @@ const FormSection = styled.div`
 
 const FormSectionLong = styled.div`
     margin-bottom: 24px;
-  display: flex;
-  justify-content: space-between;
+    display: flex;
+    justify-content: space-between;
 `;
 
 const Label = styled.div`

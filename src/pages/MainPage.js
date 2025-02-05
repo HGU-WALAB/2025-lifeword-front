@@ -4,7 +4,6 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import MainNavbar from '../components/MainNavbar';
 import QuickReadingPage from '../components/bible/QuickReadingPage';
 import SearchPage from '../components/bible/SearchPage';
-import BookmarkPage from '../components/bible/BookmarkPage';
 import AddSermonPage from '../components/sermon/AddSermonPage';
 import EditSermonPage from '../components/sermon/EditSermonPage';
 import SermonListPage from '../components/sermon/SermonListPage';
@@ -29,7 +28,6 @@ const MainPage = () => {
                     <Route path="/" element={<Navigate to="/main/quick-reading" replace />} />
                     <Route path="/quick-reading" element={<QuickReadingPage />} />
                     <Route path="/search" element={<SearchPage />} />
-                    <Route path="/bookmarks" element={<BookmarkPage />} />
                     <Route path="/add-sermon" element={<AddSermonPage />} />
                     <Route path="/sermon-list/*" element={<SermonListLayout />} />
                     <Route path="/mypage" element={<MyPage />} />
