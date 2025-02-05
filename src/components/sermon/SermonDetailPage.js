@@ -95,24 +95,24 @@ const SermonDetailPage = () => {
                     </ToggleButton>
                     <MetaSection isOpen={isMetaSectionOpen}>
 
-                        <BackButton onClick={() => navigate(-1)}>
-                            <ArrowLeft size={20} />
-                            <span>뒤로 가기</span>
-                        </BackButton>
-                        {(sermon?.userId === currentUserId || (isAdmin && isAdminPage)) && (
-                            <ActionButtons>
-                                <ActionButton onClick={handleEdit}>
-                                    <Pencil size={16} />
-                                </ActionButton>
-                                <ActionButton onClick={handleDelete} isDelete>
-                                    <Trash2 size={16} />
-                                </ActionButton>
-                            </ActionButtons>
-                        )}
-                        <FormSection>
-                            <Label>작성자</Label>
-                            <AuthorInfo>
-                                <Author>{sermon.ownerName}</Author>
+                        <TopBar>
+                            <BackButton onClick={() => navigate(-1)}>
+                                <ArrowLeft size={20} />
+                                <span>뒤로 가기</span>
+                            </BackButton>
+                            {(sermon?.userId === currentUserId || (isAdmin && isAdminPage)) && (
+                                <ActionButtons>
+                                    <ActionButton onClick={handleEdit}>
+                                        <Pencil size={16} />
+                                    </ActionButton>
+                                    <ActionButton onClick={handleDelete} isDelete>
+                                        <Trash2 size={16} />
+                                    </ActionButton>
+                                </ActionButtons>
+                            )}
+                        </TopBar>
+                        <FormSectionLong>
+                                <Author> 작성자: {sermon.ownerName}</Author>
                                 <DateInfo>
                                     <SermonDate>
                                         {new Date(sermon.sermonDate).toLocaleDateString('ko-KR', {
@@ -130,18 +130,17 @@ const SermonDetailPage = () => {
                                         })}
                                     </CreatedDate>
                                 </DateInfo>
-                            </AuthorInfo>
-                        </FormSection>
-
-                        <FormSection>
-                            <Label>예배 종류</Label>
-                            <Badge>{sermon.worshipType}</Badge>
-                        </FormSection>
+                        </FormSectionLong>
 
                         <FormSection>
                             <Label>설교 제목</Label>
                             <Title>{sermon.sermonTitle}</Title>
                         </FormSection>
+
+                        <FormSectionLong>
+                            <Label>예배 종류</Label>
+                            <Badge>{sermon.worshipType}</Badge>
+                        </FormSectionLong>
 
                         <FormSection>
                             <Label>성경 구절</Label>
@@ -163,7 +162,7 @@ const SermonDetailPage = () => {
                             </FormSection>
                         )}
 
-                        <FormSection>
+                        <FormSectionLong>
                             <Label>공개 설정</Label>
                             <PrivacyStatus>
                                 {sermon.public ? (
@@ -178,7 +177,7 @@ const SermonDetailPage = () => {
                                     </>
                                 )}
                             </PrivacyStatus>
-                        </FormSection>
+                        </FormSectionLong>
                     </MetaSection>
                 </MetaSectionWrapper>
 
@@ -226,10 +225,11 @@ const ExpandedContent = styled.div`
     }
 `;
 
-const StickyHeader = styled.div`
-  position: sticky;
-  top: 0;
-  z-index: 100;
+const TopBar = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
 `;
 
 const BackButton = styled.button`
@@ -287,7 +287,6 @@ const ActionButton = styled.button`
 const Title = styled.h1`
     font-size: 2.5rem;
     color: #333;
-    margin-bottom: 0.5rem;
     font-weight: 600;
 `;
 
@@ -377,6 +376,12 @@ const ContentSection = styled.div`
 
 const FormSection = styled.div`
     margin-bottom: 24px;
+`;
+
+const FormSectionLong = styled.div`
+    margin-bottom: 24px;
+  display: flex;
+  justify-content: space-between;
 `;
 
 const Label = styled.div`
