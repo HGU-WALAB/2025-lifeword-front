@@ -388,7 +388,7 @@ const SermonListPage = () => {
 };
 
 const Container = styled.div`
-    margin-left: 100px;
+    margin-left: 40px;
     padding: 40px;
     width: calc(100vw);
     min-height: 91vh;
