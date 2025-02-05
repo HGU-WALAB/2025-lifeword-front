@@ -87,14 +87,12 @@ const SermonDetailPage = () => {
 
     return (
         <Container isExpanded={isExpanded}>
-
             <FormContainer isMetaOpen={isMetaSectionOpen}>
                 <MetaSectionWrapper isOpen={isMetaSectionOpen}>
                     <ToggleButton onClick={() => setIsMetaSectionOpen(!isMetaSectionOpen)} type="button">
                         {isMetaSectionOpen ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
                     </ToggleButton>
                     <MetaSection isOpen={isMetaSectionOpen}>
-
                         <TopBar>
                             <BackButton onClick={() => navigate(-1)}>
                                 <ArrowLeft size={20} />
@@ -112,24 +110,24 @@ const SermonDetailPage = () => {
                             )}
                         </TopBar>
                         <FormSectionLong>
-                                <Author> 작성자: {sermon.ownerName}</Author>
-                                <DateInfo>
-                                    <SermonDate>
-                                        {new Date(sermon.sermonDate).toLocaleDateString('ko-KR', {
-                                            year: 'numeric',
-                                            month: 'long',
-                                            day: 'numeric',
-                                        })}
-                                    </SermonDate>
-                                    <CreatedDate>
-                                        작성일:{' '}
-                                        {new Date(sermon.createdAt).toLocaleDateString('ko-KR', {
-                                            year: 'numeric',
-                                            month: 'long',
-                                            day: 'numeric',
-                                        })}
-                                    </CreatedDate>
-                                </DateInfo>
+                            <Author> 작성자: {sermon.ownerName}</Author>
+                            <DateInfo>
+                                <SermonDate>
+                                    {new Date(sermon.sermonDate).toLocaleDateString('ko-KR', {
+                                        year: 'numeric',
+                                        month: 'long',
+                                        day: 'numeric',
+                                    })}
+                                </SermonDate>
+                                <CreatedDate>
+                                    작성일:{' '}
+                                    {new Date(sermon.createdAt).toLocaleDateString('ko-KR', {
+                                        year: 'numeric',
+                                        month: 'long',
+                                        day: 'numeric',
+                                    })}
+                                </CreatedDate>
+                            </DateInfo>
                         </FormSectionLong>
 
                         <FormSection>
@@ -191,7 +189,7 @@ const SermonDetailPage = () => {
 };
 
 const Container = styled.div`
-  padding: 40px;
+    padding: 40px;
     width: 100vw;
     background-color: #f5f5f5;
     min-height: 100vh;
@@ -207,11 +205,10 @@ const ExpandableHeader = styled.div`
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     height: 60px; /* Collapsed */
     transition: height 0.3s ease;
-  margin-bottom: 24px;
+    margin-bottom: 24px;
 
     &:hover {
         height: 200px;
-      
     }
 `;
 
@@ -226,10 +223,10 @@ const ExpandedContent = styled.div`
 `;
 
 const TopBar = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
 `;
 
 const BackButton = styled.button`
@@ -344,7 +341,6 @@ const ToggleButton = styled.button`
 `;
 
 const MetaSectionWrapper = styled.div`
-  
     position: relative;
     min-width: ${(props) => (props.isOpen ? '400px' : '50px')};
     transition: all 0.3s ease;
@@ -380,8 +376,8 @@ const FormSection = styled.div`
 
 const FormSectionLong = styled.div`
     margin-bottom: 24px;
-  display: flex;
-  justify-content: space-between;
+    display: flex;
+    justify-content: space-between;
 `;
 
 const Label = styled.div`
