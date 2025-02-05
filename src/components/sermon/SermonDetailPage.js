@@ -2,17 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { getSermonDetail, deleteSermon } from '../../services/APIService';
-import {
-    ArrowLeft,
-    Pencil,
-    Trash2,
-    ChevronDown,
-    ChevronUp,
-    Lock,
-    Unlock,
-    ChevronLeft,
-    ChevronRight,
-} from 'lucide-react';
+import { ArrowLeft, Pencil, Trash2, Lock, Unlock, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useUserState } from '../../recoil/utils';
 import { useRecoilValue } from 'recoil';
 import { isNavExpandedState } from '../../recoil/atoms';
@@ -27,7 +17,6 @@ const SermonDetailPage = () => {
     const isAdminPage = currentPath.includes('/admin/sermons');
     const [isMetaSectionOpen, setIsMetaSectionOpen] = useState(true);
     const isExpanded = useRecoilValue(isNavExpandedState);
-    const [scrollPosition, setScrollPosition] = useState(0);
 
     useEffect(() => {
         const fetchSermonDetail = async () => {
@@ -45,15 +34,6 @@ const SermonDetailPage = () => {
             fetchSermonDetail();
         }
     }, [id]);
-
-    useEffect(() => {
-        const handleScroll = () => {
-            setScrollPosition(window.scrollY);
-        };
-
-        window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
-    }, []);
 
     const handleDelete = async () => {
         if (window.confirm('정말로 이 설교를 삭제하시겠습니까?')) {
@@ -87,31 +67,32 @@ const SermonDetailPage = () => {
 
     return (
         <Container isExpanded={isExpanded}>
-
             <FormContainer isMetaOpen={isMetaSectionOpen}>
-                <MetaSectionWrapper isOpen={isMetaSectionOpen}>
-                    <ToggleButton onClick={() => setIsMetaSectionOpen(!isMetaSectionOpen)} type="button">
-                        {isMetaSectionOpen ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
-                    </ToggleButton>
-                    <MetaSection isOpen={isMetaSectionOpen}>
-
-                        <TopBar>
-                            <BackButton onClick={() => navigate(-1)}>
-                                <ArrowLeft size={20} />
-                                <span>뒤로 가기</span>
-                            </BackButton>
-                            {(sermon?.userId === currentUserId || (isAdmin && isAdminPage)) && (
-                                <ActionButtons>
-                                    <ActionButton onClick={handleEdit}>
-                                        <Pencil size={16} />
-                                    </ActionButton>
-                                    <ActionButton onClick={handleDelete} isDelete>
-                                        <Trash2 size={16} />
-                                    </ActionButton>
-                                </ActionButtons>
-                            )}
-                        </TopBar>
-                        <FormSectionLong>
+                <StickyContainer>
+                    <MetaSectionWrapper isOpen={isMetaSectionOpen}>
+                        <StickyContainer>
+                            <ToggleButton onClick={() => setIsMetaSectionOpen(!isMetaSectionOpen)} type="button">
+                                {isMetaSectionOpen ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
+                            </ToggleButton>
+                        </StickyContainer>
+                        <MetaSection isOpen={isMetaSectionOpen}>
+                            <TopBar>
+                                <BackButton onClick={() => navigate(-1)}>
+                                    <ArrowLeft size={20} />
+                                    <span>뒤로 가기</span>
+                                </BackButton>
+                                {(sermon?.userId === currentUserId || (isAdmin && isAdminPage)) && (
+                                    <ActionButtons>
+                                        <ActionButton onClick={handleEdit}>
+                                            <Pencil size={16} />
+                                        </ActionButton>
+                                        <ActionButton onClick={handleDelete} isDelete>
+                                            <Trash2 size={16} />
+                                        </ActionButton>
+                                    </ActionButtons>
+                                )}
+                            </TopBar>
+                            <FormSectionLong>
                                 <Author> 작성자: {sermon.ownerName}</Author>
                                 <DateInfo>
                                     <SermonDate>
@@ -130,57 +111,57 @@ const SermonDetailPage = () => {
                                         })}
                                     </CreatedDate>
                                 </DateInfo>
-                        </FormSectionLong>
+                            </FormSectionLong>
 
-                        <FormSection>
-                            <Label>설교 제목</Label>
-                            <Title>{sermon.sermonTitle}</Title>
-                        </FormSection>
-
-                        <FormSectionLong>
-                            <Label>예배 종류</Label>
-                            <Badge>{sermon.worshipType}</Badge>
-                        </FormSectionLong>
-
-                        <FormSection>
-                            <Label>성경 구절</Label>
-                            <ScriptureContainer>
-                                <Scripture>{sermon.mainScripture}</Scripture>
-                                {sermon.additionalScripture && <Scripture>{sermon.additionalScripture}</Scripture>}
-                            </ScriptureContainer>
-                        </FormSection>
-
-                        <FormSection>
-                            <Label>설교 요약</Label>
-                            <Summary>{sermon.summary}</Summary>
-                        </FormSection>
-
-                        {sermon.notes && (
                             <FormSection>
-                                <Label>노트</Label>
-                                <Notes>{sermon.notes}</Notes>
+                                <Label>설교 제목</Label>
+                                <Title>{sermon.sermonTitle}</Title>
                             </FormSection>
-                        )}
 
-                        <FormSectionLong>
-                            <Label>공개 설정</Label>
-                            <PrivacyStatus>
-                                {sermon.public ? (
-                                    <>
-                                        <Unlock size={16} />
-                                        전체 공개
-                                    </>
-                                ) : (
-                                    <>
-                                        <Lock size={16} />
-                                        비공개
-                                    </>
-                                )}
-                            </PrivacyStatus>
-                        </FormSectionLong>
-                    </MetaSection>
-                </MetaSectionWrapper>
+                            <FormSectionLong>
+                                <Label>예배 종류</Label>
+                                <Badge>{sermon.worshipType}</Badge>
+                            </FormSectionLong>
 
+                            <FormSection>
+                                <Label>성경 구절</Label>
+                                <ScriptureContainer>
+                                    <Scripture>{sermon.mainScripture}</Scripture>
+                                    {sermon.additionalScripture && <Scripture>{sermon.additionalScripture}</Scripture>}
+                                </ScriptureContainer>
+                            </FormSection>
+
+                            <FormSection>
+                                <Label>설교 요약</Label>
+                                <Summary>{sermon.summary}</Summary>
+                            </FormSection>
+
+                            {sermon.notes && (
+                                <FormSection>
+                                    <Label>노트</Label>
+                                    <Notes>{sermon.notes}</Notes>
+                                </FormSection>
+                            )}
+
+                            <FormSectionLong>
+                                <Label>공개 설정</Label>
+                                <PrivacyStatus>
+                                    {sermon.public ? (
+                                        <>
+                                            <Unlock size={16} />
+                                            전체 공개
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Lock size={16} />
+                                            비공개
+                                        </>
+                                    )}
+                                </PrivacyStatus>
+                            </FormSectionLong>
+                        </MetaSection>
+                    </MetaSectionWrapper>
+                </StickyContainer>
                 <ContentSection className="editor-container" isMetaOpen={isMetaSectionOpen}>
                     <Label>설교 내용</Label>
                     <Content dangerouslySetInnerHTML={{ __html: sermon.contents[0]?.contentText || '' }} />
@@ -191,45 +172,35 @@ const SermonDetailPage = () => {
 };
 
 const Container = styled.div`
-  padding: 40px;
+    padding: 40px;
     width: 100vw;
     background-color: #f5f5f5;
     min-height: 100vh;
     transition: all 0.3s ease;
 `;
 
-const ExpandableHeader = styled.div`
-    position: sticky;
-    top: 0;
-    width: 100%;
-    z-index: 100;
-    overflow: hidden;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    height: 60px; /* Collapsed */
-    transition: height 0.3s ease;
-  margin-bottom: 24px;
-
-    &:hover {
-        height: 200px;
-      
-    }
+const FormContainer = styled.div`
+    display: grid;
+    grid-template-columns: ${(props) => (props.isMetaOpen ? '400px 1fr' : '50px 1fr')};
+    gap: 32px;
+    max-width: 1200px;
+    margin: 0 auto;
+    align-items: start;
+    overflow: visible;
 `;
 
-const ExpandedContent = styled.div`
-    padding: 16px;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-
-    ${ExpandableHeader}:hover & {
-        opacity: 1;
-    }
+const StickyContainer = styled.div`
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    height: fit-content;
 `;
 
 const TopBar = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
 `;
 
 const BackButton = styled.button`
@@ -290,31 +261,10 @@ const Title = styled.h1`
     font-weight: 600;
 `;
 
-const Description = styled.p`
-    color: #666;
-    font-size: 1.1rem;
-`;
-
-const FormContainer = styled.div`
-    display: grid;
-    grid-template-columns: ${(props) => (props.isMetaOpen ? '400px 1fr' : '50px 1fr')};
-    gap: 32px;
-    max-width: 1200px;
-    margin: 0 auto;
-    margin-bottom: 40px;
-    transition: all 0.3s ease;
-    align-items: start;
-
-    @media (max-width: 1200px) {
-        grid-template-columns: 1fr;
-        padding: 0 20px;
-    }
-`;
-
 const ToggleButton = styled.button`
     position: absolute;
+    top: 40px;
     right: -16px;
-    top: 20px;
     width: 32px;
     height: 32px;
     border-radius: 50%;
@@ -344,7 +294,6 @@ const ToggleButton = styled.button`
 `;
 
 const MetaSectionWrapper = styled.div`
-  
     position: relative;
     min-width: ${(props) => (props.isOpen ? '400px' : '50px')};
     transition: all 0.3s ease;
@@ -370,8 +319,6 @@ const ContentSection = styled.div`
     min-height: 600px;
     display: flex;
     flex-direction: column;
-    position: sticky;
-    top: 40px;
 `;
 
 const FormSection = styled.div`
@@ -380,8 +327,8 @@ const FormSection = styled.div`
 
 const FormSectionLong = styled.div`
     margin-bottom: 24px;
-  display: flex;
-  justify-content: space-between;
+    display: flex;
+    justify-content: space-between;
 `;
 
 const Label = styled.div`
@@ -389,12 +336,6 @@ const Label = styled.div`
     font-weight: 600;
     color: #4f3296;
     margin-bottom: 8px;
-`;
-
-const AuthorInfo = styled.div`
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
 `;
 
 const Author = styled.span`

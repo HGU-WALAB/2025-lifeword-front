@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import styled from 'styled-components';
 import { User, Mail, Bookmark, Shield, Award, Lock } from 'lucide-react';
 import { setUserPassword } from '../../services/APIService';
-import PasswordModal from "./PasswordModal";
+import PasswordModal from './PasswordModal';
 import BookmarkPage from './BookmarkPage';
 import { useUserState } from '../../recoil/utils';
 
@@ -10,11 +10,9 @@ const MyPage = () => {
     const [newPassword, setNewPassword] = useState('');
     const [newPasswordConfirm, setNewPasswordConfirm] = useState('');
     const [passwordMatchMessage, setPasswordMatchMessage] = useState('');
-    const [activeTab, setActiveTab] = useState('info');  // 'info' or 'bookmark'
+    const [activeTab, setActiveTab] = useState('info'); // 'info' or 'bookmark'
     const [showPasswordModal, setShowPasswordModal] = useState(false);
     const { userEmail, userJob: job, isAdmin } = useUserState();
-
-
 
     const handlePasswordChange = async () => {
         if (!newPassword) {
@@ -33,14 +31,15 @@ const MyPage = () => {
         }
     };
 
-
     const handlePasswordCheckChange = (value) => {
         setNewPassword(value);
         if (!newPasswordConfirm) {
             setPasswordMatchMessage('');
             return;
         }
-        setPasswordMatchMessage(value === newPasswordConfirm ? '비밀번호가 일치합니다.' : '비밀번호가 일치하지 않습니다.');
+        setPasswordMatchMessage(
+            value === newPasswordConfirm ? '비밀번호가 일치합니다.' : '비밀번호가 일치하지 않습니다.'
+        );
     };
 
     const handlePasswordConfirmChange = (value) => {
@@ -52,7 +51,6 @@ const MyPage = () => {
         setPasswordMatchMessage(value === newPassword ? '비밀번호가 일치합니다.' : '비밀번호가 일치하지 않습니다.');
     };
 
-
     return (
         <Container>
             <PageHeader>
@@ -63,16 +61,10 @@ const MyPage = () => {
             </PageHeader>
 
             <TabContainer>
-                <TabButton
-                    active={activeTab === 'info'}
-                    onClick={() => setActiveTab('info')}
-                >
+                <TabButton active={activeTab === 'info'} onClick={() => setActiveTab('info')}>
                     <Lock size={20} /> 마이페이지 관리
                 </TabButton>
-                <TabButton
-                    active={activeTab === 'bookmark'}
-                    onClick={() => setActiveTab('bookmark')}
-                >
+                <TabButton active={activeTab === 'bookmark'} onClick={() => setActiveTab('bookmark')}>
                     <Bookmark size={20} /> 북마크 관리
                 </TabButton>
             </TabContainer>
@@ -147,8 +139,6 @@ const MyPage = () => {
         </Container>
     );
 };
-
-
 
 const Container = styled.div`
     margin-left: 100px;
@@ -247,7 +237,6 @@ const InfoCard = styled.div`
     }
 `;
 
-
 const InfoHeader = styled.div`
     display: flex;
     align-items: center;
@@ -287,7 +276,6 @@ const SectionTitle = styled.h2`
     align-items: center;
     gap: 0.5rem;
 `;
-
 
 const ChangePasswordButton = styled.button`
     background: #4f3296;
@@ -339,5 +327,6 @@ const TabButton = styled.button`
 const BookmarkSection = styled.div`
     padding-top: 2rem;
     border-top: 1px solid #eee;
+    margin-left: 200px;
 `;
 export default MyPage;
