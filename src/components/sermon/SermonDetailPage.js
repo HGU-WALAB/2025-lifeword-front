@@ -70,9 +70,11 @@ const SermonDetailPage = () => {
             <FormContainer isMetaOpen={isMetaSectionOpen}>
                 <StickyContainer>
                     <MetaSectionWrapper isOpen={isMetaSectionOpen}>
+                    <StickyContainer>
                         <ToggleButton onClick={() => setIsMetaSectionOpen(!isMetaSectionOpen)} type="button">
                             {isMetaSectionOpen ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
                         </ToggleButton>
+                        </StickyContainer>
                         <MetaSection isOpen={isMetaSectionOpen}>
                             <TopBar>
                                 <BackButton onClick={() => navigate(-1)}>
@@ -191,7 +193,6 @@ const StickyContainer = styled.div`
     position: sticky;
     top: 0;
     z-index: 1000;
-    padding: 16px;
     height: fit-content;
 `;
 
@@ -262,8 +263,8 @@ const Title = styled.h1`
 
 const ToggleButton = styled.button`
     position: absolute;
+    top: 40px;
     right: -16px;
-    top: 20px;
     width: 32px;
     height: 32px;
     border-radius: 50%;

@@ -157,10 +157,15 @@ const EditSermonPage = () => {
             </PageHeader>
 
             <FormContainer onSubmit={handleSubmit} isMetaOpen={isMetaSectionOpen}>
+                <StickyContainer>
+
+                
                 <MetaSectionWrapper isOpen={isMetaSectionOpen}>
+                <StickyContainer>
                     <ToggleButton onClick={toggleMetaSection} type="button">
                         {isMetaSectionOpen ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
                     </ToggleButton>
+                    </StickyContainer>
                     <MetaSection isOpen={isMetaSectionOpen}>
                         <FormSection>
                             <Label>설교 날짜</Label>
@@ -320,7 +325,7 @@ const EditSermonPage = () => {
                         <SubmitButton type="submit">수정 완료</SubmitButton>
                     </MetaSection>
                 </MetaSectionWrapper>
-
+                </StickyContainer>
                 <EditorContainer className="editor-container" isMetaOpen={isMetaSectionOpen}>
                     <Label>설교 내용</Label>
                     <SermonEditor ref={editorRef} value={formData.contentText} onChange={handleEditorChange} />
@@ -337,7 +342,6 @@ const Container = styled.div`
     width: 100vw;
     background-color: #f5f5f5;
     min-height: 100vh;
-    overflow-y: auto;
 `;
 
 const PageHeader = styled.div`
@@ -362,6 +366,13 @@ const FormContainer = styled.form`
         grid-template-columns: 1fr;
         padding: 0 20px;
     }
+`;
+
+const StickyContainer = styled.div`
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    height: fit-content;
 `;
 
 const MetaSectionWrapper = styled.div`
@@ -494,8 +505,8 @@ const Description = styled.p`
 
 const ToggleButton = styled.button`
     position: absolute;
+    top: 40px;
     right: -16px;
-    top: 20px;
     width: 32px;
     height: 32px;
     border-radius: 50%;
