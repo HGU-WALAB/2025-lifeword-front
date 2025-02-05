@@ -171,7 +171,6 @@ const Container = styled.div`
     align-items: center;
     justify-content: center;
     background-color: #f5f5f5;
-    height: 91vh;
 `;
 
 const TestamentSelector = styled.div`
@@ -223,7 +222,6 @@ const BookNavigation = styled.div`
 const ScrollView = styled.div`
     width: 100%;
     max-width: 800px;
-    height: calc(100vh - 450px);
     overflow-y: auto;
     margin: 20px 0;
     padding: 20px;

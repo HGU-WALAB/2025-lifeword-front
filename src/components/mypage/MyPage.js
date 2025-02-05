@@ -62,7 +62,7 @@ const MyPage = () => {
 
             <TabContainer>
                 <TabButton active={activeTab === 'info'} onClick={() => setActiveTab('info')}>
-                    <Lock size={20} /> 마이페이지 관리
+                    <Lock size={20} /> 계정 관리
                 </TabButton>
                 <TabButton active={activeTab === 'bookmark'} onClick={() => setActiveTab('bookmark')}>
                     <Bookmark size={20} /> 북마크 관리
@@ -326,6 +326,7 @@ const TabButton = styled.button`
 const BookmarkSection = styled.div`
     padding-top: 2rem;
     border-top: 1px solid #eee;
-    margin-left: 200px;
+    width: 80vw;
+    margin: 0 auto;
 `;
 export default MyPage;
