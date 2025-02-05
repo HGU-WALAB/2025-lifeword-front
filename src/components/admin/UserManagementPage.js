@@ -236,13 +236,14 @@ const UserManagementPage = () => {
 
 const Container = styled.div`
     padding: 40px;
-    width: 100vw;
+    margin: 0 auto;
+    width: 80vw;
     min-height: 92vh;
     background-color: #f5f5f5;
 `;
 
 const ContentWrapper = styled.div`
-    margin-left: 150px;
+    margin: 0 auto;
     max-width: 1200px;
     background: white;
     border-radius: 16px;
