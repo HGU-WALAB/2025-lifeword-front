@@ -79,7 +79,8 @@ const Container = styled.div`
 const MainContent = styled.div`
     flex: 1;
     position: relative;
-    margin-left: ${(props) => (props.isExpanded ? '360px' : '150px')};
+    margin-left: ${(props) => (props.isExpanded ? '380px' : '180px')};
+    margin-right: 60px;
     width: ${(props) => (props.isExpanded ? 'calc(100vw - 280px)' : 'calc(100vw - 80px)')};
     transition: all 0.3s ease;
     background-color: #f5f5f5;
