@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
-import { getBookmarks, deleteBookmark } from '../../services/APIService';
+import {getBookmarks, deleteBookmark, getSermonBookmarks, getVerseBookmarks} from '../../services/APIService';
 import { useUserState } from '../../recoil/utils';
 
 const ITEMS_PER_PAGE = 20;
@@ -16,7 +16,8 @@ const BookmarkPage = () => {
     const fetchBookmarks = async () => {
         setLoading(true);
         try {
-            const response = await getBookmarks(userId);
+            //const response = await getBookmarks(userId);
+            const response = isSermonView ? await getSermonBookmarks(userId) : await getVerseBookmarks(userId);
             if (response.success) {
                 setBookmarks(response.data);
             }
@@ -29,7 +30,7 @@ const BookmarkPage = () => {
 
     useEffect(() => {
         fetchBookmarks();
-    }, [userId]);
+    }, [userId, isSermonView]);
 
     const handleDeleteBookmark = async (bookmark) => {
         if (!window.confirm('이 북마크를 삭제하시겠습니까?')) {
@@ -37,7 +38,7 @@ const BookmarkPage = () => {
         }
 
         try {
-            const response = await deleteBookmark(userId, bookmark.verse_id);
+            const response = await deleteBookmark(userId, bookmark.bookmark_id);
             if (response.success) {
                 alert('북마크가 삭제되었습니다.');
                 await fetchBookmarks();
@@ -100,9 +101,9 @@ const BookmarkPage = () => {
                         <ResultItem key={bookmark.idx}>
                             <ResultContent>
                                 <ResultHeader>
-                                    {bookmark.long_label} {bookmark.chapter}장 {bookmark.paragraph}절
+                                     { isSermonView ? bookmark.sermon_title :bookmark.long_label } { isSermonView ? bookmark.sermon_date :bookmark.chapter} {isSermonView ? bookmark.worship_type : bookmark.paragraph}
                                 </ResultHeader>
-                                <VerseText>{bookmark.sentence}</VerseText>
+                                <VerseText> {isSermonView ? bookmark.summary : bookmark.sentence } </VerseText>
                             </ResultContent>
                             <DeleteButton onClick={() => handleDeleteBookmark(bookmark)} aria-label="북마크 삭제">
                                 <Trash2 size={20} />

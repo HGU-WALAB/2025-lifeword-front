@@ -36,7 +36,7 @@ const BookmarkPage = () => {
         }
 
         try {
-            const response = await deleteBookmark(userId, bookmark.verse_id);
+            const response = await deleteBookmark(userId, bookmark.bookmark_id); //verse_id -> bookmark.id
             if (response.success) {
                 alert('북마크가 삭제되었습니다.');
                 await fetchBookmarks();

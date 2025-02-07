@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-const BASE_URL = 'http://walab.handong.edu:8080/naimkim_1/api/v1';
-
+//const BASE_URL = 'http://walab.handong.edu:8080/naimkim_1/api/v1';
+const BASE_URL = 'http://localhost:8080/api/v1';
 // User 관련 API
 export const verifyUser = async (email, setUserState) => {
     try {
@@ -150,11 +150,11 @@ export const searchSermons = async (keyword, userId, searchIn = 'both') => {
 };
 
 // Bookmark 관련 API
-export const createBookmark = async (userID, verseId) => {
+export const createBookmark = async (userID, verseId , sermonId , isSermon) => {
     try {
         const { data } = await axios.post(
             `${BASE_URL}/bookmarks`,
-            { verseId },
+            { verseId, sermonId,isSermon },
             {
                 params: { userID },
             }
@@ -178,9 +178,33 @@ export const getBookmarks = async (userID) => {
     }
 };
 
-export const deleteBookmark = async (userID, verseId) => {
+export const getSermonBookmarks = async (userID) => {
     try {
-        const { data } = await axios.delete(`${BASE_URL}/bookmarks/${verseId}`, {
+        const { data } = await axios.get(`${BASE_URL}/bookmarks/sermon`, {
+            params: { userID },
+        });
+        return data;
+    } catch (error) {
+        console.error('Error getting bookmarks:', error);
+        throw error;
+    }
+};
+
+export const getVerseBookmarks = async (userID) => {
+    try {
+        const { data } = await axios.get(`${BASE_URL}/bookmarks/verse`, {
+            params: { userID },
+        });
+        return data;
+    } catch (error) {
+        console.error('Error getting bookmarks:', error);
+        throw error;
+    }
+};
+
+export const deleteBookmark = async (userID, bookmarkId) => {
+    try {
+        const { data } = await axios.delete(`${BASE_URL}/bookmarks/${bookmarkId}`, {
             params: { userID },
         });
         return data;

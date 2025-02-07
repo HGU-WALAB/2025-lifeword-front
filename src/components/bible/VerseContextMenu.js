@@ -34,7 +34,7 @@ const VerseContextMenu = ({ targetRef, verse }) => {
                 return;
             }
 
-            const response = await createBookmark(userId, verse.idx);
+            const response = await createBookmark(userId, verse.idx,null,false);
             if (response.success) {
                 alert('북마크가 추가되었습니다.');
             } else if (response.message === 'Already bookmarked') {
