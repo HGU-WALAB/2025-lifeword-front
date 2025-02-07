@@ -90,26 +90,26 @@ const AdminNavbar = () => {
 const AdminNavItem = styled(NavItem)`
     margin-top: 20px;
     padding: 14px ${(props) => (props.isExpanded ? '20px' : '0')};
-    background: ${(props) => (props.active ? '#6b4ee6' : 'rgba(107, 78, 230, 0.08)')};
-    border-left: 4px solid #8a70ff;
+    background: ${(props) => (props.active ? '#ff4444' : 'rgba(255, 68, 68, 0.08)')};
+    border-left: 4px solid #ff6666;
     position: relative;
 
     &:hover {
-        background: rgba(107, 78, 230, 0.2);
+        background: rgba(255, 68, 68, 0.2);
         transform: translateX(5px);
 
         svg,
         span {
-            color: #6b4ee6;
+            color: #ff4444;
         }
     }
 
     svg {
-        color: ${(props) => (props.active ? '#ffffff' : '#6b4ee6')};
+        color: ${(props) => (props.active ? '#ffffff' : '#ff4444')};
     }
 
     span {
-        color: ${(props) => (props.active ? '#ffffff' : '#6b4ee6')};
+        color: ${(props) => (props.active ? '#ffffff' : '#ff4444')};
         font-weight: 600;
     }
 
@@ -121,7 +121,7 @@ const AdminNavItem = styled(NavItem)`
         transform: translateY(-50%);
         font-size: 11px;
         padding: 2px 6px;
-        background: #ff6b6b;
+        background: #ff4444;
         color: white;
         border-radius: 10px;
         display: ${(props) => (props.isExpanded ? 'block' : 'none')};
