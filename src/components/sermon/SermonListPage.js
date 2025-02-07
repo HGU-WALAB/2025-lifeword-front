@@ -610,16 +610,35 @@ const SermonListPage = () => {
                                     viewType={viewType}
                                     onClick={() => navigate(`/main/sermon-list/detail/${sermon.sermonId}`)}
                                 >
-                                    <SermonAuthor>{sermon.ownerName}</SermonAuthor>
-                                    <SermonTitle>{sermon.sermonTitle}</SermonTitle>
-                                    <SermonInfo>
-                                        <Scripture>{sermon.mainScripture}</Scripture>
-                                        {sermon.additionalScripture && (
-                                            <Scripture>{sermon.additionalScripture}</Scripture>
-                                        )}
-                                        <WorshipType>{sermon.worshipType}</WorshipType>
-                                    </SermonInfo>
-                                    <SermonSummary>{sermon.summary}</SermonSummary>
+                                    {viewType === 'list' ? (
+                                        <>
+                                            <div className="sermon-meta">
+                                                <SermonAuthor>{sermon.ownerName}</SermonAuthor>
+                                                <SermonTitle>{sermon.sermonTitle}</SermonTitle>
+                                                <SermonInfo>
+                                                    <Scripture>{sermon.mainScripture}</Scripture>
+                                                    {sermon.additionalScripture && (
+                                                        <Scripture>{sermon.additionalScripture}</Scripture>
+                                                    )}
+                                                    <WorshipType>{sermon.worshipType}</WorshipType>
+                                                </SermonInfo>
+                                            </div>
+                                            <SermonSummary>{sermon.summary}</SermonSummary>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <SermonAuthor>{sermon.ownerName}</SermonAuthor>
+                                            <SermonTitle>{sermon.sermonTitle}</SermonTitle>
+                                            <SermonInfo>
+                                                <Scripture>{sermon.mainScripture}</Scripture>
+                                                {sermon.additionalScripture && (
+                                                    <Scripture>{sermon.additionalScripture}</Scripture>
+                                                )}
+                                                <WorshipType>{sermon.worshipType}</WorshipType>
+                                            </SermonInfo>
+                                            <SermonSummary>{sermon.summary}</SermonSummary>
+                                        </>
+                                    )}
                                 </SermonCard>
                             ))
                         ) : (
@@ -860,17 +879,35 @@ const ActiveFilters = styled.div`
 `;
 
 const FilterTag = styled.span`
-    padding: 5px 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    margin-right: 5px;
+    display: flex;
+    align-items: center;
+    padding: 4px 12px;
+    height: 30px;
+    background: white;
+    border: 1px solid #d9d9d9;
+    border-radius: 25px;
+    margin-right: 8px;
+    transition: all 0.2s ease;
+
+    &:hover {
+        border-color: #6b4ee6;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
 `;
 
 const TagText = styled.span`
-    margin-right: 5px;
+    font-size: 13px;
+    color: #333;
+    margin-right: 8px;
+    font-weight: 500;
 `;
 
 const RemoveButton = styled.button`
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
     padding: 0;
     border: none;
     background: none;
@@ -880,6 +917,11 @@ const RemoveButton = styled.button`
 
     &:hover {
         color: #6b4ee6;
+    }
+
+    svg {
+        width: 16px;
+        height: 16px;
     }
 `;
 
@@ -953,16 +995,53 @@ const SermonList = styled.div`
         props.viewType === 'grid'
             ? props.isNavExpanded
                 ? 'repeat(auto-fill, minmax(280px, 1fr))'
-                : 'repeat(auto-fill, minmax(300px, 1fr))'
-            : 'unset'};
+                : 'repeat(auto-fill, minmax(260px, 1fr))'
+            : '1fr'};
     gap: 24px;
     transition: all 0.3s ease;
+    width: 100%;
 `;
 
 const SermonCard = styled.div`
+    ${(props) =>
+        props.viewType === 'grid' &&
+        `
+        min-height: 220px;
+        padding: 20px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+
+        ${SermonAuthor} {
+            font-size: 12px;
+            margin-bottom: 4px;
+        }
+
+        ${SermonTitle} {
+            font-size: 18px;
+            margin-bottom: 8px;
+            line-height: 1.3;
+        }
+
+        ${SermonInfo} {
+            margin-bottom: 12px;
+        }
+
+        ${SermonSummary} {
+            font-size: 13px;
+            -webkit-line-clamp: 3;
+            margin-top: 8px;
+        }
+    `}
+
     padding: 20px;
     background: white;
-    border-radius: 16px;
+    border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -971,14 +1050,75 @@ const SermonCard = styled.div`
         props.viewType === 'list' &&
         `
         display: grid;
-        grid-template-columns: 1fr 3fr;
-        gap: 20px;
-        margin-bottom: 12px;
+        grid-template-columns: 300px 1fr;
+        gap: 40px;
+        padding: 20px 32px;
+        height: 167px;
+        position: relative;
+
+        .sermon-meta {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            gap: 4px;
+        }
+
+        ${SermonAuthor} {
+            font-size: 12px;
+            color: #595C62;
+            font-weight: 500;
+        }
+
+        ${SermonTitle} {
+            font-size: 24px;
+            font-weight: 800;
+            color: #482895;
+            margin: 8px 0;
+        }
+
+        ${SermonInfo} {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            margin-top: auto;
+        }
+
+        ${Scripture} {
+            font-size: 12px;
+            font-weight: 500;
+            color: #212A3E;
+            padding: 4px 8px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            border: 1px solid #e1e1e1;
+        }
+
+        ${WorshipType} {
+            font-size: 10px;
+            padding: 4px 12px;
+            background: #eee6ff;
+            border: 1px solid #d4c4ff;
+            border-radius: 4px;
+            color: #482895;
+        }
+
+        ${SermonSummary} {
+            font-size: 14px;
+            line-height: 24px;
+            color: #212A3E;
+            font-weight: 500;
+            margin: 0;
+            display: -webkit-box;
+            -webkit-line-clamp: 6;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
     `}
 
     &:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
 `;
 
@@ -998,7 +1138,8 @@ const SermonTitle = styled.h2`
 
 const SermonInfo = styled.div`
     display: flex;
-    gap: 12px;
+    flex-wrap: wrap;
+    gap: 8px;
     align-items: center;
     margin-bottom: 16px;
 `;
@@ -1007,14 +1148,19 @@ const Scripture = styled.span`
     font-size: 12px;
     font-weight: 500;
     color: #212a3e;
+    padding: 4px 8px;
+    background: #f8f9fa;
+    border-radius: 4px;
+    border: 1px solid #e1e1e1;
 `;
 
 const WorshipType = styled.span`
     font-size: 10px;
-    padding: 4px 8px;
-    background: #f8f9fa;
+    padding: 4px 12px;
+    background: #eee6ff;
+    border: 1px solid #d4c4ff;
     border-radius: 4px;
-    color: #212a3e;
+    color: #482895;
 `;
 
 const SermonSummary = styled.p`
