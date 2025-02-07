@@ -152,7 +152,7 @@ const Container = styled.div`
     flex-direction: column;
     align-items: flex-start; /* 왼쪽 정렬로 변경 */
     padding-left: 20px; /* 여백 조정 */
-    background-color: #f5f5f5;
+    background-color: white;
     overflow-y: hidden;
 `;
 

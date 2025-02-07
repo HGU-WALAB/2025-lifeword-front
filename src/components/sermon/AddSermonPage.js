@@ -324,7 +324,7 @@ const AddSermonPage = () => {
 
 const Container = styled.div`
     padding: 40px;
-    background-color: #f5f5f5;
+    background-color: white;
     min-height: 100vh;
 `;
 
@@ -355,7 +355,7 @@ const EditorContainer = styled.div`
     background: white;
     padding: 32px;
     border-radius: 16px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
     min-height: 600px;
     display: flex;
     flex-direction: column;
@@ -373,7 +373,7 @@ const MetaSection = styled.div`
     background: white;
     padding: 32px;
     border-radius: 16px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
     height: fit-content;
     transform: translateX(${(props) => (props.isOpen ? '0' : '-100%')});
     opacity: ${(props) => (props.isOpen ? 1 : 0)};

@@ -40,7 +40,7 @@ const Container = styled.div`
     padding: 40px;
     width: 100vw;
     min-height: 92vh;
-    background-color: #f5f5f5;
+    background-color: white;
 `;
 
 const Title = styled.h1`
