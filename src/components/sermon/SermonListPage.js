@@ -108,9 +108,9 @@ const SermonListPage = () => {
         authors: [],
     });
 
-    // 날짜 필터 상태 수정
+    // 날짜 필터 상태
     const [dateFilter, setDateFilter] = useState({
-        type: 'single', // 'single' or 'range'
+        type: 'single',
         singleDate: '',
         range: {
             startDate: '',
@@ -196,7 +196,7 @@ const SermonListPage = () => {
         });
     };
 
-    // 아코디언 토글 함수 추가
+    // 아코디언 토글 함수
     const toggleAccordion = (sectionName) => {
         setExpandedFilters((prev) => ({
             ...prev,
@@ -245,7 +245,7 @@ const SermonListPage = () => {
     const renderPageButtons = () => {
         const pageButtons = [];
         const DOTS = '...';
-        const SIBLINGS_COUNT = 1; // 현재 페이지 양쪽에 보여줄 페이지 수
+        const SIBLINGS_COUNT = 1;
 
         // 첫 페이지 버튼
         pageButtons.push(
@@ -635,10 +635,11 @@ const SermonListPage = () => {
 
 const Container = styled.div`
     padding: 40px 60px;
-    width: ${(props) => (props.isNavExpanded ? 'calc(100vw - 320px)' : 'calc(100vw - 120px)')};
     min-height: 91vh;
     background-color: #f8f9fa;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    width: 100%;
+    flex: 1;
 `;
 
 const SearchSection = styled.div`
@@ -690,6 +691,7 @@ const ContentWrapper = styled.div`
     grid-template-columns: ${(props) => (props.isNavExpanded ? '300px 1fr' : '260px 1fr')};
     gap: 40px;
     transition: all 0.3s ease;
+    width: 100%;
 `;
 
 const FilterSection = styled.div`
@@ -827,17 +829,17 @@ const FilterCheckbox = styled.label`
     cursor: pointer;
     transition: all 0.2s ease;
     border-radius: 6px;
-    font-size: 13px; // 폰트 크기 약간 감소
+    font-size: 13px;
 
     &:hover {
         background: #f8f9fa;
     }
 
     span {
-        white-space: nowrap; // 텍스트 줄바꿈 방지
+        white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        padding-left: 24px; // 체크박스 아이콘 공간
+        padding-left: 24px;
     }
 `;
 
@@ -916,19 +918,31 @@ const Select = styled.select`
 const ViewToggle = styled.div`
     display: flex;
     align-items: center;
+    gap: 8px;
+    padding: 4px;
+    background: #f8f9fa;
+    border-radius: 8px;
 `;
 
 const ToggleButton = styled.button`
-    padding: 5px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    background-color: ${(props) => (props.active ? '#007bff' : 'transparent')};
-    color: ${(props) => (props.active ? '#fff' : '#333')};
+    padding: 8px;
+    border: none;
+    border-radius: 6px;
+    background-color: ${(props) => (props.active ? '#6b4ee6' : 'transparent')};
+    color: ${(props) => (props.active ? 'white' : '#666')};
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
     &:hover {
-        background-color: ${(props) => (props.active ? '#0056b3' : '#f0f0f0')};
+        background-color: ${(props) => (props.active ? '#5a3eb8' : '#e9ecef')};
+    }
+
+    svg {
+        width: 20px;
+        height: 20px;
     }
 `;
 
