@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-//const BASE_URL = 'http://walab.handong.edu:8080/naimkim_1/api/v1';
-const BASE_URL = 'http://localhost:8080/api/v1';
+const BASE_URL = 'http://walab.handong.edu:8080/naimkim_1/api/v1';
+
 // User 관련 API
 export const verifyUser = async (email, setUserState) => {
     try {
@@ -203,8 +203,9 @@ export const getVerseBookmarks = async (userID) => {
 };
 
 export const deleteBookmark = async (userID, bookmarkId) => {
+    //console.log(bookmarkId.bookmarkId);
     try {
-        const { data } = await axios.delete(`${BASE_URL}/bookmarks/${bookmarkId}`, {
+        const { data } = await axios.delete(`${BASE_URL}/bookmarks/${parseInt(bookmarkId)}`, {
             params: { userID },
         });
         return data;
