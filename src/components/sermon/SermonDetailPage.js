@@ -73,84 +73,85 @@ const SermonDetailPage = () => {
 
   return (
     <Container>
-        <HeaderContainer
-          expanded={headerExpanded}
-          onMouseEnter={() => setIsHeaderHovered(true)}
-          onMouseLeave={() => setIsHeaderHovered(false)}
-          onClick={toggleHeaderPin}
-        >
-          <TopBar>
-            <BackButton onClick={() => navigate(-1)}>
-              <ArrowLeft size={20} />
-              <span>뒤로 가기</span>
-            </BackButton>
-            {(sermon?.userId === currentUserId || (isAdmin && isAdminPage)) && (
-              <ActionButtons>
-                <ActionButton onClick={handleEdit}>
-                  <Pencil size={16} />
-                </ActionButton>
-                <ActionButton onClick={handleDelete} isDelete>
-                  <Trash2 size={16} />
-                </ActionButton>
-              </ActionButtons>
-            )}
-          </TopBar>
-          {headerExpanded && (
-            <>
-              <MetaInfo>
-                <FormSectionLong>
-                  <Author>작성자: {sermon.ownerName}</Author>
-                  <DateInfo>
-                    <SermonDate>
-                      {new Date(sermon.sermonDate).toLocaleDateString('ko-KR', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                      })}
-                    </SermonDate>
-                    <CreatedDate>
-                      작성일:{' '}
-                      {new Date(sermon.createdAt).toLocaleDateString('ko-KR', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                      })}
-                    </CreatedDate>
-                  </DateInfo>
-                </FormSectionLong>
-                <FormSection>
-                  <Label>설교 제목</Label>
-                  <Title>{sermon.sermonTitle}</Title>
-                </FormSection>
-              </MetaInfo>
-              <ExtraInfo>
-                <SectionContainer>
-                  <SectionLabel>요약</SectionLabel>
-                  <SectionBox>{sermon.summary}</SectionBox>
-                </SectionContainer>
-                {sermon.notes && (
-                  <SectionContainer>
-                    <SectionLabel>노트</SectionLabel>
-                    <SectionBox>{sermon.notes}</SectionBox>
-                  </SectionContainer>
-                )}
-              </ExtraInfo>
-            </>
+      <HeaderContainer
+        expanded={headerExpanded}
+        onMouseEnter={() => setIsHeaderHovered(true)}
+        onMouseLeave={() => setIsHeaderHovered(false)}
+        onClick={toggleHeaderPin}
+      >
+        <TopBar>
+          <BackButton onClick={() => navigate(-1)}>
+            <ArrowLeft size={20} />
+            <span>뒤로 가기</span>
+          </BackButton>
+          {(sermon?.userId === currentUserId || (isAdmin && isAdminPage)) && (
+            <ActionButtons>
+              <ActionButton onClick={handleEdit}>
+                <Pencil size={16} />
+              </ActionButton>
+              <ActionButton onClick={handleDelete} isDelete>
+                <Trash2 size={16} />
+              </ActionButton>
+            </ActionButtons>
           )}
-        </HeaderContainer>
-        <ContentSection>
-          <Label>설교 내용</Label>
-          <Content
-            dangerouslySetInnerHTML={{
-              __html: sermon.contents[0]?.contentText || '',
-            }}
-          />
-        </ContentSection>
+        </TopBar>
+        {headerExpanded && (
+          <>
+            <MetaInfo>
+              <FormSectionLong>
+                <Author>작성자: {sermon.ownerName}</Author>
+                <DateInfo>
+                  <SermonDate>
+                    {new Date(sermon.sermonDate).toLocaleDateString('ko-KR', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                    })}
+                  </SermonDate>
+                  <CreatedDate>
+                    작성일:{' '}
+                    {new Date(sermon.createdAt).toLocaleDateString('ko-KR', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                    })}
+                  </CreatedDate>
+                </DateInfo>
+              </FormSectionLong>
+              <FormSection>
+                <Label>설교 제목</Label>
+                <Title>{sermon.sermonTitle}</Title>
+              </FormSection>
+            </MetaInfo>
+            <ExtraInfo>
+              <SectionContainer>
+                <SectionLabel>요약</SectionLabel>
+                <SectionBox>{sermon.summary}</SectionBox>
+              </SectionContainer>
+              {sermon.notes && (
+                <SectionContainer>
+                  <SectionLabel>노트</SectionLabel>
+                  <SectionBox>{sermon.notes}</SectionBox>
+                </SectionContainer>
+              )}
+            </ExtraInfo>
+          </>
+        )}
+      </HeaderContainer>
+      <ContentSection>
+        <Label>설교 내용</Label>
+        <Content
+          dangerouslySetInnerHTML={{
+            __html: sermon.contents[0]?.contentText || '',
+          }}
+        />
+      </ContentSection>
     </Container>
   );
 };
 
 const Container = styled.div`
+  padding: 40px;
   width: 100%;
   min-height: 100vh;
   transition: all 0.3s ease;
