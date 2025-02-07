@@ -72,12 +72,14 @@ const Container = styled.div`
     display: flex;
     min-height: 100vh;
     background-color: #ffffff;
+    
+    
+    
 `;
-
 const MainContent = styled.div`
     flex: 1;
     position: relative;
-    margin-left: ${(props) => (props.isExpanded ? '280px' : '80px')};
+    margin-left: ${(props) => (props.isExpanded ? '360px' : '150px')};
     width: ${(props) => (props.isExpanded ? 'calc(100vw - 280px)' : 'calc(100vw - 80px)')};
     transition: all 0.3s ease;
     background-color: #f5f5f5;
