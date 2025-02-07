@@ -140,11 +140,6 @@ const AddSermonPage = () => {
 
     return (
         <Container>
-            <PageHeader>
-                <Title>설교 작성하기</Title>
-                <Description>새로운 설교를 기록해보세요.</Description>
-            </PageHeader>
-
             <FormContainer onSubmit={handleSubmit} isMetaOpen={isMetaSectionOpen}>
                 <StickyContainer>
                     <MetaSectionWrapper isOpen={isMetaSectionOpen}>
@@ -213,7 +208,10 @@ const AddSermonPage = () => {
                                 <ScriptureHeader>
                                     <Label>성경 본문</Label>
                                     {!showAdditionalScripture && (
-                                        <AddScriptureButton type="button" onClick={() => setShowAdditionalScripture(true)}>
+                                        <AddScriptureButton
+                                            type="button"
+                                            onClick={() => setShowAdditionalScripture(true)}
+                                        >
                                             <Plus size={16} />
                                             추가
                                         </AddScriptureButton>
@@ -326,16 +324,8 @@ const AddSermonPage = () => {
 
 const Container = styled.div`
     padding: 40px;
-    background-color: #f5f5f5;
+    background-color: white;
     min-height: 100vh;
-`;
-
-const PageHeader = styled.div`
-    margin-bottom: 40px;
-    width: 100%;
-    max-width: 1200px;
-    margin-left: auto;
-    margin-right: auto;
 `;
 
 const StickyContainer = styled.div`
@@ -343,18 +333,6 @@ const StickyContainer = styled.div`
     top: 0;
     z-index: 1000;
     height: fit-content;
-`;
-
-const Title = styled.h1`
-    font-size: 2.5rem;
-    color: #333;
-    margin-bottom: 0.5rem;
-    font-weight: 600;
-`;
-
-const Description = styled.p`
-    color: #666;
-    font-size: 1.1rem;
 `;
 
 const FormContainer = styled.form`
@@ -377,7 +355,7 @@ const EditorContainer = styled.div`
     background: white;
     padding: 32px;
     border-radius: 16px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
     min-height: 600px;
     display: flex;
     flex-direction: column;
@@ -395,7 +373,7 @@ const MetaSection = styled.div`
     background: white;
     padding: 32px;
     border-radius: 16px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
     height: fit-content;
     transform: translateX(${(props) => (props.isOpen ? '0' : '-100%')});
     opacity: ${(props) => (props.isOpen ? 1 : 0)};
@@ -434,8 +412,6 @@ const ToggleButton = styled.button`
         transition: all 0.2s ease;
     }
 `;
-
-
 
 const FormSection = styled.div`
     margin-bottom: 32px;

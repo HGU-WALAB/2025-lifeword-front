@@ -62,7 +62,7 @@ const MyPage = () => {
 
             <TabContainer>
                 <TabButton active={activeTab === 'info'} onClick={() => setActiveTab('info')}>
-                    <Lock size={20} /> 마이페이지 관리
+                    <Lock size={20} /> 계정 관리
                 </TabButton>
                 <TabButton active={activeTab === 'bookmark'} onClick={() => setActiveTab('bookmark')}>
                     <Bookmark size={20} /> 북마크 관리
@@ -141,11 +141,9 @@ const MyPage = () => {
 };
 
 const Container = styled.div`
-    margin-left: 100px;
     padding: 40px;
-    width: 100vw;
     min-height: 92vh;
-    background-color: #f5f5f5;
+    background-color: white;
 
     @media (max-width: 1200px) {
         width: calc(100vw - 320px);
@@ -200,11 +198,10 @@ const ContentWrapper = styled.div`
     background: white;
     padding: 2rem;
     border-radius: 12px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    max-width: 900px;
-    width: 100%; // centre
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    max-width: 800px;
 
-    @media (max-width: 800px) {
+    @media (max-width: 768px) {
         padding: 1.5rem;
     }
 `;
@@ -327,6 +324,7 @@ const TabButton = styled.button`
 const BookmarkSection = styled.div`
     padding-top: 2rem;
     border-top: 1px solid #eee;
-    margin-left: 200px;
+    width: 80vw;
+    margin: 0 auto;
 `;
 export default MyPage;
