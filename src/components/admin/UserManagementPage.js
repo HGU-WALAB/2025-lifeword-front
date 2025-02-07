@@ -239,7 +239,7 @@ const Container = styled.div`
     margin: 0 auto;
     width: 80vw;
     min-height: 92vh;
-    background-color: #f5f5f5;
+    background-color: white;
 `;
 
 const ContentWrapper = styled.div`

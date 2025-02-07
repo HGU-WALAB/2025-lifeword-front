@@ -184,7 +184,7 @@ const Container = styled.div`
     padding: 40px;
     width: 100vw;
     min-height: 92vh;
-    background-color: #f5f5f5;
+    background-color: white;
 `;
 
 const ContentWrapper = styled.div`
@@ -192,7 +192,7 @@ const ContentWrapper = styled.div`
     margin: 0 auto;
     background: white;
     border-radius: 16px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     padding: 48px;
 `;
 

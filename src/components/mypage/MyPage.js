@@ -143,7 +143,7 @@ const MyPage = () => {
 const Container = styled.div`
     padding: 40px;
     min-height: 92vh;
-    background-color: #f5f5f5;
+    background-color: white;
 
     @media (max-width: 1200px) {
         width: calc(100vw - 320px);
@@ -198,7 +198,7 @@ const ContentWrapper = styled.div`
     background: white;
     padding: 2rem;
     border-radius: 12px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     max-width: 800px;
 
     @media (max-width: 768px) {

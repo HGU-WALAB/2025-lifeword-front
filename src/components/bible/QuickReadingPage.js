@@ -170,7 +170,7 @@ const Container = styled.div`
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    background-color: #f5f5f5;
+    background-color: white;
 `;
 
 const TestamentSelector = styled.div`
@@ -216,7 +216,7 @@ const BookNavigation = styled.div`
     padding: 16px;
     background-color: white;
     border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 `;
 
 const ScrollView = styled.div`
@@ -227,7 +227,7 @@ const ScrollView = styled.div`
     padding: 20px;
     background-color: white;
     border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 `;
 
 const NavigationContainer = styled.div`
@@ -239,7 +239,7 @@ const NavigationContainer = styled.div`
     background-color: white;
     padding: 16px 24px;
     border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 `;
 
 const ChapterNavigation = styled.div`
