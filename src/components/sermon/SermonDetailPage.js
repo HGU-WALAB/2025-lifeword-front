@@ -151,7 +151,7 @@ const SermonDetailPage = () => {
 };
 
 const Container = styled.div`
-  padding: 40px;
+  
   width: 100%;
   min-height: 100vh;
   transition: all 0.3s ease;
@@ -230,8 +230,7 @@ const ActionButton = styled.button`
 `;
 
 const MetaInfo = styled.div`
-
-  margin-top: 12px;
+  margin-top: 20px;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -318,13 +317,14 @@ const ContentSection = styled.div`
   background: white;
   width: 100%%;
   padding: 32px;
+  margin-top: 12px;
   border-radius: 16px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   min-height: 600px;
   display: flex;
   flex-direction: column;
-  border-top: 1px solid #ccc;
 `;
+// border: 1px solid #A0A7B8;
 
 const Content = styled.div`
   font-size: 16px;

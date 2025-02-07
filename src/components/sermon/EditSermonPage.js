@@ -339,7 +339,6 @@ const EditSermonPage = () => {
 
 const Container = styled.div`
     padding: 40px;
-    width: 100vw;
     background-color: #f5f5f5;
     min-height: 100vh;
 `;
