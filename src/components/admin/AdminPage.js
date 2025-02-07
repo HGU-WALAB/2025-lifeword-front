@@ -37,7 +37,6 @@ const AdminPage = () => {
 };
 
 const Container = styled.div`
-    margin-left: 100px;
     padding: 40px;
     width: 100vw;
     min-height: 92vh;
