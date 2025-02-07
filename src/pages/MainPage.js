@@ -72,18 +72,15 @@ const Container = styled.div`
     display: flex;
     min-height: 100vh;
     background-color: #ffffff;
-    
-    
+    width: 100%;
     
 `;
 const MainContent = styled.div`
     flex: 1;
     position: relative;
-    margin-left: ${(props) => (props.isExpanded ? '380px' : '180px')};
-    margin-right: 60px;
-    width: ${(props) => (props.isExpanded ? 'calc(100vw - 280px)' : 'calc(100vw - 80px)')};
+    margin-left: ${(props) => (props.isExpanded ? '320px' : '120px')};
+    margin-right: 0px;
     transition: all 0.3s ease;
-    background-color: #f5f5f5;
     min-height: 100vh;
 `;
 
