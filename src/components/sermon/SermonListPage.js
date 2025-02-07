@@ -701,7 +701,7 @@ const FilterSection = styled.div`
     transition: all 0.3s ease;
     margin-left: 20px;
     position: sticky;
-    top: 20px; // 상단에서 20px 떨어진 위치에서 고정
+    top: 20px;
 `;
 
 const FilterHeader = styled.div`
