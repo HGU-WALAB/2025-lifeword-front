@@ -72,7 +72,6 @@ const Container = styled.div`
     display: flex;
     min-height: 100vh;
     background-color: #ffffff;
-    width: 100%;
     
 `;
 const MainContent = styled.div`
