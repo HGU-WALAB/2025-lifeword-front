@@ -83,10 +83,10 @@ export const createSermon = async (sermonData) => {
 
 export const getPublicSermons = async () => {
     try {
-        const { data } = await axios.get(`${BASE_URL}/sermons/publiclist`);
-        return data;
+        const response = await axios.get(`${BASE_URL}/sermons/publiclist`);
+        return response.data;
     } catch (error) {
-        console.error('Error getting public sermons:', error);
+        console.error('Error fetching public sermons:', error);
         throw error;
     }
 };
