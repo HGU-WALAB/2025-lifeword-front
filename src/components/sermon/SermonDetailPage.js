@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import styled from 'styled-components';
-import { getSermonDetail, deleteSermon } from '../../services/APIService';
-import { ArrowLeft, Pencil, Trash2, Lock, Unlock } from 'lucide-react';
-import { useUserState } from '../../recoil/utils';
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import styled from "styled-components";
+import { getSermonDetail, deleteSermon } from "../../services/APIService";
+import { ArrowLeft, Pencil, Trash2 } from "lucide-react";
+import { useUserState } from "../../recoil/utils";
 
 const SermonDetailPage = () => {
   const { id } = useParams();
@@ -12,9 +12,9 @@ const SermonDetailPage = () => {
   const [loading, setLoading] = useState(true);
   const { userId: currentUserId, isAdmin } = useUserState();
   const currentPath = window.location.pathname;
-  const isAdminPage = currentPath.includes('/admin/sermons');
+  const isAdminPage = currentPath.includes("/admin/sermons");
 
-  // header hover 할때 보이게 하기
+  // header state expand on hover or click (pin)
   const [isHeaderPinned, setIsHeaderPinned] = useState(false);
   const [isHeaderHovered, setIsHeaderHovered] = useState(false);
   const headerExpanded = isHeaderPinned || isHeaderHovered;
@@ -25,7 +25,7 @@ const SermonDetailPage = () => {
         const data = await getSermonDetail(id);
         setSermon(data);
       } catch (error) {
-        console.error('Error fetching sermon detail:', error);
+        console.error("Error fetching sermon detail:", error);
       } finally {
         setLoading(false);
       }
@@ -37,28 +37,28 @@ const SermonDetailPage = () => {
   }, [id]);
 
   const handleDelete = async () => {
-    if (window.confirm('정말로 이 설교를 삭제하시겠습니까?')) {
+    if (window.confirm("정말로 이 설교를 삭제하시겠습니까?")) {
       try {
         const targetUserId = isAdminPage ? sermon.userId : currentUserId;
         await deleteSermon(id, targetUserId);
-        alert('설교가 삭제되었습니다.');
+        alert("설교가 삭제되었습니다.");
         navigate(-1);
       } catch (error) {
-        console.error('Error deleting sermon:', error);
-        alert('설교 삭제 중 오류가 발생했습니다.');
+        console.error("Error deleting sermon:", error);
+        alert("설교 삭제 중 오류가 발생했습니다.");
       }
     }
   };
 
   const handleEdit = () => {
-    if (currentPath.includes('/admin/sermons')) {
+    if (currentPath.includes("/admin/sermons")) {
       navigate(`/main/admin/sermons/edit/${id}`);
     } else {
       navigate(`/main/sermon-list/edit/${id}`);
     }
   };
 
-  // header click 할때 보이게 하기
+  // Toggle header pin state on click
   const toggleHeaderPin = () => {
     setIsHeaderPinned((prev) => !prev);
   };
@@ -84,6 +84,13 @@ const SermonDetailPage = () => {
             <ArrowLeft size={20} />
             <span>뒤로 가기</span>
           </BackButton>
+          {/* header 작아질 때 제목 보이게 하기 */}
+          {!headerExpanded && (
+            <CompactHeader>
+              <Label>설교 제목</Label>
+              <CompactTitle>{sermon.sermonTitle}</CompactTitle>
+            </CompactHeader>
+          )}
           {(sermon?.userId === currentUserId || (isAdmin && isAdminPage)) && (
             <ActionButtons>
               <ActionButton onClick={handleEdit}>
@@ -102,18 +109,18 @@ const SermonDetailPage = () => {
                 <Author>작성자: {sermon.ownerName}</Author>
                 <DateInfo>
                   <SermonDate>
-                    {new Date(sermon.sermonDate).toLocaleDateString('ko-KR', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
+                    {new Date(sermon.sermonDate).toLocaleDateString("ko-KR", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
                     })}
                   </SermonDate>
                   <CreatedDate>
-                    작성일:{' '}
-                    {new Date(sermon.createdAt).toLocaleDateString('ko-KR', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
+                    작성일:{" "}
+                    {new Date(sermon.createdAt).toLocaleDateString("ko-KR", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
                     })}
                   </CreatedDate>
                 </DateInfo>
@@ -123,6 +130,17 @@ const SermonDetailPage = () => {
                 <Title>{sermon.sermonTitle}</Title>
               </FormSection>
             </MetaInfo>
+            <ScriptureInfo>
+              <FormSection>
+                <Label>성경 본문</Label>
+                <ScriptureContainer>
+                  <Scripture>{sermon.mainScripture}</Scripture>
+                  {sermon.additionalScripture && (
+                    <Scripture>{sermon.additionalScripture}</Scripture>
+                  )}
+                </ScriptureContainer>
+              </FormSection>
+            </ScriptureInfo>
             <ExtraInfo>
               <SectionContainer>
                 <SectionLabel>요약</SectionLabel>
@@ -142,7 +160,7 @@ const SermonDetailPage = () => {
         <Label>설교 내용</Label>
         <Content
           dangerouslySetInnerHTML={{
-            __html: sermon.contents[0]?.contentText || '',
+            __html: sermon.contents[0]?.contentText || "",
           }}
         />
       </ContentSection>
@@ -151,7 +169,6 @@ const SermonDetailPage = () => {
 };
 
 const Container = styled.div`
-  padding: 40px;
   width: 100%;
   min-height: 100vh;
   transition: all 0.3s ease;
@@ -165,17 +182,26 @@ const HeaderContainer = styled.div`
   position: sticky;
   top: 0;
   z-index: 100;
-  padding: ${(props) => (props.expanded ? '32px 32px' : '16px 16px')};
+  padding: ${(props) => (props.expanded ? "32px" : "16px")};
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
   transition: padding 0.3s ease;
   cursor: pointer;
-  overflow-: hidden;
+`;
+
+const CompactHeader = styled.div`
+  display: block;
+  padding: 8px 16px;
+`;
+
+const CompactTitle = styled.h1`
+  font-size: 1.25rem;
+  color: #333;
+  margin: 0;
 `;
 
 const TopBar = styled.div`
   display: flex;
   justify-content: space-between;
-  align-items: center;
 `;
 
 const BackButton = styled.button`
@@ -215,8 +241,8 @@ const ActionButton = styled.button`
   height: 36px;
   border-radius: 50%;
   border: none;
-  background: ${(props) => (props.isDelete ? '#fee2e2' : '#f3f4f6')};
-  color: ${(props) => (props.isDelete ? '#dc2626' : '#4f3296')};
+  background: ${(props) => (props.isDelete ? "#fee2e2" : "#f3f4f6")};
+  color: ${(props) => (props.isDelete ? "#dc2626" : "#4f3296")};
   display: flex;
   align-items: center;
   justify-content: center;
@@ -224,21 +250,19 @@ const ActionButton = styled.button`
   transition: background 0.2s ease, color 0.2s ease;
 
   &:hover {
-    background: ${(props) => (props.isDelete ? '#fecaca' : '#e5e7eb')};
-    color: ${(props) => (props.isDelete ? '#b91c1c' : '#3a2570')};
+    background: ${(props) => (props.isDelete ? "#fecaca" : "#e5e7eb")};
+    color: ${(props) => (props.isDelete ? "#b91c1c" : "#3a2570")};
   }
 `;
 
 const MetaInfo = styled.div`
-
-  margin-top: 12px;
+  margin-top: 20px;
   display: flex;
   flex-direction: column;
   gap: 8px;
 `;
 
 const FormSectionLong = styled.div`
-
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -286,6 +310,29 @@ const Title = styled.h1`
   margin: 0;
 `;
 
+const ScriptureInfo = styled.div`
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+`;
+
+const ScriptureContainer = styled.div`
+  display: flex;
+  gap: 16px;
+  font-size: 16px;
+  color: #212a3e;
+  @media (max-width: 480px) {
+    flex-direction: column;
+    gap: 8px;
+  }
+`;
+
+const Scripture = styled.span`
+  font-weight: 500;
+`;
+
 const ExtraInfo = styled.div`
   margin-top: 12px;
   display: flex;
@@ -316,14 +363,13 @@ const SectionBox = styled.div`
 
 const ContentSection = styled.div`
   background: white;
-  width: 100%%;
   padding: 32px;
+  margin: 40px;
   border-radius: 16px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   min-height: 600px;
   display: flex;
   flex-direction: column;
-  border-top: 1px solid #ccc;
 `;
 
 const Content = styled.div`
