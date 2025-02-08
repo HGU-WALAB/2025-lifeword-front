@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import { Search, LayoutGrid, List, RefreshCcw, ChevronDown } from 'lucide-react';
-import { getPublicSermons, getUserSermons } from '../../services/APIService';
+import { getPublicSermons, getUserSermons, searchSermons, getFilteredSermons } from '../../services/APIService';
 import { useUserState } from '../../recoil/utils';
 import { useRecoilValue } from 'recoil';
 import { isNavExpandedState } from '../../recoil/atoms';
@@ -125,7 +125,7 @@ const SermonListPage = () => {
         date: false,
     });
 
-    // 페이지네이션 계산
+    // 페이지네이션
     const indexOfLastSermon = currentPage * itemsPerPage;
     const indexOfFirstSermon = indexOfLastSermon - itemsPerPage;
     const currentSermons = sermons.slice(indexOfFirstSermon, indexOfLastSermon);
@@ -138,31 +138,107 @@ const SermonListPage = () => {
     };
 
     useEffect(() => {
-        fetchSermons();
-    }, [selectedCategory, sortBy, filters]);
+        if (searchTerm) {
+            handleSearch();
+        } else {
+            fetchSermons();
+        }
+    }, [selectedCategory, sortBy, filters, searchTerm]);
 
     const fetchSermons = async () => {
         try {
             let response;
-            switch (selectedCategory) {
-                case 'public':
-                    response = await getPublicSermons();
-                    break;
-                case 'my-all':
-                    response = await getUserSermons(userId, 'all');
-                    break;
-                case 'my-public':
-                    response = await getUserSermons(userId, 'public');
-                    break;
-                case 'my-private':
-                    response = await getUserSermons(userId, 'private');
-                    break;
-                default:
-                    response = await getPublicSermons();
+
+            // 검색어가 있는 경우 검색 결과에 필터 적용
+            if (searchTerm.trim()) {
+                response = await searchSermons(searchTerm);
+
+                // 필터가 적용된 경우 검색 결과를 클라이언트에서 추가 필터링
+                if (filters.worshipTypes.length > 0 || filters.bibleBooks.length > 0 || filters.dateFilter) {
+                    response = response.filter((sermon) => {
+                        const worshipTypeMatch =
+                            filters.worshipTypes.length === 0 || filters.worshipTypes.includes(sermon.worshipType);
+                        const bibleBookMatch =
+                            filters.bibleBooks.length === 0 ||
+                            filters.bibleBooks.some(
+                                (book) =>
+                                    sermon.mainScripture.includes(book) ||
+                                    (sermon.additionalScripture && sermon.additionalScripture.includes(book))
+                            );
+                        // 날짜 필터 적용
+                        let dateMatch = true;
+                        if (filters.dateFilter) {
+                            const sermonDate = new Date(sermon.sermonDate);
+                            if (filters.dateFilter.type === 'single') {
+                                dateMatch = sermonDate.toISOString().split('T')[0] === filters.dateFilter.date;
+                            } else {
+                                const startDate = new Date(filters.dateFilter.range.startDate);
+                                const endDate = new Date(filters.dateFilter.range.endDate);
+                                dateMatch = sermonDate >= startDate && sermonDate <= endDate;
+                            }
+                        }
+                        return worshipTypeMatch && bibleBookMatch && dateMatch;
+                    });
+                }
+            } else {
+                // 기존 필터링 로직
+                if (
+                    filters.worshipTypes.length > 0 ||
+                    filters.bibleBooks.length > 0 ||
+                    filters.dateFilter ||
+                    sortBy !== 'newest'
+                ) {
+                    const filterParams = {
+                        sort: sortBy === 'newest' ? 'desc' : sortBy === 'oldest' ? 'asc' : 'updated',
+                        ...filters,
+                    };
+                    response = await getFilteredSermons(filterParams);
+                } else {
+                    // 기본 카테고리별 조회
+                    switch (selectedCategory) {
+                        case 'public':
+                            response = await getPublicSermons();
+                            break;
+                        case 'my-all':
+                            response = await getUserSermons(userId, 'all');
+                            break;
+                        case 'my-public':
+                            response = await getUserSermons(userId, 'public');
+                            break;
+                        case 'my-private':
+                            response = await getUserSermons(userId, 'private');
+                            break;
+                        default:
+                            response = await getPublicSermons();
+                    }
+                }
             }
+
+            // 정렬 적용
+            if (response) {
+                if (sortBy === 'newest') {
+                    response.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                } else if (sortBy === 'oldest') {
+                    response.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+                } else if (sortBy === 'recently-modified') {
+                    response.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+                }
+            }
+
             setSermons(response || []);
         } catch (error) {
             console.error('Error fetching sermons:', error);
+        }
+    };
+
+    const handleSearch = async () => {
+        try {
+            if (searchTerm.trim()) {
+                const response = await searchSermons(searchTerm);
+                setSermons(response || []);
+            }
+        } catch (error) {
+            console.error('Error searching sermons:', error);
         }
     };
 
@@ -171,8 +247,17 @@ const SermonListPage = () => {
             worshipTypes: [],
             bibleBooks: [],
             authors: [],
+            dateFilter: null,
         });
         setSortBy('newest');
+        setDateFilter({
+            type: 'single',
+            singleDate: '',
+            range: {
+                startDate: '',
+                endDate: '',
+            },
+        });
     };
 
     // 필터 체크박스 토글 함수
@@ -206,10 +291,30 @@ const SermonListPage = () => {
 
     // 필터 태그 제거 함수
     const removeFilter = (type, value) => {
+        if (type === 'dateFilter') {
+            removeDateFilter();
+        } else {
+            setFilters((prev) => ({
+                ...prev,
+                [type]: prev[type].filter((item) => item !== value),
+            }));
+        }
+    };
+
+    // 날짜 필터 제거 함수
+    const removeDateFilter = () => {
         setFilters((prev) => ({
             ...prev,
-            [type]: prev[type].filter((item) => item !== value),
+            dateFilter: null,
         }));
+        setDateFilter({
+            type: 'single',
+            singleDate: '',
+            range: {
+                startDate: '',
+                endDate: '',
+            },
+        });
     };
 
     // 날짜 필터 토글 함수
@@ -373,6 +478,17 @@ const SermonListPage = () => {
 
         return pageButtons;
     };
+
+    // 검색 입력 디바운스
+    useEffect(() => {
+        const debounceTimer = setTimeout(() => {
+            if (searchTerm) {
+                handleSearch();
+            }
+        }, 300);
+
+        return () => clearTimeout(debounceTimer);
+    }, [searchTerm]);
 
     return (
         <Container isNavExpanded={isNavExpanded}>
