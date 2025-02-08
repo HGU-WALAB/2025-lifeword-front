@@ -137,14 +137,39 @@ export const getSermonDetail = async (sermonId) => {
     }
 };
 
-export const searchSermons = async (keyword, userId, searchIn = 'both') => {
+export const searchSermons = async (keyword) => {
     try {
         const { data } = await axios.get(`${BASE_URL}/sermons/search`, {
-            params: { keyword, userId, searchIn },
+            params: { keyword },
         });
         return data;
     } catch (error) {
         console.error('Error searching sermons:', error);
+        throw error;
+    }
+};
+
+// 필터링 API
+export const getFilteredSermons = async (filters) => {
+    try {
+        const { data } = await axios.get(`${BASE_URL}/sermons/filtered-list`, {
+            params: {
+                sort: filters.sort || 'desc',
+                worshipType: filters.worshipTypes?.length === 0 ? 'all' : filters.worshipTypes.join(','),
+                startDate:
+                    filters.dateFilter?.type === 'single'
+                        ? filters.dateFilter.date
+                        : filters.dateFilter?.range?.startDate || '',
+                endDate:
+                    filters.dateFilter?.type === 'single'
+                        ? filters.dateFilter.date
+                        : filters.dateFilter?.range?.endDate || '',
+                scripture: filters.bibleBooks?.length === 0 ? '' : filters.bibleBooks.join(','),
+            },
+        });
+        return data;
+    } catch (error) {
+        console.error('Error fetching filtered sermons:', error);
         throw error;
     }
 };
