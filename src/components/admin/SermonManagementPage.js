@@ -182,7 +182,7 @@ const SermonManagementPage = () => {
 
 const Container = styled.div`
     padding: 40px;
-    width: 100vw;
+    margin: 0 auto;
     min-height: 92vh;
     background-color: white;
 `;

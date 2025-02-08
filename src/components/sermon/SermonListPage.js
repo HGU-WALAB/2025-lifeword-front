@@ -125,7 +125,7 @@ const SermonListPage = () => {
         date: false,
     });
 
-    // 페이지네이션 계산
+    // 페이지네이션
     const indexOfLastSermon = currentPage * itemsPerPage;
     const indexOfFirstSermon = indexOfLastSermon - itemsPerPage;
     const currentSermons = sermons.slice(indexOfFirstSermon, indexOfLastSermon);
@@ -247,11 +247,10 @@ const SermonListPage = () => {
             worshipTypes: [],
             bibleBooks: [],
             authors: [],
-            dateFilter: null, // 날짜 필터도 초기화
+            dateFilter: null,
         });
-        setSortBy('newest'); // 정렬 옵션도 초기화
+        setSortBy('newest');
         setDateFilter({
-            // 날짜 선택 상태도 초기화
             type: 'single',
             singleDate: '',
             range: {
@@ -290,7 +289,7 @@ const SermonListPage = () => {
         }));
     };
 
-    // 필터 태그 제거 함수 수정
+    // 필터 태그 제거 함수
     const removeFilter = (type, value) => {
         if (type === 'dateFilter') {
             removeDateFilter();
@@ -302,7 +301,7 @@ const SermonListPage = () => {
         }
     };
 
-    // 날짜 필터 제거 함수 추가
+    // 날짜 필터 제거 함수
     const removeDateFilter = () => {
         setFilters((prev) => ({
             ...prev,
