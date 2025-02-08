@@ -175,11 +175,11 @@ export const getFilteredSermons = async (filters) => {
 };
 
 // Bookmark 관련 API
-export const createBookmark = async (userID, verseId) => {
+export const createBookmark = async (userID, verseId , sermonId , isSermon) => {
     try {
         const { data } = await axios.post(
             `${BASE_URL}/bookmarks`,
-            { verseId },
+            { verseId, sermonId,isSermon },
             {
                 params: { userID },
             }
@@ -203,9 +203,34 @@ export const getBookmarks = async (userID) => {
     }
 };
 
-export const deleteBookmark = async (userID, verseId) => {
+export const getSermonBookmarks = async (userID) => {
     try {
-        const { data } = await axios.delete(`${BASE_URL}/bookmarks/${verseId}`, {
+        const { data } = await axios.get(`${BASE_URL}/bookmarks/sermon`, {
+            params: { userID },
+        });
+        return data;
+    } catch (error) {
+        console.error('Error getting bookmarks:', error);
+        throw error;
+    }
+};
+
+export const getVerseBookmarks = async (userID) => {
+    try {
+        const { data } = await axios.get(`${BASE_URL}/bookmarks/verse`, {
+            params: { userID },
+        });
+        return data;
+    } catch (error) {
+        console.error('Error getting bookmarks:', error);
+        throw error;
+    }
+};
+
+export const deleteBookmark = async (userID, bookmarkId) => {
+    //console.log(bookmarkId.bookmarkId);
+    try {
+        const { data } = await axios.delete(`${BASE_URL}/bookmarks/${parseInt(bookmarkId)}`, {
             params: { userID },
         });
         return data;
