@@ -1,9 +1,45 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import styled from 'styled-components';
+import styled, { createGlobalStyle } from 'styled-components';
 import { getSermonDetail, deleteSermon } from '../../services/APIService';
-import { ArrowLeft, Pencil, Trash2 } from 'lucide-react';
+import { ArrowLeft, Pencil, Trash2, Printer } from 'lucide-react';
 import { useUserState } from '../../recoil/utils';
+
+const GlobalStyle = createGlobalStyle`
+    @media print {
+        body * {
+            visibility: hidden;
+        }
+        #printable-content, #printable-content * {
+            visibility: visible;
+            -webkit-print-color-adjust: exact !important;
+            color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+        #printable-content {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 100%;
+            max-width: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        .sermon-content {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            max-width: 100%;
+            margin: 0;
+            padding: 20mm;
+            box-sizing: border-box;
+        }
+        @page {
+            margin: 0;
+        }
+    }
+`;
 
 const SermonDetailPage = () => {
     const { id } = useParams();
@@ -73,6 +109,7 @@ const SermonDetailPage = () => {
 
     return (
         <Container>
+            <GlobalStyle />
             <HeaderContainer
                 expanded={headerExpanded}
                 onMouseEnter={() => setIsHeaderHovered(true)}
@@ -156,12 +193,19 @@ const SermonDetailPage = () => {
             </HeaderContainer>
             <ContentSection>
                 <Label>설교 내용</Label>
-                <Content
-                    dangerouslySetInnerHTML={{
-                        __html: sermon.contents[0]?.contentText || '',
-                    }}
-                />
+                <div id="printable-content">
+                    <Content
+                        className="sermon-content"
+                        dangerouslySetInnerHTML={{
+                            __html: sermon.contents[0]?.contentText || '',
+                        }}
+                    />
+                </div>
             </ContentSection>
+            <PrintButton onClick={() => window.print()}>
+                <Printer size={18} />
+                인쇄하기
+            </PrintButton>
         </Container>
     );
 };
@@ -470,6 +514,34 @@ const LoadingText = styled.div`
 
 const EmptyText = styled(LoadingText)`
     color: #999;
+`;
+
+const PrintButton = styled.button`
+    position: fixed;
+    right: 40px;
+    bottom: 40px;
+    padding: 12px 20px;
+    background: #6b4ee6;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 500;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(107, 78, 230, 0.2);
+
+    &:hover {
+        background: #5a3eb8;
+        transform: translateY(-2px);
+    }
+
+    @media print {
+        display: none;
+    }
 `;
 
 export default SermonDetailPage;
