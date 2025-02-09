@@ -152,18 +152,18 @@ const SermonDetailPage = () => {
     return (
         <Container>
             <GlobalStyle />
-            {showGuide && (
-                <GuideMessage>
-                    <span>클릭하여 더 자세한 내용을 확인해보세요</span>
-                    <ChevronDown className="bounce" size={24} />
-                </GuideMessage>
-            )}
             <HeaderContainer expanded={isHeaderExpanded} onClick={toggleHeader}>
                 <TopBar>
                     <BackButton onClick={() => navigate(-1)}>
                         <ArrowLeft size={20} />
                         <span>뒤로 가기</span>
                     </BackButton>
+                    {showGuide && (
+                        <GuideMessage>
+                            <span>클릭하여 더 자세한 내용을 확인해보세요</span>
+                            <ChevronDown className="bounce" size={24} />
+                        </GuideMessage>
+                    )}
                     {!isHeaderExpanded && (
                         <CompactHeader>
                             <Label>설교 제목</Label>
@@ -587,10 +587,10 @@ const PrintButton = styled.button`
 `;
 
 const GuideMessage = styled.div`
-    position: fixed;
-    top: 16px;
-    left: 58%;
-    transform: translateX(-50%);
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     background: rgba(79, 50, 150, 0.9);
     color: white;
     padding: 12px 24px;
@@ -605,6 +605,17 @@ const GuideMessage = styled.div`
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     pointer-events: none;
 
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translate(-50%, -100%);
+        }
+        to {
+            opacity: 1;
+            transform: translate(-50%, -50%);
+        }
+    }
+
     span {
         font-size: 14px;
         font-weight: 500;
@@ -613,17 +624,6 @@ const GuideMessage = styled.div`
     .bounce {
         animation: bounce 1.5s infinite;
         color: white;
-    }
-
-    @keyframes fadeIn {
-        from {
-            opacity: 0;
-            transform: translate(-50%, -20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateX(-50%);
-        }
     }
 
     @keyframes bounce {
