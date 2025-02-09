@@ -1,9 +1,38 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import styled from 'styled-components';
+import styled, { createGlobalStyle } from 'styled-components';
 import { getSermonDetail, deleteSermon } from '../../services/APIService';
-import { ArrowLeft, Pencil, Trash2 } from 'lucide-react';
+import { ArrowLeft, Pencil, Trash2, Printer, ChevronDown } from 'lucide-react';
 import { useUserState } from '../../recoil/utils';
+
+const GlobalStyle = createGlobalStyle`
+    @media print {
+        @page {
+            margin: 0;
+            size: auto;
+        }
+        
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        .print-container {
+            visibility: visible;
+            position: relative;
+            padding: 20mm;
+            margin: 0;
+            width: 100%;
+        }
+
+        .print-container * {
+            visibility: visible;
+            -webkit-print-color-adjust: exact !important;
+            color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+    }
+`;
 
 const SermonDetailPage = () => {
     const { id } = useParams();
@@ -13,11 +42,8 @@ const SermonDetailPage = () => {
     const { userId: currentUserId, isAdmin } = useUserState();
     const currentPath = window.location.pathname;
     const isAdminPage = currentPath.includes('/admin/sermons');
-
-    // header state expand on hover or click (pin)
-    const [isHeaderPinned, setIsHeaderPinned] = useState(false);
-    const [isHeaderHovered, setIsHeaderHovered] = useState(false);
-    const headerExpanded = isHeaderPinned || isHeaderHovered;
+    const [isHeaderExpanded, setIsHeaderExpanded] = useState(false);
+    const [showGuide, setShowGuide] = useState(true);
 
     useEffect(() => {
         const fetchSermonDetail = async () => {
@@ -35,6 +61,14 @@ const SermonDetailPage = () => {
             fetchSermonDetail();
         }
     }, [id]);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setShowGuide(false);
+        }, 3000);
+
+        return () => clearTimeout(timer);
+    }, []);
 
     const handleDelete = async () => {
         if (window.confirm('정말로 이 설교를 삭제하시겠습니까?')) {
@@ -58,9 +92,53 @@ const SermonDetailPage = () => {
         }
     };
 
-    // Toggle header pin state on click
-    const toggleHeaderPin = () => {
-        setIsHeaderPinned((prev) => !prev);
+    const toggleHeader = () => {
+        setIsHeaderExpanded((prev) => !prev);
+    };
+
+    const handlePrint = () => {
+        const printContainer = document.createElement('div');
+        printContainer.className = 'print-container';
+
+        const content = document.querySelector('#printable-content').cloneNode(true);
+        printContainer.appendChild(content);
+
+        const style = document.createElement('style');
+        style.textContent = `
+        @media print {
+            body > *:not(.print-container) {
+                display: none;
+            }
+            .print-container {
+                width: 100%;
+                padding: 20mm;
+                margin: 0;
+                left: 0;
+                position: absolute;
+                box-sizing: border-box;
+            }
+            .print-container #printable-content {
+                width: 100% !important;
+                position: relative !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                left: 0 !important;
+            }
+            .print-container .sermon-content {
+                margin: 0 !important;
+                padding: 0 !important;
+                max-width: 100% !important;
+            }
+        }
+    `;
+
+        document.body.appendChild(style);
+        document.body.appendChild(printContainer);
+
+        window.print();
+
+        document.body.removeChild(style);
+        document.body.removeChild(printContainer);
     };
 
     if (loading) {
@@ -73,19 +151,20 @@ const SermonDetailPage = () => {
 
     return (
         <Container>
-            <HeaderContainer
-                expanded={headerExpanded}
-                onMouseEnter={() => setIsHeaderHovered(true)}
-                onMouseLeave={() => setIsHeaderHovered(false)}
-                onClick={toggleHeaderPin}
-            >
+            <GlobalStyle />
+            <HeaderContainer expanded={isHeaderExpanded} onClick={toggleHeader}>
                 <TopBar>
                     <BackButton onClick={() => navigate(-1)}>
                         <ArrowLeft size={20} />
                         <span>뒤로 가기</span>
                     </BackButton>
-                    {/* header 작아질 때 제목 보이게 하기 */}
-                    {!headerExpanded && (
+                    {showGuide && (
+                        <GuideMessage>
+                            <span>클릭하여 더 자세한 내용을 확인해보세요</span>
+                            <ChevronDown className="bounce" size={24} />
+                        </GuideMessage>
+                    )}
+                    {!isHeaderExpanded && (
                         <CompactHeader>
                             <Label>설교 제목</Label>
                             <CompactTitle>{sermon.sermonTitle}</CompactTitle>
@@ -102,7 +181,7 @@ const SermonDetailPage = () => {
                         </ActionButtons>
                     )}
                 </TopBar>
-                {headerExpanded && (
+                {isHeaderExpanded && (
                     <>
                         <MetaInfo>
                             <FormSectionLong>
@@ -156,12 +235,19 @@ const SermonDetailPage = () => {
             </HeaderContainer>
             <ContentSection>
                 <Label>설교 내용</Label>
-                <Content
-                    dangerouslySetInnerHTML={{
-                        __html: sermon.contents[0]?.contentText || '',
-                    }}
-                />
+                <div id="printable-content">
+                    <Content
+                        className="sermon-content"
+                        dangerouslySetInnerHTML={{
+                            __html: sermon.contents[0]?.contentText || '',
+                        }}
+                    />
+                </div>
             </ContentSection>
+            <PrintButton onClick={handlePrint}>
+                <Printer size={18} />
+                인쇄하기
+            </PrintButton>
         </Container>
     );
 };
@@ -470,6 +556,91 @@ const LoadingText = styled.div`
 
 const EmptyText = styled(LoadingText)`
     color: #999;
+`;
+
+const PrintButton = styled.button`
+    position: fixed;
+    right: 40px;
+    bottom: 40px;
+    padding: 12px 20px;
+    background: #6b4ee6;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 500;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(107, 78, 230, 0.2);
+
+    &:hover {
+        background: #5a3eb8;
+        transform: translateY(-2px);
+    }
+
+    @media print {
+        display: none;
+    }
+`;
+
+const GuideMessage = styled.div`
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(79, 50, 150, 0.9);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 100px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    z-index: 101;
+    animation: fadeIn 0.5s ease;
+    backdrop-filter: blur(4px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    pointer-events: none;
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translate(-50%, -100%);
+        }
+        to {
+            opacity: 1;
+            transform: translate(-50%, -50%);
+        }
+    }
+
+    span {
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    .bounce {
+        animation: bounce 1.5s infinite;
+        color: white;
+    }
+
+    @keyframes bounce {
+        0%,
+        20%,
+        50%,
+        80%,
+        100% {
+            transform: translateY(0);
+        }
+        40% {
+            transform: translateY(8px);
+        }
+        60% {
+            transform: translateY(4px);
+        }
+    }
 `;
 
 export default SermonDetailPage;
