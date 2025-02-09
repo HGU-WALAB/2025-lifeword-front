@@ -7,36 +7,29 @@ import { useUserState } from '../../recoil/utils';
 
 const GlobalStyle = createGlobalStyle`
     @media print {
-        body * {
-            visibility: hidden;
+        @page {
+            margin: 0;
+            size: auto;
         }
-        #printable-content, #printable-content * {
+        
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        .print-container {
+            visibility: visible;
+            position: relative;
+            padding: 20mm;
+            margin: 0;
+            width: 100%;
+        }
+
+        .print-container * {
             visibility: visible;
             -webkit-print-color-adjust: exact !important;
             color-adjust: exact !important;
             print-color-adjust: exact !important;
-        }
-        #printable-content {
-            position: fixed;
-            left: 0;
-            top: 0;
-            width: 100%;
-            max-width: 100%;
-            margin: 0;
-            padding: 0;
-        }
-        .sermon-content {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-            max-width: 100%;
-            margin: 0;
-            padding: 20mm;
-            box-sizing: border-box;
-        }
-        @page {
-            margin: 0;
         }
     }
 `;
@@ -49,11 +42,7 @@ const SermonDetailPage = () => {
     const { userId: currentUserId, isAdmin } = useUserState();
     const currentPath = window.location.pathname;
     const isAdminPage = currentPath.includes('/admin/sermons');
-
-    // header state expand on hover or click (pin)
-    const [isHeaderPinned, setIsHeaderPinned] = useState(false);
-    const [isHeaderHovered, setIsHeaderHovered] = useState(false);
-    const headerExpanded = isHeaderPinned || isHeaderHovered;
+    const [isHeaderExpanded, setIsHeaderExpanded] = useState(false);
 
     useEffect(() => {
         const fetchSermonDetail = async () => {
@@ -94,9 +83,53 @@ const SermonDetailPage = () => {
         }
     };
 
-    // Toggle header pin state on click
-    const toggleHeaderPin = () => {
-        setIsHeaderPinned((prev) => !prev);
+    const toggleHeader = () => {
+        setIsHeaderExpanded((prev) => !prev);
+    };
+
+    const handlePrint = () => {
+        const printContainer = document.createElement('div');
+        printContainer.className = 'print-container';
+
+        const content = document.querySelector('#printable-content').cloneNode(true);
+        printContainer.appendChild(content);
+
+        const style = document.createElement('style');
+        style.textContent = `
+        @media print {
+            body > *:not(.print-container) {
+                display: none;
+            }
+            .print-container {
+                width: 100%;
+                padding: 20mm;
+                margin: 0;
+                left: 0;
+                position: absolute;
+                box-sizing: border-box;
+            }
+            .print-container #printable-content {
+                width: 100% !important;
+                position: relative !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                left: 0 !important;
+            }
+            .print-container .sermon-content {
+                margin: 0 !important;
+                padding: 0 !important;
+                max-width: 100% !important;
+            }
+        }
+    `;
+
+        document.body.appendChild(style);
+        document.body.appendChild(printContainer);
+
+        window.print();
+
+        document.body.removeChild(style);
+        document.body.removeChild(printContainer);
     };
 
     if (loading) {
@@ -110,19 +143,13 @@ const SermonDetailPage = () => {
     return (
         <Container>
             <GlobalStyle />
-            <HeaderContainer
-                expanded={headerExpanded}
-                onMouseEnter={() => setIsHeaderHovered(true)}
-                onMouseLeave={() => setIsHeaderHovered(false)}
-                onClick={toggleHeaderPin}
-            >
+            <HeaderContainer expanded={isHeaderExpanded} onClick={toggleHeader}>
                 <TopBar>
                     <BackButton onClick={() => navigate(-1)}>
                         <ArrowLeft size={20} />
                         <span>뒤로 가기</span>
                     </BackButton>
-                    {/* header 작아질 때 제목 보이게 하기 */}
-                    {!headerExpanded && (
+                    {!isHeaderExpanded && (
                         <CompactHeader>
                             <Label>설교 제목</Label>
                             <CompactTitle>{sermon.sermonTitle}</CompactTitle>
@@ -139,7 +166,7 @@ const SermonDetailPage = () => {
                         </ActionButtons>
                     )}
                 </TopBar>
-                {headerExpanded && (
+                {isHeaderExpanded && (
                     <>
                         <MetaInfo>
                             <FormSectionLong>
@@ -202,7 +229,7 @@ const SermonDetailPage = () => {
                     />
                 </div>
             </ContentSection>
-            <PrintButton onClick={() => window.print()}>
+            <PrintButton onClick={handlePrint}>
                 <Printer size={18} />
                 인쇄하기
             </PrintButton>
