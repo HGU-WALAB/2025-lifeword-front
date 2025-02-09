@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import styled, { createGlobalStyle } from 'styled-components';
 import { getSermonDetail, deleteSermon } from '../../services/APIService';
-import { ArrowLeft, Pencil, Trash2, Printer } from 'lucide-react';
+import { ArrowLeft, Pencil, Trash2, Printer, ChevronDown } from 'lucide-react';
 import { useUserState } from '../../recoil/utils';
 
 const GlobalStyle = createGlobalStyle`
@@ -43,6 +43,7 @@ const SermonDetailPage = () => {
     const currentPath = window.location.pathname;
     const isAdminPage = currentPath.includes('/admin/sermons');
     const [isHeaderExpanded, setIsHeaderExpanded] = useState(false);
+    const [showGuide, setShowGuide] = useState(true);
 
     useEffect(() => {
         const fetchSermonDetail = async () => {
@@ -60,6 +61,14 @@ const SermonDetailPage = () => {
             fetchSermonDetail();
         }
     }, [id]);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setShowGuide(false);
+        }, 3000);
+
+        return () => clearTimeout(timer);
+    }, []);
 
     const handleDelete = async () => {
         if (window.confirm('정말로 이 설교를 삭제하시겠습니까?')) {
@@ -143,6 +152,12 @@ const SermonDetailPage = () => {
     return (
         <Container>
             <GlobalStyle />
+            {showGuide && (
+                <GuideMessage>
+                    <span>클릭하여 더 자세한 내용을 확인해보세요</span>
+                    <ChevronDown className="bounce" size={24} />
+                </GuideMessage>
+            )}
             <HeaderContainer expanded={isHeaderExpanded} onClick={toggleHeader}>
                 <TopBar>
                     <BackButton onClick={() => navigate(-1)}>
@@ -568,6 +583,63 @@ const PrintButton = styled.button`
 
     @media print {
         display: none;
+    }
+`;
+
+const GuideMessage = styled.div`
+    position: fixed;
+    top: 16px;
+    left: 58%;
+    transform: translateX(-50%);
+    background: rgba(79, 50, 150, 0.9);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 100px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    z-index: 101;
+    animation: fadeIn 0.5s ease;
+    backdrop-filter: blur(4px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    pointer-events: none;
+
+    span {
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    .bounce {
+        animation: bounce 1.5s infinite;
+        color: white;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translate(-50%, -20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(-50%);
+        }
+    }
+
+    @keyframes bounce {
+        0%,
+        20%,
+        50%,
+        80%,
+        100% {
+            transform: translateY(0);
+        }
+        40% {
+            transform: translateY(8px);
+        }
+        60% {
+            transform: translateY(4px);
+        }
     }
 `;
 
