@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import styled from "styled-components";
-import { User, Mail, Bookmark, Shield, Award, Lock } from "lucide-react";
+import { User, Mail, Shield, Award, Lock } from "lucide-react";
 import { setUserPassword } from "../../services/APIService";
 import PasswordModal from "./PasswordModal";
 import BookmarkPage from "./BookmarkPage";
@@ -10,7 +10,6 @@ const MyPage = () => {
   const [newPassword, setNewPassword] = useState("");
   const [newPasswordConfirm, setNewPasswordConfirm] = useState("");
   const [passwordMatchMessage, setPasswordMatchMessage] = useState("");
-  const [activeTab, setActiveTab] = useState("info"); // 'info' or 'bookmark'
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const { userEmail, userJob: job, isAdmin } = useUserState();
 
@@ -59,118 +58,154 @@ const MyPage = () => {
 
   return (
     <Container>
-      <PageHeader>
+      <HeaderSection>
+        {/* 아이콘 + 이름 지역 교회 이름  */}
+
         <HeaderIcon>
           <User size={32} />
         </HeaderIcon>
-        <Title>마이페이지</Title>
-      </PageHeader>
+        <Column>
+          <UserDetails>
+            <DetailRow>
+              <DetailText>이름 / 지역 / 교회</DetailText>
+            </DetailRow>
+            <DetailRow>
+              <CardIcon>
+                <Mail size={20} />
+                <Value> {userEmail}</Value>
+              </CardIcon>
+            </DetailRow>
+          </UserDetails>
+        </Column>
 
-      <TabContainer>
-        <TabButton
-          active={activeTab === "info"}
-          onClick={() => setActiveTab("info")}
-        >
-          <Lock size={20} /> 계정 관리
-        </TabButton>
-        <TabButton
-          active={activeTab === "bookmark"}
-          onClick={() => setActiveTab("bookmark")}
-        >
-          <Bookmark size={20} /> 북마크 관리
-        </TabButton>
-      </TabContainer>
+        <Column>
+          <InfoCard>
+            <CardIcon>
+              <Award size={20} />
+            </CardIcon>
+            <Label>직분</Label>
+            <Value>{job}</Value>
+          </InfoCard>
+        </Column>
+        <Column>
+          <InfoCard>
+            <CardIcon>
+              <Shield size={20} />
+            </CardIcon>
+            <Label>권한</Label>
+            <Value>{isAdmin ? "관리자" : "일반 사용자"}</Value>
+          </InfoCard>
+        </Column>
 
-      {activeTab === "info" ? (
-        <ContentWrapper>
-          <InfoSection>
-            <InfoCard>
-              <InfoHeader>
-                <CardIcon>
-                  <Mail size={20} />
-                </CardIcon>
-                <Label>이메일</Label>
-              </InfoHeader>
-              <Value>{userEmail}</Value>
-            </InfoCard>
-
-            <InfoCard>
-              <InfoHeader>
-                <CardIcon>
-                  <Award size={20} />
-                </CardIcon>
-                <Label>직분</Label>
-              </InfoHeader>
-              <Value>{job}</Value>
-            </InfoCard>
-
-            <InfoCard>
-              <InfoHeader>
-                <CardIcon>
-                  <Shield size={20} />
-                </CardIcon>
-                <Label>권한</Label>
-              </InfoHeader>
-              <Value>{isAdmin ? "관리자" : "일반 사용자"}</Value>
-            </InfoCard>
-          </InfoSection>
-
-          <PasswordSection>
-            <SectionTitle>
-              <Lock size={20} />
-              비밀번호 관리
-            </SectionTitle>
+        <Column>
+          <PasswordManagement>
+            <PasswordRow>
+              <CardIcon>
+                <Lock size={20} />
+              </CardIcon>
+              <Label>비밀번호 관리</Label>
+            </PasswordRow>
             <ChangePasswordButton onClick={() => setShowPasswordModal(true)}>
               비밀번호 변경하기
             </ChangePasswordButton>
+          </PasswordManagement>
+        </Column>
+      </HeaderSection>
 
-            {showPasswordModal && (
-              <PasswordModal
-                newPassword={newPassword}
-                setNewPassword={setNewPassword}
-                newPasswordConfirm={newPasswordConfirm}
-                setNewPasswordConfirm={setNewPasswordConfirm}
-                passwordMatchMessage={passwordMatchMessage}
-                handlePasswordCheckChange={handlePasswordCheckChange}
-                handlePasswordConfirmChange={handlePasswordConfirmChange}
-                handlePasswordChange={handlePasswordChange}
-                onClose={() => {
-                  setShowPasswordModal(false);
-                  setNewPassword("");
-                  setNewPasswordConfirm("");
-                }}
-              />
-            )}
-          </PasswordSection>
-        </ContentWrapper>
-      ) : (
-        <BookmarkSection>
-          <BookmarkPage />
-        </BookmarkSection>
+      {showPasswordModal && (
+        <PasswordModal
+          newPassword={newPassword}
+          setNewPassword={setNewPassword}
+          newPasswordConfirm={newPasswordConfirm}
+          setNewPasswordConfirm={setNewPasswordConfirm}
+          passwordMatchMessage={passwordMatchMessage}
+          handlePasswordCheckChange={handlePasswordCheckChange}
+          handlePasswordConfirmChange={handlePasswordConfirmChange}
+          handlePasswordChange={handlePasswordChange}
+          onClose={() => {
+            setShowPasswordModal(false);
+            setNewPassword("");
+            setNewPasswordConfirm("");
+          }}
+        />
       )}
+
+      {/* 북마크 페이지 나오세 하는거...*/}
+      <BookmarkSection>
+        <BookmarkPage />
+      </BookmarkSection>
     </Container>
   );
 };
 
+export default MyPage;
+
 const Container = styled.div`
   padding: 40px;
-  min-height: 92vh;
   background-color: white;
 `;
 
-const PageHeader = styled.div`
+const HeaderSection = styled.div`
+  padding: 40px;
+  margin-bottom: 20px;
   display: flex;
   align-items: center;
-  gap: 1rem;
-  margin-bottom: 2rem;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 20px;
+  background: white;
+  border: 1px solid #e1e1e1;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+`;
 
-  @media (max-width: 480px) {
-    flex-direction: column;
-    text-align: center;
-  }
+const Column = styled.div`
+  flex: 1;
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+`;
+
+const UserDetails = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+`;
+
+const DetailRow = styled.div`
+
+  display: flex;
+  flexDirection: 'row',
+alignItems: 'center',
+  margin-bottom: 8px;
+`;
+
+const DetailText = styled.span`
+  font-size: 1.1rem;
+  color: #333;
+  font-weight: 500;
+`;
+
+const PasswordManagement = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+`;
+
+const PasswordRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+`;
+
+const BookmarkSection = styled.div`
+  margin-top: 30px;
 `;
 
 const HeaderIcon = styled.div`
+  width: 2rem;
   background: #4f3296;
   color: white;
   padding: 1rem;
@@ -180,55 +215,36 @@ const HeaderIcon = styled.div`
   justify-content: center;
 `;
 
-const Title = styled.h1`
-  font-size: 2.5rem;
-  color: #333;
-  margin-bottom: 0.5rem;
-  font-weight: 600;
-
+const ChangePasswordButton = styled.button`
+  background: #4f3296;
+  color: white;
+  border: none;
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+  font-weight: 500;
+  width: 100%;
+  &:hover {
+    background: #3a2570;
+    transform: translateY(-2px);
+  }
   @media (max-width: 768px) {
-    font-size: 2rem;
-  }
-
-  @media (max-width: 480px) {
-    font-size: 1.8rem;
-  }
-`;
-
-const ContentWrapper = styled.div`
-  background: white;
-  padding: 2rem;
-  border-radius: 12px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  max-width: 800px;
-
-  @media (max-width: 768px) {
-    padding: 1.5rem;
-  }
-`;
-
-const InfoSection = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2.5rem;
-
-  @media (max-width: 992px) {
-    grid-template-columns: 1fr;
-    gap: 1rem;
+    padding: 0.8rem 1.2rem;
+    font-size: 0.9rem;
   }
 `;
 
 const InfoCard = styled.div`
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  align-items: center;
   background: #f3f4f6;
   padding: 1.5rem;
   border-radius: 12px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  }
 
   @media (max-width: 768px) {
     padding: 1.2rem;
@@ -260,72 +276,3 @@ const Value = styled.div`
   font-weight: 500;
   margin-top: 0.5rem;
 `;
-
-const PasswordSection = styled.div`
-  padding-top: 2rem;
-  border-top: 1px solid #eee;
-`;
-
-const SectionTitle = styled.h2`
-  font-size: 1.2rem;
-  color: #333;
-  margin-bottom: 1.5rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-`;
-
-const ChangePasswordButton = styled.button`
-  background: #4f3296;
-  color: white;
-  border: none;
-  padding: 1rem 1.5rem;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 1rem;
-  transition: all 0.2s ease;
-  font-weight: 500;
-  width: 100%;
-
-  &:hover {
-    background: #3a2570;
-    transform: translateY(-2px);
-  }
-
-  @media (max-width: 768px) {
-    padding: 0.8rem 1.2rem;
-    font-size: 0.9rem;
-  }
-`;
-
-const TabContainer = styled.div`
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 2rem;
-`;
-
-const TabButton = styled.button`
-  background: ${(props) => (props.active ? "#4f3296" : "#e9ecef")};
-  color: ${(props) => (props.active ? "white" : "#495057")};
-  padding: 1rem 1.5rem;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: bold;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  transition: background-color 0.2s ease;
-
-  &:hover {
-    background: ${(props) => (props.active ? "#3a2570" : "#d6d6d6")};
-  }
-`;
-
-const BookmarkSection = styled.div`
-  padding-top: 2rem;
-  border-top: 1px solid #eee;
-  width: 80vw;
-  margin: 0 auto;
-`;
-export default MyPage;
