@@ -19,8 +19,23 @@ class SermonEditor extends Component {
         super(props);
         this.state = {
             editorHtml: props.value || '',
+            isScrolled: false,
         };
         this.quillRef = null;
+        this.handleScroll = this.handleScroll.bind(this);
+    }
+
+    componentDidMount() {
+        window.addEventListener('scroll', this.handleScroll);
+    }
+
+    componentWillUnmount() {
+        window.removeEventListener('scroll', this.handleScroll);
+    }
+
+    handleScroll() {
+        const scrollPosition = window.scrollY;
+        this.setState({ isScrolled: scrollPosition > 100 });
     }
 
     componentDidUpdate(prevProps) {
@@ -82,7 +97,7 @@ class SermonEditor extends Component {
 
     render() {
         return (
-            <EditorWrapper>
+            <EditorWrapper isScrolled={this.state.isScrolled}>
                 <StyledQuill
                     ref={(el) => {
                         this.quillRef = el;
@@ -107,13 +122,14 @@ const EditorWrapper = styled.div`
 
     .ql-toolbar {
         position: sticky;
-        top: 0;
-        z-index: 100;
+        top: ${(props) => (props.isScrolled ? '90px' : 'auto')};
+        z-index: 90;
         background: white;
         border: 2px solid #eee;
         border-bottom: none;
-        border-top-left-radius: 8px;
-        border-top-right-radius: 8px;
+        border-top-left-radius: ${(props) => (props.isScrolled ? '0' : '8px')};
+        border-top-right-radius: ${(props) => (props.isScrolled ? '0' : '8px')};
+        transition: all 0.2s ease;
     }
 
     .ql-editor {
