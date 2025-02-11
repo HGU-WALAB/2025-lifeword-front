@@ -1,9 +1,7 @@
 import React, { Component } from 'react';
-import ReactQuill, { Quill } from 'react-quill';
+import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import styled from 'styled-components';
-
-const Delta = Quill.import('delta');
 
 const Font = ReactQuill.Quill.import('formats/font');
 const Size = ReactQuill.Quill.import('formats/size');
@@ -23,77 +21,11 @@ class SermonEditor extends Component {
             editorHtml: props.value || '',
         };
         this.quillRef = null;
-        this.isUserScrolling = false; // 사용자 스크롤 상태
-        this.lastScrollTop = 0; // 마지막 스크롤 위치
     }
 
     componentDidUpdate(prevProps) {
         if (prevProps.value !== this.props.value) {
             this.setState({ editorHtml: this.props.value });
-        }
-    }
-
-    componentDidMount() {
-        if (this.quillRef) {
-            const editor = this.quillRef.getEditor();
-            const editorContainer = editor.root.parentElement;
-
-            // 스크롤 시작 감지
-            editorContainer.addEventListener(
-                'mousewheel',
-                () => {
-                    this.isUserScrolling = true;
-                    this.lastScrollTop = editorContainer.scrollTop;
-                },
-                { passive: true }
-            );
-
-            // 스크롤 터치 시작 감지
-            editorContainer.addEventListener(
-                'touchstart',
-                () => {
-                    this.isUserScrolling = true;
-                    this.lastScrollTop = editorContainer.scrollTop;
-                },
-                { passive: true }
-            );
-
-            // 붙여넣기 이벤트 핸들러
-            editor.root.addEventListener('paste', () => {
-                if (!this.isUserScrolling) {
-                    setTimeout(() => {
-                        this.scrollToBottom();
-                    }, 10);
-                }
-            });
-
-            // 키 입력 처리
-            editor.root.addEventListener('keyup', (e) => {
-                if (!this.isUserScrolling) {
-                    this.scrollToBottom();
-                }
-            });
-
-            // 텍스트 변경 감지
-            editor.on('text-change', () => {
-                if (!this.isUserScrolling) {
-                    this.scrollToBottom();
-                }
-            });
-
-            // 클릭 이벤트 처리
-            editor.root.addEventListener('click', () => {
-                // 클릭한 위치가 마지막 스크롤 위치와 비슷하면 사용자가 의도적으로 그 위치에서 작업하려는 것
-                if (Math.abs(editorContainer.scrollTop - this.lastScrollTop) < 50) {
-                    this.isUserScrolling = true;
-                }
-            });
-        }
-    }
-
-    componentWillUnmount() {
-        if (this.resizeObserver) {
-            this.resizeObserver.disconnect();
         }
     }
 
@@ -131,13 +63,7 @@ class SermonEditor extends Component {
     ];
 
     handleChange = (content) => {
-        this.setState({ editorHtml: content }, () => {
-            if (this.quillRef && this.lastCursorPosition) {
-                const editor = this.quillRef.getEditor();
-                editor.setSelection(this.lastCursorPosition);
-            }
-        });
-
+        this.setState({ editorHtml: content });
         if (this.props.onChange) {
             this.props.onChange(content);
         }
@@ -153,38 +79,6 @@ class SermonEditor extends Component {
     getEditor() {
         return this.quillRef.getEditor();
     }
-
-    // 스크롤 함수
-    scrollToBottom = () => {
-        if (this.quillRef && !this.isUserScrolling) {
-            const editor = this.quillRef.getEditor();
-            const editorContainer = editor.root.parentElement;
-            editorContainer.scrollTop = editorContainer.scrollHeight;
-            window.scrollTo(0, document.body.scrollHeight);
-        }
-    };
-
-    // 커서가 보이도록 스크롤 조정하는 새로운 메서드
-    scrollToVisibleCursor = () => {
-        if (!this.quillRef) return;
-
-        const editor = this.quillRef.getEditor();
-        const editorContainer = editor.root.parentElement;
-        const selection = editor.getSelection();
-
-        if (!selection) return;
-
-        const [blot] = editor.getLine(selection.index);
-        if (!blot || !blot.domNode) return;
-
-        const cursorRect = blot.domNode.getBoundingClientRect();
-        const containerRect = editorContainer.getBoundingClientRect();
-
-        if (cursorRect.bottom > containerRect.bottom) {
-            const scrollDiff = cursorRect.bottom - containerRect.bottom + 50;
-            editorContainer.scrollTop += scrollDiff;
-        }
-    };
 
     render() {
         return (
@@ -227,19 +121,15 @@ const EditorWrapper = styled.div`
         font-size: 16px;
         line-height: 1.8;
         padding: 24px;
-        overflow-y: auto;
-        scroll-behavior: smooth;
     }
 
     .ql-container {
         height: auto !important;
         min-height: 580px;
-        overflow-y: auto;
         border: 2px solid #eee;
         border-top: none;
         border-bottom-left-radius: 8px;
         border-bottom-right-radius: 8px;
-        scroll-behavior: smooth;
     }
 
     .ql-editor::-webkit-scrollbar {
@@ -258,17 +148,6 @@ const EditorWrapper = styled.div`
 
     .ql-editor::-webkit-scrollbar-thumb:hover {
         background: #555;
-    }
-
-    .ql-editor p {
-        margin-bottom: 1.5em;
-    }
-
-    .ql-editor h1,
-    .ql-editor h2,
-    .ql-editor h3 {
-        margin-top: 1.5em;
-        margin-bottom: 0.5em;
     }
 
     /* 폰트 스타일 */
@@ -475,10 +354,6 @@ const StyledQuill = styled(ReactQuill)`
     height: auto;
     display: flex;
     flex-direction: column;
-
-    .ql-container {
-        flex: 1;
-    }
 `;
 
 export default React.forwardRef((props, ref) => {
