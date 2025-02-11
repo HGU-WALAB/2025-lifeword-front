@@ -18,7 +18,7 @@ class SermonEditor extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            editorHtml: props.value || '',
+            editorHtml: props.value || props.initialContent || '',
             isScrolled: false,
         };
         this.quillRef = null;
@@ -27,6 +27,9 @@ class SermonEditor extends Component {
 
     componentDidMount() {
         window.addEventListener('scroll', this.handleScroll);
+        if (this.props.initialContent && !this.state.editorHtml) {
+            this.setState({ editorHtml: this.props.initialContent });
+        }
     }
 
     componentWillUnmount() {
@@ -41,6 +44,9 @@ class SermonEditor extends Component {
     componentDidUpdate(prevProps) {
         if (prevProps.value !== this.props.value) {
             this.setState({ editorHtml: this.props.value });
+        }
+        if (prevProps.initialContent !== this.props.initialContent) {
+            this.setState({ editorHtml: this.props.initialContent });
         }
     }
 

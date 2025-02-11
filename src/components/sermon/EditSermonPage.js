@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import styled from 'styled-components';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, X, Unlock, Lock } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, X, Unlock, Lock, ChevronDown } from 'lucide-react';
 import { getSermonDetail, updateSermon } from '../../services/APIService';
 import SermonEditor from '../Editor/SermonEditor';
 import { useUserState, useOriginalUserId } from '../../recoil/utils';
@@ -29,24 +29,23 @@ const EditSermonPage = () => {
     const { userId } = useUserState();
 
     const [loading, setLoading] = useState(true);
+    const [isMetaOpen, setIsMetaOpen] = useState(false);
 
-    const [formData, setFormData] = useState({
+    const [sermonData, setSermonData] = useState({
         sermonTitle: '',
         sermonDate: '',
         worshipType: '',
         mainScripture: '',
-        additionalScripture: '',
+        additionalScriptures: [],
         summary: '',
         notes: '',
-        recordInfo: '',
         contentText: '',
-        public: false,
+        public: true,
+        customWorshipType: '',
         userId: '',
     });
 
     const [showAdditionalScripture, setShowAdditionalScripture] = useState(false);
-    const [isMetaSectionOpen, setIsMetaSectionOpen] = useState(true);
-    const [autoSaveStatus, setAutoSaveStatus] = useState('');
 
     // 현재 경로가 admin인지 확인
     const isAdminPage = window.location.pathname.includes('/admin/sermons');
@@ -55,14 +54,18 @@ const EditSermonPage = () => {
         const fetchSermonData = async () => {
             try {
                 const data = await getSermonDetail(id);
-                setFormData({
+                setSermonData({
                     ...data,
                     userId: data.userId,
                     sermonDate: new Date(data.sermonDate).toISOString().split('T')[0],
                     contentText: data.contents && data.contents.length > 0 ? data.contents[0].contentText : '',
+                    additionalScriptures: [],
                 });
                 if (data.additionalScripture) {
-                    setShowAdditionalScripture(true);
+                    setSermonData((prev) => ({
+                        ...prev,
+                        additionalScriptures: [data.additionalScripture],
+                    }));
                 }
                 setLoading(false);
                 window.scrollTo(0, 0);
@@ -76,59 +79,81 @@ const EditSermonPage = () => {
         fetchSermonData();
     }, [id, navigate]);
 
-    useEffect(() => {
-        const autoSaveTimer = setTimeout(() => {
-            if (formData.contentText) {
-                localStorage.setItem('sermon_draft', JSON.stringify(formData));
-                setAutoSaveStatus('임시저장됨');
-
-                setTimeout(() => setAutoSaveStatus(''), 2000);
-            }
-        }, 30000);
-
-        return () => clearTimeout(autoSaveTimer);
-    }, [formData]);
-
     const handleInputChange = (e) => {
-        const { name, value, type, checked } = e.target;
-        setFormData((prev) => ({
-            ...prev,
-            [name]: type === 'checkbox' ? checked : value,
-        }));
+        const { name, value } = e.target;
+
+        if (name === 'worshipType') {
+            setSermonData((prev) => ({
+                ...prev,
+                worshipType: value,
+                ...(value !== '기타' && { customWorshipType: '' }),
+            }));
+        } else if (name === 'customWorshipType') {
+            setSermonData((prev) => ({
+                ...prev,
+                customWorshipType: value,
+                worshipType: '기타',
+            }));
+        } else {
+            setSermonData((prev) => ({
+                ...prev,
+                [name]: value,
+            }));
+        }
     };
 
     const handleEditorChange = (content) => {
-        setFormData((prev) => ({
+        setSermonData((prev) => ({
             ...prev,
             contentText: content,
+        }));
+    };
+
+    const handleAddScripture = () => {
+        setSermonData((prev) => ({
+            ...prev,
+            additionalScriptures: [...prev.additionalScriptures, ''],
+        }));
+    };
+
+    const handleRemoveScripture = (index) => {
+        setSermonData((prev) => ({
+            ...prev,
+            additionalScriptures: prev.additionalScriptures.filter((_, i) => i !== index),
+        }));
+    };
+
+    const handleScriptureChange = (index, value) => {
+        setSermonData((prev) => ({
+            ...prev,
+            additionalScriptures: prev.additionalScriptures.map((scripture, i) => (i === index ? value : scripture)),
         }));
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        if (!formData.sermonTitle || !formData.sermonDate || !formData.contentText) {
+        if (!sermonData.sermonTitle || !sermonData.sermonDate || !sermonData.contentText) {
             alert('제목, 날짜, 내용은 필수 입력사항입니다.');
             return;
         }
 
         try {
-            const cleanContent = formData.contentText.replace(/<span class="ql-cursor">.*?<\/span>/g, '');
+            const cleanContent = sermonData.contentText.replace(/<span class="ql-cursor">.*?<\/span>/g, '');
             const updatedSermon = {
-                sermonDate: formData.sermonDate,
-                worshipType: formData.worshipType === '기타' ? formData.customWorshipType : formData.worshipType,
-                mainScripture: formData.mainScripture,
-                additionalScripture: formData.additionalScripture,
-                sermonTitle: formData.sermonTitle,
-                summary: formData.summary,
-                notes: formData.notes,
-                recordInfo: formData.recordInfo,
+                sermonDate: sermonData.sermonDate,
+                worshipType: sermonData.worshipType === '기타' ? sermonData.customWorshipType : sermonData.worshipType,
+                mainScripture: sermonData.mainScripture,
+                additionalScripture: sermonData.additionalScriptures.join(', '),
+                sermonTitle: sermonData.sermonTitle,
+                summary: sermonData.summary,
+                notes: sermonData.notes,
                 contentText: cleanContent,
-                public: formData.public,
+                public: sermonData.public,
             };
 
             // 관리자 페이지에서 수정할 때는 해당 설교의 원래 userId를 사용
-            const targetUserId = isAdminPage ? formData.userId : userId;
+            const targetUserId = isAdminPage ? sermonData.userId : userId;
             await updateSermon(id, targetUserId, updatedSermon);
 
             alert('설교가 성공적으로 수정되었습니다.');
@@ -141,339 +166,225 @@ const EditSermonPage = () => {
         }
     };
 
-    const toggleMetaSection = () => {
-        setIsMetaSectionOpen(!isMetaSectionOpen);
-    };
-
     if (loading) {
         return <LoadingText>로딩 중...</LoadingText>;
     }
 
     return (
         <Container>
-            <PageHeader>
-                <Title>설교 수정하기</Title>
-                <Description>설교 내용을 수정해보세요.</Description>
-            </PageHeader>
+            <Header>
+                <TitleInput
+                    type="text"
+                    placeholder="설교 제목을 입력하세요"
+                    value={sermonData.sermonTitle}
+                    onChange={handleInputChange}
+                    name="sermonTitle"
+                />
+                <HeaderControls>
+                    <MetaButton onClick={() => setIsMetaOpen(!isMetaOpen)} isOpen={isMetaOpen}>
+                        <span>추가정보</span>
+                        <ChevronDown size={16} />
+                    </MetaButton>
+                    <PublishButton onClick={handleSubmit}>수정하기</PublishButton>
+                </HeaderControls>
+            </Header>
 
-            <FormContainer onSubmit={handleSubmit} isMetaOpen={isMetaSectionOpen}>
-                <StickyContainer>
-                    <MetaSectionWrapper isOpen={isMetaSectionOpen}>
-                        <StickyContainer>
-                            <ToggleButton onClick={toggleMetaSection} type="button">
-                                {isMetaSectionOpen ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
-                            </ToggleButton>
-                        </StickyContainer>
-                        <MetaSection isOpen={isMetaSectionOpen}>
-                            <FormSection>
-                                <Label>설교 날짜</Label>
-                                <DateInputWrapper>
-                                    <CalendarIcon size={20} />
-                                    <DateInput
-                                        type="date"
-                                        name="sermonDate"
-                                        value={formData.sermonDate}
-                                        onChange={handleInputChange}
-                                        required
-                                    />
-                                </DateInputWrapper>
-                            </FormSection>
+            <MetaPanel isOpen={isMetaOpen}>
+                <MetaGrid isOpen={isMetaOpen}>
+                    <MetaSection>
+                        <MetaLabel>설교 날짜</MetaLabel>
+                        <DateInput
+                            type="date"
+                            name="sermonDate"
+                            value={sermonData.sermonDate}
+                            onChange={handleInputChange}
+                        />
+                    </MetaSection>
 
-                            <FormSection>
-                                <Label>예배 종류</Label>
-                                <Select
-                                    name="worshipType"
-                                    value={formData.worshipType}
-                                    onChange={handleInputChange}
-                                    required
-                                >
-                                    <option value="">예배 종류 선택</option>
-                                    {WORSHIP_TYPES.map((type) => (
-                                        <option key={type} value={type}>
-                                            {type}
-                                        </option>
-                                    ))}
-                                </Select>
-                                {formData.worshipType === '기타' && (
-                                    <CustomInputWrapper>
-                                        <Input
-                                            type="text"
-                                            name="customWorshipType"
-                                            value={formData.customWorshipType}
-                                            onChange={handleInputChange}
-                                            placeholder="예배 종류를 직접 입력하세요"
-                                            required
-                                        />
-                                    </CustomInputWrapper>
-                                )}
-                            </FormSection>
-
-                            <FormSection>
-                                <Label>설교 제목</Label>
+                    <MetaSection>
+                        <MetaLabel>예배 종류</MetaLabel>
+                        <Select name="worshipType" value={sermonData.worshipType} onChange={handleInputChange}>
+                            <option value="">예배 종류 선택</option>
+                            {WORSHIP_TYPES.map((type) => (
+                                <option key={type} value={type}>
+                                    {type}
+                                </option>
+                            ))}
+                        </Select>
+                        {sermonData.worshipType === '기타' && (
+                            <CustomInputWrapper>
                                 <Input
                                     type="text"
-                                    name="sermonTitle"
-                                    value={formData.sermonTitle}
+                                    name="customWorshipType"
+                                    value={sermonData.customWorshipType}
                                     onChange={handleInputChange}
-                                    placeholder="설교 제목을 입력하세요"
-                                    required
+                                    placeholder="예배 종류를 입력하세요"
                                 />
-                            </FormSection>
+                            </CustomInputWrapper>
+                        )}
+                    </MetaSection>
 
-                            <FormSection>
-                                <ScriptureHeader>
-                                    <Label>성경 본문</Label>
-                                    {!showAdditionalScripture && (
-                                        <AddScriptureButton
-                                            type="button"
-                                            onClick={() => setShowAdditionalScripture(true)}
-                                        >
-                                            <Plus size={16} />
-                                            추가
-                                        </AddScriptureButton>
-                                    )}
-                                </ScriptureHeader>
-                                <ScriptureContainer>
-                                    <Input
-                                        type="text"
-                                        name="mainScripture"
-                                        value={formData.mainScripture}
-                                        onChange={handleInputChange}
-                                        placeholder="예) 요한복음 3:16"
-                                        required
-                                    />
-                                    {showAdditionalScripture && (
-                                        <AdditionalScriptureWrapper>
-                                            <Input
-                                                type="text"
-                                                name="additionalScripture"
-                                                value={formData.additionalScripture}
-                                                onChange={handleInputChange}
-                                                placeholder="예) 로마서 8:28"
-                                            />
-                                            <RemoveScriptureButton
-                                                type="button"
-                                                onClick={() => {
-                                                    setShowAdditionalScripture(false);
-                                                    setFormData((prev) => ({
-                                                        ...prev,
-                                                        additionalScripture: '',
-                                                    }));
-                                                }}
-                                            >
-                                                <X size={16} />
-                                            </RemoveScriptureButton>
-                                        </AdditionalScriptureWrapper>
-                                    )}
-                                </ScriptureContainer>
-                            </FormSection>
-
-                            <FormSection>
-                                <Label>설교 요약</Label>
-                                <TextArea
-                                    name="summary"
-                                    value={formData.summary}
-                                    onChange={handleInputChange}
-                                    placeholder="설교의 주요 내용을 요약해서 입력하세요"
-                                    rows={4}
-                                    required
+                    <MetaSection>
+                        <MetaLabel>성경 구절</MetaLabel>
+                        <ScriptureInputs>
+                            <Input
+                                type="text"
+                                name="mainScripture"
+                                value={sermonData.mainScripture}
+                                onChange={handleInputChange}
+                                placeholder="예: 요한복음 3:16"
+                            />
+                            <AddButton type="button" onClick={handleAddScripture}>
+                                <Plus size={16} />
+                            </AddButton>
+                        </ScriptureInputs>
+                        {sermonData.additionalScriptures.map((scripture, index) => (
+                            <AdditionalScriptureInput key={index}>
+                                <Input
+                                    type="text"
+                                    value={scripture}
+                                    onChange={(e) => handleScriptureChange(index, e.target.value)}
+                                    placeholder="추가 성경 구절"
                                 />
-                            </FormSection>
+                                <RemoveButton onClick={() => handleRemoveScripture(index)}>
+                                    <X size={16} />
+                                </RemoveButton>
+                            </AdditionalScriptureInput>
+                        ))}
+                    </MetaSection>
 
-                            <FormSection>
-                                <Label>노트</Label>
-                                <TextArea
-                                    name="notes"
-                                    value={formData.notes}
-                                    onChange={handleInputChange}
-                                    placeholder="추가 노트를 입력하세요"
-                                    rows={3}
+                    <MetaSection>
+                        <MetaLabel>설교 요약</MetaLabel>
+                        <TextArea
+                            name="summary"
+                            value={sermonData.summary}
+                            onChange={handleInputChange}
+                            placeholder="설교의 핵심 내용을 요약해주세요"
+                            rows={3}
+                        />
+                    </MetaSection>
+
+                    <MetaSection>
+                        <MetaLabel>공개 설정</MetaLabel>
+                        <PrivacyToggle>
+                            <ToggleSwitch>
+                                <input
+                                    type="checkbox"
+                                    checked={sermonData.public}
+                                    onChange={(e) =>
+                                        setSermonData((prev) => ({
+                                            ...prev,
+                                            public: e.target.checked,
+                                        }))
+                                    }
                                 />
-                            </FormSection>
+                                <span />
+                            </ToggleSwitch>
+                            <PrivacyLabel>
+                                {sermonData.public ? (
+                                    <>
+                                        <Unlock size={16} />
+                                        전체 공개
+                                    </>
+                                ) : (
+                                    <>
+                                        <Lock size={16} />
+                                        비공개
+                                    </>
+                                )}
+                            </PrivacyLabel>
+                        </PrivacyToggle>
+                    </MetaSection>
+                </MetaGrid>
+            </MetaPanel>
 
-                            <FormSection>
-                                <Label>공개 설정</Label>
-                                <PrivacyToggle>
-                                    <ToggleSwitch>
-                                        <input
-                                            type="checkbox"
-                                            checked={formData.public}
-                                            onChange={(e) =>
-                                                setFormData((prev) => ({
-                                                    ...prev,
-                                                    public: e.target.checked,
-                                                }))
-                                            }
-                                        />
-                                        <span />
-                                    </ToggleSwitch>
-                                    <PrivacyLabel>
-                                        {formData.public ? (
-                                            <>
-                                                <Unlock size={16} />
-                                                전체 공개
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Lock size={16} />
-                                                비공개
-                                            </>
-                                        )}
-                                    </PrivacyLabel>
-                                </PrivacyToggle>
-                            </FormSection>
-
-                            <SubmitButton type="submit">수정 완료</SubmitButton>
-                        </MetaSection>
-                    </MetaSectionWrapper>
-                </StickyContainer>
-                <EditorContainer className="editor-container" isMetaOpen={isMetaSectionOpen}>
-                    <Label>설교 내용</Label>
-                    <SermonEditor ref={editorRef} value={formData.contentText} onChange={handleEditorChange} />
-                </EditorContainer>
-            </FormContainer>
-
-            <AutoSaveStatus visible={!!autoSaveStatus}>{autoSaveStatus}</AutoSaveStatus>
+            <EditorContainer>
+                <SermonEditor ref={editorRef} onChange={handleEditorChange} initialContent={sermonData.contentText} />
+            </EditorContainer>
         </Container>
     );
 };
 
 const Container = styled.div`
-    padding: 40px;
-    background-color: #f8f9fa;
     min-height: 100vh;
+    background: #fff;
+    display: flex;
+    width: 100%;
+    flex-direction: column;
 `;
 
-const PageHeader = styled.div`
-    margin-bottom: 40px;
-    margin-left: auto;
-    margin-right: auto;
-`;
-
-const FormContainer = styled.form`
-    display: grid;
-    grid-template-columns: ${(props) => (props.isMetaOpen ? '400px 1fr' : '50px 1fr')};
-    gap: 32px;
-    max-width: 1200px;
-    margin: 0 auto;
-    margin-bottom: 40px;
-    transition: all 0.3s ease;
-    align-items: start;
-
-    @media (max-width: 1200px) {
-        grid-template-columns: 1fr;
-        padding: 0 20px;
-    }
-`;
-
-const StickyContainer = styled.div`
+const Header = styled.div`
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 32px;
+    border-bottom: 1px solid #eee;
     position: sticky;
     top: 0;
-    z-index: 1000;
-    height: fit-content;
+    background: #fff;
+    z-index: 100;
+    height: 57px;
 `;
 
-const MetaSectionWrapper = styled.div`
-    position: relative;
-    min-width: ${(props) => (props.isOpen ? '400px' : '50px')};
-    transition: all 0.3s ease;
-`;
-
-const MetaSection = styled.div`
-    background: white;
-    padding: 32px;
-    border-radius: 16px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-    height: fit-content;
-    transform: translateX(${(props) => (props.isOpen ? '0' : '-100%')});
-    opacity: ${(props) => (props.isOpen ? 1 : 0)};
-    visibility: ${(props) => (props.isOpen ? 'visible' : 'hidden')};
-    transition: all 0.3s ease;
-`;
-
-const EditorContainer = styled.div`
-    background: white;
-    padding: 32px;
-    border-radius: 16px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-
-    min-height: 600px;
-    display: flex;
-    flex-direction: column;
-    position: sticky;
-    top: 40px;
-`;
-
-const FormSection = styled.div`
-    margin-bottom: 32px;
-    padding-right: 35px;
-
-    &:last-child {
-        margin-bottom: 0;
-    }
-`;
-
-const Label = styled.label`
-    display: block;
-    margin-bottom: 8px;
-    color: #333;
-    font-weight: 500;
-`;
-
-const Input = styled.input`
+const TitleInput = styled.input`
+    border: none;
+    font-size: 24px;
+    font-weight: 600;
+    color: #1a1a1a;
     width: 100%;
-    padding: 12px 16px;
-    border: 2px solid #eee;
-    border-radius: 8px;
-    font-size: 1rem;
-    transition: all 0.2s ease;
+    max-width: 600px;
+    padding: 8px 0;
+
+    &::placeholder {
+        color: #999;
+    }
 
     &:focus {
         outline: none;
-        border-color: #4f3296;
     }
 `;
 
-const DateInputWrapper = styled.div`
-    position: relative;
+const HeaderControls = styled.div`
+    display: flex;
+    gap: 16px;
+    align-items: center;
+`;
+
+const MetaButton = styled.button`
     display: flex;
     align-items: center;
-
-    svg {
-        position: absolute;
-        left: 16px;
-        color: #4f3296;
-    }
-`;
-
-const DateInput = styled(Input)`
-    padding-left: 48px;
-`;
-
-const TextArea = styled.textarea`
-    width: 100%;
-    padding: 16px;
-    border: 2px solid #eee;
+    gap: 8px;
+    padding: 8px 16px;
+    border: 1px solid #e1e1e1;
     border-radius: 8px;
-    font-size: 1rem;
-    resize: vertical;
+    background: white;
+    color: #666;
+    font-size: 14px;
+    cursor: pointer;
     transition: all 0.2s ease;
 
-    &:focus {
-        outline: none;
-        border-color: #4f3296;
+    svg {
+        transition: transform 0.3s ease;
+        transform: rotate(${(props) => (props.isOpen ? '180deg' : '0deg')});
+    }
+
+    &:hover {
+        background: #f8f9fa;
+        border-color: #666;
+    }
+
+    &:active {
+        transform: scale(0.98);
     }
 `;
 
-const SubmitButton = styled.button`
-    width: 100%;
-    padding: 16px;
-    background: #4f3296;
+const PublishButton = styled.button`
+    padding: 8px 24px;
+    background: #482895;
     color: white;
     border: none;
     border-radius: 8px;
-    font-size: 1.1rem;
-    font-weight: 500;
+    font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
 
@@ -482,133 +393,172 @@ const SubmitButton = styled.button`
     }
 `;
 
-const LoadingText = styled.div`
+const MetaPanel = styled.div`
+    padding: 24px 32px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #eee;
+    position: sticky;
+    top: 90px;
+    z-index: 99;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-origin: top;
+    overflow: hidden;
+    opacity: ${(props) => (props.isOpen ? 1 : 0)};
+    transform: translateY(${(props) => (props.isOpen ? '0' : '-10px')});
+    max-height: ${(props) => (props.isOpen ? '1000px' : '0')};
+    pointer-events: ${(props) => (props.isOpen ? 'all' : 'none')};
+`;
+
+const MetaGrid = styled.div`
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 24px;
+    max-width: 1200px;
+    margin: 0 auto;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: ${(props) => (props.isOpen ? 1 : 0)};
+    transform: translateY(${(props) => (props.isOpen ? '0' : '-10px')});
+`;
+
+const MetaSection = styled.div`
     display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    font-size: 1.2rem;
-    color: #666;
-`;
-
-const Title = styled.h1`
-    font-size: 2rem;
-    font-weight: 700;
-    margin-bottom: 16px;
-`;
-
-const Description = styled.p`
-    font-size: 1.2rem;
-    color: #666;
-`;
-
-const ToggleButton = styled.button`
-    position: absolute;
-    top: 40px;
-    right: -16px;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
+    flex-direction: column;
+    gap: 8px;
     background: white;
-    border: 2px solid #eee;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    z-index: 10;
-    transition: all 0.2s ease;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    color: #4f3296;
-
-    &:hover {
-        background: #4f3296;
-        border-color: #4f3296;
-        color: white;
-        transform: scale(1.1);
-    }
-
-    svg {
-        width: 18px;
-        height: 18px;
-        transition: all 0.2s ease;
-    }
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 `;
 
-const Select = styled.select`
-    width: 100%;
-    padding: 12px;
-    border: 2px solid #eee;
+const MetaLabel = styled.label`
+    font-size: 13px;
+    font-weight: 600;
+    color: #482895;
+    margin-bottom: 4px;
+`;
+
+const Input = styled.input`
+    padding: 10px 16px;
+    border: 1px solid #e1e1e1;
     border-radius: 8px;
-    font-size: 1rem;
+    font-size: 14px;
     transition: all 0.2s ease;
 
     &:focus {
         outline: none;
-        border-color: #4f3296;
+        border-color: #482895;
+        box-shadow: 0 0 0 3px rgba(72, 40, 149, 0.1);
     }
 `;
 
-const CustomInputWrapper = styled.div`
-    margin-top: 16px;
-`;
-
-const AddScriptureButton = styled.button`
-    padding: 8px 16px;
-    background: transparent;
-    border: none;
-    color: #4f3296;
-    font-size: 14px;
-    font-weight: 500;
+const Select = styled(Input).attrs({ as: 'select' })`
     cursor: pointer;
-    transition: all 0.2s ease;
-    border-radius: 8px;
-
-    &:hover {
-        background: #f3f4f6;
-    }
-
-    svg {
-        transition: transform 0.2s ease;
-    }
-
-    &:hover svg {
-        transform: translateX(-4px);
-    }
 `;
 
-const ScriptureHeader = styled.div`
+const TextArea = styled(Input).attrs({ as: 'textarea' })`
+    resize: vertical;
+    min-height: 80px;
+`;
+
+const ScriptureInputs = styled.div`
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 16px;
+    gap: 12px;
+    align-items: flex-start;
+    margin-bottom: 8px;
 `;
 
-const ScriptureContainer = styled.div`
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+const EditorContainer = styled.div`
+    flex: 1;
+    padding: 32px;
+    max-width: 900px;
+    margin: 0 auto;
+    width: 100%;
+
+    .ql-editor {
+        min-height: 600px;
+        font-size: 16px;
+        line-height: 1.8;
+    }
 `;
 
-const AdditionalScriptureWrapper = styled.div`
-    position: relative;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-`;
-
-const RemoveScriptureButton = styled.button`
+const AddButton = styled.button`
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 4px;
+    width: 36px;
+    height: 36px;
+    border: 1px dashed #482895;
+    border-radius: 8px;
+    background: white;
+    color: #482895;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+        background: #f8f9fa;
+        transform: translateY(-1px);
+    }
+`;
+
+const AdditionalScriptureInput = styled.div`
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-top: 8px;
+`;
+
+const RemoveButton = styled.button`
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
     border: none;
-    background: none;
+    background: transparent;
     color: #666;
     cursor: pointer;
     transition: all 0.2s ease;
 
     &:hover {
         color: #ff4444;
+    }
+`;
+
+const DateInput = styled(Input)`
+    padding-left: 40px;
+    position: relative;
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="%23666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>');
+    background-repeat: no-repeat;
+    background-position: 12px center;
+    background-size: 16px;
+
+    &::-webkit-calendar-picker-indicator {
+        background: transparent;
+        bottom: 0;
+        color: transparent;
+        cursor: pointer;
+        height: auto;
+        left: 0;
+        position: absolute;
+        right: 0;
+        top: 0;
+        width: auto;
+    }
+`;
+
+const CustomInputWrapper = styled.div`
+    margin-top: 8px;
+    animation: slideDown 0.3s ease;
+
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
 `;
 
@@ -675,18 +625,13 @@ const PrivacyLabel = styled.div`
     }
 `;
 
-const AutoSaveStatus = styled.div`
-    position: fixed;
-    bottom: 40px;
-    right: 40px;
-    padding: 8px 16px;
-    background: rgba(0, 0, 0, 0.7);
-    color: white;
-    border-radius: 8px;
-    font-size: 14px;
-    opacity: ${(props) => (props.visible ? 1 : 0)};
-    transition: opacity 0.3s ease;
-    z-index: 1000;
+const LoadingText = styled.div`
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    font-size: 1.2rem;
+    color: #666;
 `;
 
 export default EditSermonPage;
