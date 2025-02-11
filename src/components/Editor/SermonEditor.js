@@ -19,7 +19,6 @@ class SermonEditor extends Component {
         super(props);
         this.state = {
             editorHtml: props.value || '',
-            initialHeight: 0, // 초기 높이 저장
         };
         this.quillRef = null;
     }
@@ -27,84 +26,6 @@ class SermonEditor extends Component {
     componentDidUpdate(prevProps) {
         if (prevProps.value !== this.props.value) {
             this.setState({ editorHtml: this.props.value });
-        }
-    }
-
-    componentDidMount() {
-        if (this.quillRef) {
-            const editor = this.quillRef.getEditor();
-            editor.root.style.fontSize = '14px';
-            editor.format('size', '14px');
-            editor.blur();
-            editor.root.blur();
-
-            this.setState({
-                initialHeight: editor.root.clientHeight,
-            });
-
-            // 붙여넣기 이벤트 핸들러 수정
-            editor.root.addEventListener('paste', (e) => {
-                // 기본 스크롤 동작 방지
-                e.preventDefault();
-
-                // 클립보드 데이터 가져오기
-                const text = e.clipboardData.getData('text/plain');
-                const html = e.clipboardData.getData('text/html');
-
-                // 현재 선택 위치 저장
-                const range = editor.getSelection(true);
-
-                // HTML이 있으면 HTML을, 없으면 일반 텍스트를 삽입
-                if (html) {
-                    editor.clipboard.dangerouslyPasteHTML(range.index, html);
-                } else {
-                    editor.clipboard.dangerouslyPasteHTML(range.index, text);
-                }
-
-                // 붙여넣은 후 커서 위치 업데이트
-                editor.setSelection(range.index + text.length, 0);
-
-                // 즉시 스크롤 조정
-                const editorRoot = editor.root;
-                const editorContainer = editorRoot.parentElement.parentElement;
-                window.scrollTo({
-                    top: editorContainer.offsetTop + editorContainer.offsetHeight,
-                    behavior: 'instant', // 즉시 스크롤
-                });
-            });
-
-            // 텍스트 변경 이벤트 핸들러
-            editor.on('text-change', (delta, oldContents, source) => {
-                // source === 'user' 조건 제거하여 모든 변경에 대해 스크롤 적용
-                const range = editor.getSelection(true);
-                if (range) {
-                    // 즉시 스크롤 조정
-                    const editorRoot = editor.root;
-                    const editorContainer = editorRoot.parentElement.parentElement;
-                    window.scrollTo({
-                        top: editorContainer.offsetTop + editorContainer.offsetHeight,
-                        behavior: 'instant', // 즉시 스크롤로 변경
-                    });
-                }
-            });
-
-            // 툴바 선택 이벤트 핸들러 추가
-            editor.on('selection-change', (range) => {
-                if (range) {
-                    const editorRoot = editor.root;
-                    const editorContainer = editorRoot.parentElement.parentElement;
-                    window.scrollTo({
-                        top: editorContainer.offsetTop + editorContainer.offsetHeight,
-                        behavior: 'instant',
-                    });
-                }
-            });
-        }
-    }
-
-    componentWillUnmount() {
-        if (this.resizeObserver) {
-            this.resizeObserver.disconnect();
         }
     }
 
@@ -142,22 +63,7 @@ class SermonEditor extends Component {
     ];
 
     handleChange = (content) => {
-        this.setState({ editorHtml: content }, () => {
-            if (this.quillRef) {
-                const editor = this.quillRef.getEditor();
-                const length = editor.getLength();
-                editor.setSelection(length, 0);
-
-                // 변경 후 에디터 컨테이너의 맨 아래가 보이도록 스크롤
-                const editorRoot = editor.root;
-                const editorContainer = editorRoot.parentElement.parentElement;
-                window.scrollTo({
-                    top: editorContainer.offsetTop + editorContainer.offsetHeight,
-                    behavior: 'smooth',
-                });
-            }
-        });
-
+        this.setState({ editorHtml: content });
         if (this.props.onChange) {
             this.props.onChange(content);
         }
@@ -173,27 +79,6 @@ class SermonEditor extends Component {
     getEditor() {
         return this.quillRef.getEditor();
     }
-
-    // 커서 위치로 스크롤하는 헬퍼 함수
-    scrollToCursor = (editor) => {
-        const selection = editor.getSelection();
-        if (selection) {
-            const bounds = editor.getBounds(selection.index);
-            const editorContainer = editor.root.parentElement;
-            const containerHeight = editorContainer.clientHeight;
-            const scrollTop = editorContainer.scrollTop;
-            const boundsBottom = bounds.bottom + scrollTop;
-
-            // 커서가 화면 아래에 있을 때
-            if (boundsBottom > scrollTop + containerHeight - 100) {
-                editorContainer.scrollTop = boundsBottom - containerHeight + 100;
-            }
-            // 커서가 화면 위에 있을 때
-            else if (bounds.top + scrollTop < scrollTop + 50) {
-                editorContainer.scrollTop = bounds.top + scrollTop - 50;
-            }
-        }
-    };
 
     render() {
         return (
@@ -218,7 +103,6 @@ const EditorWrapper = styled.div`
     display: flex;
     flex-direction: column;
     width: 100%;
-    height: 60%;
     position: relative;
 
     .ql-toolbar {
@@ -237,16 +121,13 @@ const EditorWrapper = styled.div`
         font-size: 16px;
         line-height: 1.8;
         padding: 24px;
-        overflow-y: auto;
-        scroll-behavior: smooth;
     }
 
     .ql-container {
+        height: auto !important;
+        min-height: 580px;
         border: 2px solid #eee;
         border-top: none;
-        height: auto !important;
-        overflow-y: auto;
-        scroll-behavior: smooth;
         border-bottom-left-radius: 8px;
         border-bottom-right-radius: 8px;
     }
@@ -267,17 +148,6 @@ const EditorWrapper = styled.div`
 
     .ql-editor::-webkit-scrollbar-thumb:hover {
         background: #555;
-    }
-
-    .ql-editor p {
-        margin-bottom: 1.5em;
-    }
-
-    .ql-editor h1,
-    .ql-editor h2,
-    .ql-editor h3 {
-        margin-top: 1.5em;
-        margin-bottom: 0.5em;
     }
 
     /* 폰트 스타일 */
@@ -481,13 +351,9 @@ const EditorWrapper = styled.div`
 `;
 
 const StyledQuill = styled(ReactQuill)`
-    height: 100%;
+    height: auto;
     display: flex;
     flex-direction: column;
-
-    .ql-container {
-        flex: 1;
-    }
 `;
 
 export default React.forwardRef((props, ref) => {
