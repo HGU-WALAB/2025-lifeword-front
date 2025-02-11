@@ -59,8 +59,6 @@ const MyPage = () => {
   return (
     <Container>
       <HeaderSection>
-        {/* 아이콘 + 이름 지역 교회 이름  */}
-
         <HeaderIcon>
           <User size={32} />
         </HeaderIcon>
@@ -251,13 +249,6 @@ const InfoCard = styled.div`
   }
 `;
 
-const InfoHeader = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
-`;
-
 const CardIcon = styled.div`
   color: #4f3296;
   display: flex;
@@ -274,5 +265,4 @@ const Value = styled.div`
   color: #333;
   font-size: 1.1rem;
   font-weight: 500;
-  margin-top: 0.5rem;
 `;
