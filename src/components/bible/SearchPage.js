@@ -7,41 +7,36 @@ import VerseContextMenu from "./VerseContextMenu";
 const ITEMS_PER_PAGE = 20;
 
 const SearchPage = () => {
-  // State variables for the search keyword, results, loading status, pagination, and whether a search has been made
   const [keyword, setKeyword] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [hasSearched, setHasSearched] = useState(false);
 
-  // Function to handle searching; triggered on form submission or Enter key press
   const handleSearch = async (e) => {
-    if (e && e.preventDefault) e.preventDefault(); // Prevent default form submission behavior
+    if (e && e.preventDefault) e.preventDefault();
     setLoading(true);
     try {
-      // Call the search API with the current keyword
       const response = await searchBibles(keyword);
       if (response.success) {
-        // Map over results to highlight the search keyword in the sentence
         const highlightedData = response.data.map((result) => ({
           ...result,
           highlightedSentence: highlightText(result.sentence, keyword),
         }));
         setSearchResults(highlightedData);
-        setCurrentPage(1); // Reset pagination to the first page
+        setCurrentPage(1);
       } else {
-        setSearchResults([]); // Clear results if API response indicates failure
+        setSearchResults([]);
       }
     } catch (error) {
       console.error("Search error:", error);
       setSearchResults([]);
     } finally {
       setLoading(false);
-      setHasSearched(true); // Mark that a search has been performed
+      setHasSearched(true);
     }
   };
 
-  // Function to highlight occurrences of the search keyword within the given text
   const highlightText = (text, keyword) => {
     if (!keyword) return text;
     const regex = new RegExp(`(${keyword})`, "gi");
@@ -55,15 +50,13 @@ const SearchPage = () => {
     );
   };
 
-  // Calculate total pages based on the number of search results and items per page
   const totalPages = Math.ceil(searchResults.length / ITEMS_PER_PAGE);
-  // Slice the search results to show only the results for the current page
+
   const currentResults = searchResults.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
 
-  // Function to generate visible page numbers for pagination with dots for skipped ranges
   const getVisiblePages = () => {
     const delta = 2;
     const range = [];
@@ -88,27 +81,23 @@ const SearchPage = () => {
     return rangeWithDots;
   };
 
-  // Trigger an initial search when the component mounts (showing results for an empty keyword)
   useEffect(() => {
     handleSearch();
   }, []);
 
   return (
     <Container>
-      {/* Search bar section */}
       <SearchBar>
-        <BubbleText>찾고싶은 성경구절을 찾아보세요!</BubbleText>
+        <BubbleText>찾고싶은 성경구절을 검색해 보세요!</BubbleText>
         <SearchForm onSubmit={handleSearch}>
           <SearchInputGroup>
             <SearchInput
               type="text"
               value={keyword}
-              // On change, update the keyword and reset the hasSearched flag to hide empty result messages
               onChange={(e) => {
                 setKeyword(e.target.value);
                 setHasSearched(false);
               }}
-              // Handle Enter key press to trigger search
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   e.preventDefault();
@@ -117,13 +106,13 @@ const SearchPage = () => {
               }}
               placeholder="성경 구절을 검색하세요 (예: 창 1:1, 창세기 1장, 사랑)"
             />
-            {/* Clear button appears when there is a keyword */}
+
             {keyword && (
               <ClearButton onClick={() => setKeyword("")}>
                 <X size={20} />
               </ClearButton>
             )}
-            {/* Search button */}
+
             <SearchButton type="submit" disabled={loading}>
               <Search size={24} />
             </SearchButton>
@@ -131,13 +120,11 @@ const SearchPage = () => {
         </SearchForm>
       </SearchBar>
 
-      {/* ResultsWrapper holds the scrollable results and the fixed gradient overlay */}
       <ResultsWrapper>
         <ResultsContainer>
           {loading ? (
             <LoadingText>로딩 중...</LoadingText>
           ) : searchResults.length > 0 ? (
-            // Map current results to individual result items
             currentResults.map((result) => (
               <ResultItem key={result.idx} result={result} />
             ))
@@ -151,11 +138,8 @@ const SearchPage = () => {
             )
           )}
         </ResultsContainer>
-        {/* Gradient overlay fixed at the bottom of the results area */}
-        <GradientOverlay />
       </ResultsWrapper>
 
-      {/* Pagination controls (only shown if there are multiple pages) */}
       {totalPages > 1 && (
         <PaginationContainer>
           <PaginationButton
@@ -213,21 +197,18 @@ const SearchBar = styled.div`
   transition: all 0.2s ease;
 `;
 
-// Form container for the search input
 const SearchForm = styled.form`
   width: 100%;
   display: flex;
   flex-direction: column;
 `;
 
-// Container for the search input, clear button, and search button
 const SearchInputGroup = styled.div`
   display: flex;
   align-items: center;
   position: relative;
 `;
 
-// Styled search input with focus styles and placeholder color
 const SearchInput = styled.input`
   flex: 1;
   padding: 12px 50px 12px 24px;
@@ -241,7 +222,6 @@ const SearchInput = styled.input`
   }
 `;
 
-// Clear button that appears inside the input to clear the keyword
 const ClearButton = styled.button`
   position: absolute;
   right: 50px;
@@ -256,7 +236,6 @@ const ClearButton = styled.button`
   }
 `;
 
-// Search button styled as a circular icon button
 const SearchButton = styled.button`
   width: 42px;
   height: 42px;
@@ -275,7 +254,7 @@ const SearchButton = styled.button`
   }
 `;
 
-// Bubble text that prompts the user to search for a Bible verse
+// 찬고싶은 성경구절
 const BubbleText = styled.div`
   position: relative;
   left: -16px;
@@ -311,26 +290,11 @@ const ResultsWrapper = styled.div`
 const ResultsContainer = styled.div`
   height: 100%;
   overflow-y: auto;
-  padding-right: 16px;
   display: flex;
   flex-direction: column;
   gap: 16px;
 `;
 
-// Gradient overlay fixed at the bottom of the results wrapper
-const GradientOverlay = styled.div`
-  position: absolute;
-  padding: 10;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 24px; /* Adjust height as needed */
-  background: linear-gradient(to top, #c1c1c1, transparent);
-  pointer-events: none;
-  z-index: 1000;
-`;
-
-// Container for each individual result item
 const ResultItemContainer = styled.div`
   position: relative;
   background-color: white;
@@ -340,19 +304,16 @@ const ResultItemContainer = styled.div`
   border: 1px solid #ececec;
 `;
 
-// Header for a result item (e.g., the Bible reference)
 const ResultHeader = styled.div`
   color: #482895;
   font-weight: 600;
   margin-bottom: 8px;
 `;
 
-// Content of the result item
 const ResultContent = styled.div`
   line-height: 1.6;
 `;
 
-// Styled text used for highlighting the search keyword within results
 const HighlightedText = styled.span`
   font-weight: bold;
   color: #482895;
@@ -360,7 +321,6 @@ const HighlightedText = styled.span`
   padding: 1px;
 `;
 
-// Container for the pagination controls
 const PaginationContainer = styled.div`
   display: flex;
   align-items: center;
@@ -374,7 +334,6 @@ const PaginationContainer = styled.div`
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 `;
 
-// Individual pagination button styling
 const PaginationButton = styled.button`
   width: 36px;
   height: 36px;
@@ -395,7 +354,6 @@ const PaginationButton = styled.button`
   }
 `;
 
-// Container for page numbers in pagination
 const PageNumbers = styled.div`
   display: flex;
   gap: 8px;
@@ -406,7 +364,6 @@ const PageNumbers = styled.div`
   }
 `;
 
-// Styling for each individual page button
 const PageButton = styled.button`
   width: 36px;
   height: 36px;
@@ -429,14 +386,12 @@ const PageButton = styled.button`
   }
 `;
 
-// Loading text styling
 const LoadingText = styled.div`
   text-align: center;
   padding: 20px;
   color: #666666;
 `;
 
-// Empty text styling for no results
 const EmptyText = styled.div`
   width: 60%;
   text-align: left;
@@ -444,7 +399,6 @@ const EmptyText = styled.div`
   color: #666666;
 `;
 
-// Component for an individual result item, including the context menu
 const ResultItem = ({ result }) => {
   const resultRef = useRef(null);
   return (
