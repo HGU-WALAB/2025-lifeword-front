@@ -8,6 +8,7 @@ import AddSermonPage from '../components/sermon/AddSermonPage';
 import EditSermonPage from '../components/sermon/EditSermonPage';
 import SermonListPage from '../components/sermon/SermonListPage';
 import SermonDetailPage from '../components/sermon/SermonDetailPage';
+import SermonDetailPageAdmin from '../components/admin/SermonDetailPageAdmin';
 import AdminPage from '../components/admin/AdminPage';
 import UserManagementPage from '../components/admin/UserManagementPage';
 import SermonManagementPage from '../components/admin/SermonManagementPage';
@@ -61,7 +62,7 @@ const AdminSermonLayout = () => {
         <SermonListContainer>
             <Routes>
                 <Route path="/" element={<SermonManagementPage />} />
-                <Route path="/detail/:id" element={<SermonDetailPage />} />
+                <Route path="/detail/:id" element={<SermonDetailPageAdmin />} />
                 <Route path="/edit/:id" element={<EditSermonPage />} />
             </Routes>
         </SermonListContainer>

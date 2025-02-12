@@ -317,7 +317,7 @@ export const setUserPassword = async (email, password) => {
     }
 };
 
-// 나머지 관리자 관련 API는 유지:
+// 관리자 user 관련 API
 export const getAdminUsers = async () => {
     try {
         const { data } = await axios.get(`${BASE_URL}/admin/users`);
@@ -380,6 +380,52 @@ export const getFilteredSermonList = async (params) => {
         return data;
     } catch (error) {
         console.error('Error fetching filtered sermons:', error);
+        throw error;
+    }
+};
+
+export const getFilteredSermonListAdmin = async (params) => {
+    try {
+        const { data } = await axios.get(`${BASE_URL}/sermons/filtered-list-admin`, {
+            params: {
+                keyword: params.keyword || null,
+                searchType: params.searchType || null,
+                sort: params.sort || 'desc',
+                worshipType: params.worshipTypes?.join(',') || '',
+                scripture: params.scripture?.join(',') || '',
+                page: params.page || 1,
+                size: params.size || 10,
+                startDate: params.startDate || '',
+                endDate: params.endDate || '',
+            },
+        });
+        return data;
+    } catch (error) {
+        console.error('Error fetching filtered sermons:', error);
+        throw error;
+    }
+};
+
+// 관리자용 설교 삭제 API
+export const deleteSermonAdmin = async (sermonId, userId) => {
+    try {
+        const { data } = await axios.delete(`${BASE_URL}/sermons/${sermonId}`, {
+            params: { userId },
+        });
+        return data;
+    } catch (error) {
+        console.error('Error deleting sermon:', error);
+        throw error;
+    }
+};
+
+// 관리자용 설교 수정 API
+export const updateSermonAdmin = async (sermonId, sermonData) => {
+    try {
+        const { data } = await axios.patch(`${BASE_URL}/admin/sermons/${sermonId}`, sermonData);
+        return data;
+    } catch (error) {
+        console.error('Error updating sermon:', error);
         throw error;
     }
 };
