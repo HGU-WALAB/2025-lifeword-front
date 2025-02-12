@@ -81,28 +81,6 @@ export const createSermon = async (sermonData) => {
     }
 };
 
-export const getPublicSermons = async () => {
-    try {
-        const response = await axios.get(`${BASE_URL}/sermons/publiclist`);
-        return response.data;
-    } catch (error) {
-        console.error('Error fetching public sermons:', error);
-        throw error;
-    }
-};
-
-export const getUserSermons = async (userId, option = 'all') => {
-    try {
-        const { data } = await axios.get(`${BASE_URL}/sermons/user/list`, {
-            params: { userId, option },
-        });
-        return data;
-    } catch (error) {
-        console.error('Error getting user sermons:', error);
-        throw error;
-    }
-};
-
 export const updateSermon = async (sermonId, userId, sermonData) => {
     try {
         const { data } = await axios.patch(`${BASE_URL}/sermons/update/${sermonId}`, sermonData, {
@@ -137,49 +115,12 @@ export const getSermonDetail = async (sermonId) => {
     }
 };
 
-export const searchSermons = async (keyword) => {
-    try {
-        const { data } = await axios.get(`${BASE_URL}/sermons/search`, {
-            params: { keyword },
-        });
-        return data;
-    } catch (error) {
-        console.error('Error searching sermons:', error);
-        throw error;
-    }
-};
-
-// 필터링 API
-export const getFilteredSermons = async (filters) => {
-    try {
-        const { data } = await axios.get(`${BASE_URL}/sermons/filtered-list`, {
-            params: {
-                sort: filters.sort || 'desc',
-                worshipType: filters.worshipTypes?.length === 0 ? 'all' : filters.worshipTypes.join(','),
-                startDate:
-                    filters.dateFilter?.type === 'single'
-                        ? filters.dateFilter.date
-                        : filters.dateFilter?.range?.startDate || '',
-                endDate:
-                    filters.dateFilter?.type === 'single'
-                        ? filters.dateFilter.date
-                        : filters.dateFilter?.range?.endDate || '',
-                scripture: filters.bibleBooks?.length === 0 ? '' : filters.bibleBooks.join(','),
-            },
-        });
-        return data;
-    } catch (error) {
-        console.error('Error fetching filtered sermons:', error);
-        throw error;
-    }
-};
-
 // Bookmark 관련 API
-export const createBookmark = async (userID, verseId , sermonId , isSermon) => {
+export const createBookmark = async (userID, verseId, sermonId, isSermon) => {
     try {
         const { data } = await axios.post(
             `${BASE_URL}/bookmarks`,
-            { verseId, sermonId,isSermon },
+            { verseId, sermonId, isSermon },
             {
                 params: { userID },
             }
@@ -348,7 +289,35 @@ export const getGoogleUserInfo = async (access_token) => {
     }
 };
 
-// 관리자 관련 API
+export const updateUserProvider = async (email, provider, uid) => {
+    try {
+        const { data } = await axios.patch(`${BASE_URL}/users/provider`, null, {
+            params: {
+                email,
+                oauthProvider: provider,
+                oauthUid: uid,
+            },
+        });
+        return data;
+    } catch (error) {
+        console.error('Error updating user provider:', error);
+        throw error;
+    }
+};
+
+export const setUserPassword = async (email, password) => {
+    try {
+        const { data } = await axios.patch(`${BASE_URL}/users/setUserPassword`, null, {
+            params: { email, password },
+        });
+        return data;
+    } catch (error) {
+        console.error('Error setting user password:', error);
+        throw error;
+    }
+};
+
+// 관리자 user 관련 API
 export const getAdminUsers = async () => {
     try {
         const { data } = await axios.get(`${BASE_URL}/admin/users`);
@@ -391,40 +360,72 @@ export const deleteAdminUser = async (userId) => {
     }
 };
 
-export const getAdminSermons = async () => {
+export const getFilteredSermonList = async (params) => {
     try {
-        const { data } = await axios.get(`${BASE_URL}/sermons/admin/list`);
-        return data;
-    } catch (error) {
-        console.error('Error getting admin sermons:', error);
-        throw error;
-    }
-};
-
-export const updateUserProvider = async (email, provider, uid) => {
-    try {
-        const { data } = await axios.patch(`${BASE_URL}/users/provider`, null, {
+        const { data } = await axios.get(`${BASE_URL}/sermons/filtered-list-user`, {
             params: {
-                email,
-                oauthProvider: provider,
-                oauthUid: uid,
+                user_id: params.userId,
+                keyword: params.keyword || null,
+                searchType: params.searchType || null,
+                sort: params.sort || 'desc',
+                worshipType: params.worshipTypes?.join(',') || '',
+                scripture: params.scripture?.join(',') || '',
+                page: params.page || 1,
+                size: params.size || 10,
+                mode: params.mode || 0,
+                startDate: params.startDate || '',
+                endDate: params.endDate || '',
             },
         });
         return data;
     } catch (error) {
-        console.error('Error updating user provider:', error);
+        console.error('Error fetching filtered sermons:', error);
         throw error;
     }
 };
 
-export const setUserPassword = async (email, password) => {
+export const getFilteredSermonListAdmin = async (params) => {
     try {
-        const { data } = await axios.patch(`${BASE_URL}/users/setUserPassword`, null, {
-            params: { email, password },
+        const { data } = await axios.get(`${BASE_URL}/sermons/filtered-list-admin`, {
+            params: {
+                keyword: params.keyword || null,
+                searchType: params.searchType || null,
+                sort: params.sort || 'desc',
+                worshipType: params.worshipTypes?.join(',') || '',
+                scripture: params.scripture?.join(',') || '',
+                page: params.page || 1,
+                size: params.size || 10,
+                startDate: params.startDate || '',
+                endDate: params.endDate || '',
+            },
         });
         return data;
     } catch (error) {
-        console.error('Error setting user password:', error);
+        console.error('Error fetching filtered sermons:', error);
+        throw error;
+    }
+};
+
+// 관리자용 설교 삭제 API
+export const deleteSermonAdmin = async (sermonId, userId) => {
+    try {
+        const { data } = await axios.delete(`${BASE_URL}/sermons/${sermonId}`, {
+            params: { userId },
+        });
+        return data;
+    } catch (error) {
+        console.error('Error deleting sermon:', error);
+        throw error;
+    }
+};
+
+// 관리자용 설교 수정 API
+export const updateSermonAdmin = async (sermonId, sermonData) => {
+    try {
+        const { data } = await axios.patch(`${BASE_URL}/admin/sermons/${sermonId}`, sermonData);
+        return data;
+    } catch (error) {
+        console.error('Error updating sermon:', error);
         throw error;
     }
 };
