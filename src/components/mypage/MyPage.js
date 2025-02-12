@@ -144,8 +144,7 @@ const Container = styled.div`
 `;
 
 const HeaderSection = styled.div`
-  padding: 40px;
-  margin-bottom: 20px;
+  padding: 20px 40px;
   display: flex;
   align-items: center;
   justify-content: space-between;

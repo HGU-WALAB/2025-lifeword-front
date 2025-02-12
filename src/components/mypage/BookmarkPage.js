@@ -80,7 +80,8 @@ const BookmarkPage = () => {
         <SmallText>북마크</SmallText>
         <TitleRow>
           <StrongText>
-            {isSermonView ? "즐겨찾는 설교" : "즐겨찾는 구절"}
+            즐겨찾는&nbsp;
+            <ChangeText>{isSermonView ? "설교" : "구절"}</ChangeText>
           </StrongText>
           <ButtonGroup>
             <ToggleButton
@@ -195,16 +196,17 @@ const ButtonGroup = styled.div`
 `;
 
 const ToggleButton = styled.button`
-  background: ${(props) => (props.active ? "#4f3296" : "#e9ecef")};
-  color: ${(props) => (props.active ? "white" : "#495057")};
+  background-color: ${(props) => (props.active ? "#6b4ee6" : "transparent")};
+  color: ${(props) => (props.active ? "white" : "#666")};
   padding: 10px 15px;
   border: none;
   border-radius: 8px;
   cursor: pointer;
   font-weight: bold;
   transition: background-color 0.2s ease;
+  border: 1px solid #ececec;
   &:hover {
-    background: ${(props) => (props.active ? "#3a2570" : "#d6d6d6")};
+    background-color: ${(props) => (props.active ? "#5a3eb8" : "#e9ecef")};
   }
 `;
 
@@ -212,18 +214,26 @@ const SmallText = styled.div`
   font-family: "Inter";
   font-style: normal;
   font-weight: 400;
-  font-size: 48px;
+  font-size: 30px;
   line-height: 140%;
   color: #757575;
 `;
 
 const StrongText = styled.div`
+  display: flex;
   font-family: "Inter";
   font-style: normal;
   font-weight: 600;
-  font-size: 50px;
+  font-size: 42px;
   line-height: 140%;
   color: #1e1e1e;
+`;
+const ChangeText = styled.div`
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 600;
+  font-size: 42px;
+  color: #4f3296;
 `;
 
 const ResultsContainer = styled.div`
@@ -239,12 +249,12 @@ const ResultItem = styled.div`
   background-color: white;
   padding: 20px;
   border-radius: 8px;
+  border: 1px solid #ececec;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   gap: 16px;
-  width: 100%;
 `;
 
 const ResultContent = styled.div`

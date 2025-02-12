@@ -13,6 +13,15 @@ const SearchPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [hasSearched, setHasSearched] = useState(false);
 
+  //BubbleText 4 초
+  const [showBubble, setShowBubble] = useState(true);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowBubble(false);
+    }, 4000);
+    return () => clearTimeout(timer);
+  }, []);
+
   const handleSearch = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
     setLoading(true);
@@ -87,8 +96,12 @@ const SearchPage = () => {
 
   return (
     <Container>
-      <SearchBar>
-        <BubbleText>찾고싶은 성경구절을 검색해 보세요!</BubbleText>
+      <SearchBar bubbleVisible={showBubble}>
+        {showBubble && (
+          <BubbleText visible={showBubble}>
+            찾고싶은 성경구절을 검색해 보세요!
+          </BubbleText>
+        )}
         <SearchForm onSubmit={handleSearch}>
           <SearchInputGroup>
             <SearchInput
@@ -190,11 +203,11 @@ const SearchBar = styled.div`
   align-self: flex-start;
   display: flex;
   flex-direction: column;
-  padding: 40px 0 0 15%;
+  padding: ${(props) =>
+    props.bubbleVisible ? "40px 0 0 15%" : "90px 0 0 15%"};
   width: 35%;
   max-width: 600px;
   background: white;
-  transition: all 0.2s ease;
 `;
 
 const SearchForm = styled.form`
@@ -212,13 +225,21 @@ const SearchInputGroup = styled.div`
 const SearchInput = styled.input`
   flex: 1;
   padding: 12px 50px 12px 24px;
-  border: 2px solid #4f3296;
+  /* Use the hasValue prop to change the border color dynamically */
+  border: 2px solid ${(props) => (props.hasValue ? "#ff4444" : "#4f3296")};
   border-radius: 25px;
   font-size: 14px;
-  transition: all 0.2s ease;
-
+  transition: border-color 0.2s ease;
   &::placeholder {
     color: #999;
+  }
+  &:focus {
+    border-color: ${(props) => (props.hasValue ? "#ff4444" : "#6b4ee6")};
+    outline: none;
+  }
+  &:focus-within {
+    border-color: #6b4ee6;
+    box-shadow: 0 0 0 3px rgba(107, 78, 230, 0.1);
   }
 `;
 
@@ -251,11 +272,13 @@ const SearchButton = styled.button`
   transition: background-color 0.2s ease;
   &:hover {
     color: #6b4ee6;
+    background-color: rgba(163, 163, 163, 0.31);
   }
 `;
 
 // 찬고싶은 성경구절
 const BubbleText = styled.div`
+  height: 20px;
   position: relative;
   left: -16px;
   margin-bottom: 15px;
@@ -266,6 +289,9 @@ const BubbleText = styled.div`
   border-radius: 24px;
   align-self: flex-start;
   display: inline-block;
+  transform: ${(props) =>
+    props.bubbleVisible ? "translateY(0)" : "translateY(-10px)"};
+  transition: opacity 0.5s ease-out, transform 0.5s ease-out;
   &::after {
     // 말풍선 꼬랑지
     content: "";
