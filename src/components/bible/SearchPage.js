@@ -225,13 +225,21 @@ const SearchInputGroup = styled.div`
 const SearchInput = styled.input`
   flex: 1;
   padding: 12px 50px 12px 24px;
-  border: 2px solid #4f3296;
+  /* Use the hasValue prop to change the border color dynamically */
+  border: 2px solid ${(props) => (props.hasValue ? "#ff4444" : "#4f3296")};
   border-radius: 25px;
   font-size: 14px;
-  transition: all 0.2s ease;
-
+  transition: border-color 0.2s ease;
   &::placeholder {
     color: #999;
+  }
+  &:focus {
+    border-color: ${(props) => (props.hasValue ? "#ff4444" : "#6b4ee6")};
+    outline: none;
+  }
+  &:focus-within {
+    border-color: #6b4ee6;
+    box-shadow: 0 0 0 3px rgba(107, 78, 230, 0.1);
   }
 `;
 
@@ -264,6 +272,7 @@ const SearchButton = styled.button`
   transition: background-color 0.2s ease;
   &:hover {
     color: #6b4ee6;
+    background-color: rgba(163, 163, 163, 0.31);
   }
 `;
 
