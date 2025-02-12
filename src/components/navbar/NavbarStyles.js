@@ -10,7 +10,7 @@ export const NavContainer = styled.nav`
   position: fixed;
   left: 0;
   top: 0;
-  transition: all 0.3s ease;
+  transition: all 0.4s ease;
   z-index: 1000;
 `;
 
@@ -28,7 +28,8 @@ export const ToggleButton = styled.button`
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: transform 0.4s ease, background 0.4s ease, border-color 0.4s ease,
+    color 0.4s ease;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   color: #4f3296;
   z-index: 1001;
@@ -43,7 +44,7 @@ export const ToggleButton = styled.button`
   svg {
     width: 18px;
     height: 18px;
-    transition: transform 0.3s ease;
+    transition: transform 0.4s ease;
     transform: ${(props) =>
       props.isExpanded ? "rotate(0deg)" : "rotate(180deg)"};
   }
@@ -62,7 +63,7 @@ export const Logo = styled.img`
   width: ${(props) => (props.isExpanded ? "170px" : "56px")};
   height: 56px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.4s ease;
 `;
 
 export const NavItems = styled.div`
