@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { Search, Edit2, Trash2, ChevronLeft, ChevronRight, ArrowLeft, Eye } from 'lucide-react';
-import { getAdminSermons, searchSermons, deleteSermon } from '../../services/APIService';
 import { useNavigate } from 'react-router-dom';
 import { useUserState } from '../../recoil/utils';
 
@@ -19,8 +18,7 @@ const SermonManagementPage = () => {
     const loadSermons = async () => {
         setLoading(true);
         try {
-            const data = await getAdminSermons();
-            setSermons(data);
+            // 새로운 API 호출 로직이 여기에 들어갈 예정
         } catch (error) {
             console.error('Failed to load sermons:', error);
             setSermons([]);
@@ -39,8 +37,7 @@ const SermonManagementPage = () => {
         }
         setLoading(true);
         try {
-            const results = await searchSermons(searchValue, userId, searchType);
-            setSermons(Array.isArray(results) ? results : []);
+            // 새로운 API 호출 로직이 여기에 들어갈 예정
             setCurrentPage(1);
         } catch (error) {
             console.error('Search failed:', error);
@@ -58,11 +55,7 @@ const SermonManagementPage = () => {
     const handleDelete = async (sermonId) => {
         if (window.confirm('정말로 이 설교를 삭제하시겠습니까?')) {
             try {
-                const sermon = sermons.find((s) => s.sermonId === sermonId);
-                if (!sermon) {
-                    throw new Error('설교를 찾을 수 없습니다.');
-                }
-                await deleteSermon(sermonId, sermon.userId);
+                // 새로운 API 호출 로직이 여기에 들어갈 예정
                 loadSermons();
             } catch (error) {
                 console.error('Failed to delete sermon:', error);
