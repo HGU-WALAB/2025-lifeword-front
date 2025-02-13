@@ -16,6 +16,7 @@ import MyPage from '../components/mypage/MyPage';
 import { useUserState } from '../recoil/utils';
 import { useRecoilValue } from 'recoil';
 import { isNavExpandedState } from '../recoil/atoms';
+import BookmarkSermonDetailPage from '../components/mypage/BookmarkSermonDetailPage';
 
 const MainPage = () => {
     const { isAdmin } = useUserState();
@@ -32,6 +33,7 @@ const MainPage = () => {
                     <Route path="/add-sermon" element={<AddSermonPage />} />
                     <Route path="/sermon-list/*" element={<SermonListLayout />} />
                     <Route path="/mypage" element={<MyPage />} />
+                    <Route path="mypage/sermon/:id" element={<BookmarkSermonDetailPage />} />
                     {isAdmin && (
                         <>
                             <Route path="/admin" element={<AdminPage />} />

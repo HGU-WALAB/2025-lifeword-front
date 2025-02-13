@@ -116,14 +116,29 @@ export const getSermonDetail = async (sermonId) => {
 };
 
 // Bookmark 관련 API
+export const getBookmarks = async (userID) => {
+    try {
+        const [verseResponse, sermonResponse] = await Promise.all([
+            axios.get(`${BASE_URL}/bookmarks/verse`, { params: { userID } }),
+            axios.get(`${BASE_URL}/bookmarks/sermon`, { params: { userID } }),
+        ]);
+        return {
+            success: true,
+            verses: verseResponse.data.data || [],
+            sermons: sermonResponse.data.data || [],
+        };
+    } catch (error) {
+        console.error('Error getting bookmarks:', error);
+        throw error;
+    }
+};
+
 export const createBookmark = async (userID, verseId, sermonId, isSermon) => {
     try {
         const { data } = await axios.post(
             `${BASE_URL}/bookmarks`,
             { verseId, sermonId, isSermon },
-            {
-                params: { userID },
-            }
+            { params: { userID } }
         );
         return data;
     } catch (error) {
@@ -132,46 +147,9 @@ export const createBookmark = async (userID, verseId, sermonId, isSermon) => {
     }
 };
 
-export const getBookmarks = async (userID) => {
-    try {
-        const { data } = await axios.get(`${BASE_URL}/bookmarks`, {
-            params: { userID },
-        });
-        return data;
-    } catch (error) {
-        console.error('Error getting bookmarks:', error);
-        throw error;
-    }
-};
-
-export const getSermonBookmarks = async (userID) => {
-    try {
-        const { data } = await axios.get(`${BASE_URL}/bookmarks/sermon`, {
-            params: { userID },
-        });
-        return data;
-    } catch (error) {
-        console.error('Error getting bookmarks:', error);
-        throw error;
-    }
-};
-
-export const getVerseBookmarks = async (userID) => {
-    try {
-        const { data } = await axios.get(`${BASE_URL}/bookmarks/verse`, {
-            params: { userID },
-        });
-        return data;
-    } catch (error) {
-        console.error('Error getting bookmarks:', error);
-        throw error;
-    }
-};
-
 export const deleteBookmark = async (userID, bookmarkId) => {
-    //console.log(bookmarkId.bookmarkId);
     try {
-        const { data } = await axios.delete(`${BASE_URL}/bookmarks/${parseInt(bookmarkId)}`, {
+        const { data } = await axios.delete(`${BASE_URL}/bookmarks/${bookmarkId}`, {
             params: { userID },
         });
         return data;
@@ -412,7 +390,7 @@ export const deleteSermonAdmin = async (sermonId, userId) => {
         const { data } = await axios.delete(`${BASE_URL}/sermons/${sermonId}`, {
             params: { userId },
         });
-        return data;
+        return data || { success: true };
     } catch (error) {
         console.error('Error deleting sermon:', error);
         throw error;
