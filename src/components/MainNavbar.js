@@ -5,10 +5,10 @@ import BelieverNavbar from './navbar/BelieverNavbar';
 import { useUserState } from '../recoil/utils';
 
 const MainNavbar = () => {
-    const { isAdmin, userJob } = useUserState();
+    const { role, userJob } = useUserState();
     const isPastor = userJob === '목회자';
 
-    if (isAdmin) {
+    if (role === 'ADMIN') {
         return <AdminNavbar />;
     } else if (isPastor) {
         return <PastorNavbar />;

@@ -1,13 +1,6 @@
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-    getKakaoToken,
-    getKakaoUserInfo,
-    verifyUser,
-    getGoogleToken,
-    getGoogleUserInfo,
-    updateUserProvider,
-} from '../../services/APIService';
+import { authenticateKakaoUser, authenticateGoogleUser } from '../../services/APIService';
 import { useSetUserState } from '../../recoil/utils';
 
 const AuthCallback = () => {
@@ -15,79 +8,50 @@ const AuthCallback = () => {
     const setUserState = useSetUserState();
 
     useEffect(() => {
-        const processLogin = async () => {
-            try {
-                const url = new URL(window.location.href);
-                const code = url.searchParams.get('code');
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('code');
+        const provider = urlParams.get('state');
+        console.log(`✅ 받은 ${provider} Authorization Code:`, code);
 
-                if (!code) {
-                    throw new Error('No authorization code found');
-                }
+        if (code) {
+            const authFunction = provider === 'kakao' ? authenticateKakaoUser : authenticateGoogleUser;
 
-                let userEmail, uid, provider;
-                const isGoogle = url.searchParams.get('scope')?.includes('email');
-
-                if (isGoogle) {
-                    const tokenData = await getGoogleToken(code);
-                    if (!tokenData.access_token) {
-                        throw new Error('Failed to get Google access token');
+            authFunction(code)
+                .then((data) => {
+                    console.log(`✅ ${provider} 로그인 성공! 받은 데이터:`, data);
+                    if (data.exists) {
+                        setUserState({
+                            isLoggedIn: true,
+                            userId: data.userId,
+                            userEmail: data.email,
+                            job: data.job,
+                            role: data.role,
+                        });
+                        navigate('/main', { replace: true });
+                    } else {
+                        navigate('/signup', {
+                            state: {
+                                userId: data.userId,
+                                userEmail: data.email,
+                                provider: provider, // provider 정보도 전달
+                            },
+                        });
                     }
-                    const userInfo = await getGoogleUserInfo(tokenData.access_token);
-                    uid = userInfo.id;
-                    userEmail = userInfo.email;
-                    provider = 'google';
-                } else {
-                    const tokenData = await getKakaoToken(code);
-                    if (!tokenData.access_token) {
-                        throw new Error('Failed to get Kakao access token');
+                })
+                .catch((error) => {
+                    if (error.message.includes('찾을 수 없음')) {
+                        navigate('/signup', {
+                            state: { provider: provider },
+                        });
+                    } else {
+                        console.error(`❌ ${provider} 로그인 실패:`, error);
+                        navigate('/', { replace: true });
                     }
-                    const userInfo = await getKakaoUserInfo(tokenData.access_token);
-                    uid = userInfo.id;
-                    userEmail = userInfo.kakao_account?.email;
-                    provider = 'kakao';
-                }
-
-                const verifyResult = await verifyUser(userEmail, setUserState);
-
-                if (!verifyResult.success || verifyResult.data === null) {
-                    navigate('/signup', {
-                        state: {
-                            userId: `${provider}_${uid}`,
-                            userEmail: userEmail,
-                        },
-                        replace: true,
-                    });
-                    return;
-                }
-
-                await updateUserProvider(userEmail, provider, uid);
-
-                setUserState({
-                    isLoggedIn: true,
-                    userId: verifyResult.data.userId,
-                    userEmail: userEmail,
-                    job: verifyResult.data.job,
-                    admin: verifyResult.data.admin,
                 });
-
-                navigate('/main', { replace: true });
-            } catch (error) {
-                console.error('Login process failed:', error);
-                setUserState({
-                    isLoggedIn: false,
-                    userId: '',
-                    userEmail: '',
-                    job: '',
-                    admin: false,
-                });
-                navigate('/', { replace: true });
-            }
-        };
-
-        processLogin();
+        }
     }, [navigate, setUserState]);
 
-    return <div>로그인 처리중...</div>;
+    return <div>로그인 처리 중...</div>;
 };
 
 export default AuthCallback;

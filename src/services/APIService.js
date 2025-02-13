@@ -1,11 +1,17 @@
 import axios from 'axios';
 
-const BASE_URL = 'http://walab.handong.edu:8080/naimkim_1/api/v1';
+const BASE_URL = 'http://172.18.130.17:8080';
+
+// axios 인스턴스 생성 및 기본 설정
+const axiosInstance = axios.create({
+    baseURL: BASE_URL,
+    withCredentials: true, // 모든 요청에 credentials 포함
+});
 
 // User 관련 API
 export const verifyUser = async (email, setUserState) => {
     try {
-        const { data } = await axios.get(`${BASE_URL}/users/verify/kakao-google`, {
+        const { data } = await axiosInstance.get('/users/verify/kakao-google', {
             params: { email },
         });
         if (data.success && setUserState) {
@@ -26,7 +32,7 @@ export const verifyUser = async (email, setUserState) => {
 
 export const login = async (email, password, setUserState) => {
     try {
-        const { data } = await axios.get(`${BASE_URL}/users/verify/bibly`, {
+        const { data } = await axiosInstance.get('/users/verify/bibly', {
             params: { email, password },
         });
         if (data.success && setUserState) {
@@ -47,7 +53,7 @@ export const login = async (email, password, setUserState) => {
 
 export const createUser = async (userData) => {
     try {
-        const { data } = await axios.post(`${BASE_URL}/users`, userData);
+        const { data } = await axiosInstance.post('/users', userData);
         return data;
     } catch (error) {
         console.error('Error creating user:', error);
@@ -57,7 +63,7 @@ export const createUser = async (userData) => {
 
 export const verifyEmail = async (email) => {
     try {
-        const { data } = await axios.get(`${BASE_URL}/users/verify/emailCheck`, {
+        const { data } = await axiosInstance.get('/users/verify/emailCheck', {
             params: { email },
         });
         return {
@@ -73,7 +79,7 @@ export const verifyEmail = async (email) => {
 // Sermon 관련 API
 export const createSermon = async (sermonData) => {
     try {
-        const { data } = await axios.post(`${BASE_URL}/sermons`, sermonData);
+        const { data } = await axiosInstance.post('/sermons', sermonData);
         return data;
     } catch (error) {
         console.error('Error creating sermon:', error);
@@ -83,7 +89,7 @@ export const createSermon = async (sermonData) => {
 
 export const updateSermon = async (sermonId, userId, sermonData) => {
     try {
-        const { data } = await axios.patch(`${BASE_URL}/sermons/update/${sermonId}`, sermonData, {
+        const { data } = await axiosInstance.patch(`/sermons/update/${sermonId}`, sermonData, {
             params: { userId },
         });
         return data;
@@ -95,7 +101,7 @@ export const updateSermon = async (sermonId, userId, sermonData) => {
 
 export const deleteSermon = async (sermonId, userId) => {
     try {
-        const { data } = await axios.delete(`${BASE_URL}/sermons/${sermonId}`, {
+        const { data } = await axiosInstance.delete(`/sermons/${sermonId}`, {
             params: { userId },
         });
         return data || { success: true };
@@ -107,7 +113,7 @@ export const deleteSermon = async (sermonId, userId) => {
 
 export const getSermonDetail = async (sermonId) => {
     try {
-        const { data } = await axios.get(`${BASE_URL}/sermons/details/${sermonId}`);
+        const { data } = await axiosInstance.get(`/sermons/details/${sermonId}`);
         return data;
     } catch (error) {
         console.error('Error getting sermon detail:', error);
@@ -119,8 +125,8 @@ export const getSermonDetail = async (sermonId) => {
 export const getBookmarks = async (userID) => {
     try {
         const [verseResponse, sermonResponse] = await Promise.all([
-            axios.get(`${BASE_URL}/bookmarks/verse`, { params: { userID } }),
-            axios.get(`${BASE_URL}/bookmarks/sermon`, { params: { userID } }),
+            axiosInstance.get('/bookmarks/verse', { params: { userID } }),
+            axiosInstance.get('/bookmarks/sermon', { params: { userID } }),
         ]);
         return {
             success: true,
@@ -135,8 +141,8 @@ export const getBookmarks = async (userID) => {
 
 export const createBookmark = async (userID, verseId, sermonId, isSermon) => {
     try {
-        const { data } = await axios.post(
-            `${BASE_URL}/bookmarks`,
+        const { data } = await axiosInstance.post(
+            '/bookmarks',
             { verseId, sermonId, isSermon },
             { params: { userID } }
         );
@@ -149,7 +155,7 @@ export const createBookmark = async (userID, verseId, sermonId, isSermon) => {
 
 export const deleteBookmark = async (userID, bookmarkId) => {
     try {
-        const { data } = await axios.delete(`${BASE_URL}/bookmarks/${bookmarkId}`, {
+        const { data } = await axiosInstance.delete(`/bookmarks/${bookmarkId}`, {
             params: { userID },
         });
         return data;
@@ -162,7 +168,7 @@ export const deleteBookmark = async (userID, bookmarkId) => {
 // Bible 관련 API
 export const getBooks = async (testament) => {
     try {
-        const { data } = await axios.get(`${BASE_URL}/books`, {
+        const { data } = await axiosInstance.get('/books', {
             params: { testament },
         });
         return data;
@@ -174,7 +180,7 @@ export const getBooks = async (testament) => {
 
 export const getBibles = async (testament, book, chapter) => {
     try {
-        const { data } = await axios.get(`${BASE_URL}/bibles`, {
+        const { data } = await axiosInstance.get('/bibles', {
             params: { testament, ...(book && { book }), ...(chapter && { chapter }) },
         });
         return data;
@@ -186,7 +192,7 @@ export const getBibles = async (testament, book, chapter) => {
 
 export const searchBibles = async (keyword) => {
     try {
-        const { data } = await axios.get(`${BASE_URL}/bibles/search`, {
+        const { data } = await axiosInstance.get('/bibles/search', {
             params: { keyword1: keyword },
         });
         return data;
@@ -196,30 +202,35 @@ export const searchBibles = async (keyword) => {
     }
 };
 
-// 카카오 로그인 관련
-export const getKakaoToken = async (code) => {
+// 카카오 로그인
+export const authenticateKakaoUser = async (code) => {
     try {
-        const { data } = await axios.post('https://kauth.kakao.com/oauth/token', null, {
-            params: {
-                grant_type: 'authorization_code',
-                client_id: process.env.REACT_APP_KAKAO_REST_API_KEY,
-                redirect_uri: process.env.REACT_APP_KAKAO_REDIRECT_URI,
-                code: code,
-            },
+        const response = await fetch(`${BASE_URL}/auth/login/kakao`, {
+            method: 'POST',
             headers: {
-                'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8',
+                'Content-Type': 'application/json',
             },
+            body: JSON.stringify({ code }),
+            credentials: 'include',
         });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(errorText);
+        }
+
+        const data = await response.json();
+        console.log('✅ 카카오 로그인 성공! 받은 데이터:', data);
         return data;
     } catch (error) {
-        console.error('Error getting Kakao token:', error);
+        console.error('❌ 카카오 로그인 실패:', error);
         throw error;
     }
 };
 
 export const getKakaoUserInfo = async (access_token) => {
     try {
-        const { data } = await axios.get('https://kapi.kakao.com/v2/user/me', {
+        const { data } = await axiosInstance.get('https://kapi.kakao.com/v2/user/me', {
             headers: {
                 Authorization: `Bearer ${access_token}`,
             },
@@ -231,31 +242,35 @@ export const getKakaoUserInfo = async (access_token) => {
     }
 };
 
-// 구글 로그인 관련
-export const getGoogleToken = async (code) => {
+// 구글 로그인
+export const authenticateGoogleUser = async (code) => {
     try {
-        const { data } = await axios.post('https://oauth2.googleapis.com/token', null, {
-            params: {
-                code,
-                client_id: process.env.REACT_APP_GOOGLE_CLIENT_ID,
-                client_secret: process.env.REACT_APP_GOOGLE_CLIENT_SECRET,
-                redirect_uri: process.env.REACT_APP_GOOGLE_REDIRECT_URI,
-                grant_type: 'authorization_code',
-            },
+        const response = await fetch(`${BASE_URL}/auth/login/google`, {
+            method: 'POST',
             headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
+                'Content-Type': 'application/json',
             },
+            body: JSON.stringify({ code }),
+            credentials: 'include',
         });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(errorText);
+        }
+
+        const data = await response.json();
+        console.log('✅ 구글 로그인 성공! 받은 데이터:', data);
         return data;
     } catch (error) {
-        console.error('Error getting Google token:', error);
+        console.error('❌ 구글 로그인 실패:', error);
         throw error;
     }
 };
 
 export const getGoogleUserInfo = async (access_token) => {
     try {
-        const { data } = await axios.get('https://www.googleapis.com/oauth2/v2/userinfo', {
+        const { data } = await axiosInstance.get('https://www.googleapis.com/oauth2/v2/userinfo', {
             headers: {
                 Authorization: `Bearer ${access_token}`,
             },
@@ -269,7 +284,7 @@ export const getGoogleUserInfo = async (access_token) => {
 
 export const updateUserProvider = async (email, provider, uid) => {
     try {
-        const { data } = await axios.patch(`${BASE_URL}/users/provider`, null, {
+        const { data } = await axiosInstance.patch('/users/provider', null, {
             params: {
                 email,
                 oauthProvider: provider,
@@ -285,7 +300,7 @@ export const updateUserProvider = async (email, provider, uid) => {
 
 export const setUserPassword = async (email, password) => {
     try {
-        const { data } = await axios.patch(`${BASE_URL}/users/setUserPassword`, null, {
+        const { data } = await axiosInstance.patch('/users/setUserPassword', null, {
             params: { email, password },
         });
         return data;
@@ -298,7 +313,7 @@ export const setUserPassword = async (email, password) => {
 // 관리자 user 관련 API
 export const getAdminUsers = async () => {
     try {
-        const { data } = await axios.get(`${BASE_URL}/admin/users`);
+        const { data } = await axiosInstance.get('/admin/users');
         return data;
     } catch (error) {
         console.error('Error getting admin users:', error);
@@ -308,7 +323,7 @@ export const getAdminUsers = async () => {
 
 export const searchAdminUsers = async (type, value) => {
     try {
-        const { data } = await axios.get(`${BASE_URL}/admin/users/search`, {
+        const { data } = await axiosInstance.get('/admin/users/search', {
             params: { type, value },
         });
         return data;
@@ -320,7 +335,7 @@ export const searchAdminUsers = async (type, value) => {
 
 export const updateAdminUser = async (userId, userData) => {
     try {
-        const { data } = await axios.patch(`${BASE_URL}/admin/users/${userId}`, userData);
+        const { data } = await axiosInstance.patch(`/admin/users/${userId}`, userData);
         return data;
     } catch (error) {
         console.error('Error updating admin user:', error);
@@ -330,7 +345,7 @@ export const updateAdminUser = async (userId, userData) => {
 
 export const deleteAdminUser = async (userId) => {
     try {
-        const { data } = await axios.delete(`${BASE_URL}/admin/users/${userId}`);
+        const { data } = await axiosInstance.delete(`/admin/users/${userId}`);
         return data || { success: true };
     } catch (error) {
         console.error('Error deleting admin user:', error);
@@ -340,7 +355,7 @@ export const deleteAdminUser = async (userId) => {
 
 export const getFilteredSermonList = async (params) => {
     try {
-        const { data } = await axios.get(`${BASE_URL}/sermons/filtered-list-user`, {
+        const { data } = await axiosInstance.get('/sermons/filtered-list-user', {
             params: {
                 user_id: params.userId,
                 keyword: params.keyword || null,
@@ -364,7 +379,7 @@ export const getFilteredSermonList = async (params) => {
 
 export const getFilteredSermonListAdmin = async (params) => {
     try {
-        const { data } = await axios.get(`${BASE_URL}/sermons/filtered-list-admin`, {
+        const { data } = await axiosInstance.get('/sermons/filtered-list-admin', {
             params: {
                 keyword: params.keyword || null,
                 searchType: params.searchType || null,
@@ -387,7 +402,7 @@ export const getFilteredSermonListAdmin = async (params) => {
 // 관리자용 설교 삭제 API
 export const deleteSermonAdmin = async (sermonId, userId) => {
     try {
-        const { data } = await axios.delete(`${BASE_URL}/sermons/${sermonId}`, {
+        const { data } = await axiosInstance.delete(`/sermons/${sermonId}`, {
             params: { userId },
         });
         return data || { success: true };
@@ -400,10 +415,37 @@ export const deleteSermonAdmin = async (sermonId, userId) => {
 // 관리자용 설교 수정 API
 export const updateSermonAdmin = async (sermonId, sermonData) => {
     try {
-        const { data } = await axios.patch(`${BASE_URL}/admin/sermons/${sermonId}`, sermonData);
+        const { data } = await axiosInstance.patch(`/admin/sermons/${sermonId}`, sermonData);
         return data;
     } catch (error) {
         console.error('Error updating sermon:', error);
+        throw error;
+    }
+};
+
+// 일반 로그인
+export const loginUser = async (email, password) => {
+    try {
+        const response = await fetch(`${BASE_URL}/auth/login?email=${email}&password=${password}`, {
+            method: 'POST',
+            credentials: 'include',
+        });
+        return await response.json();
+    } catch (error) {
+        console.error('❌ 로그인 실패:', error);
+        throw error;
+    }
+};
+
+// 로그아웃
+export const logout = async () => {
+    try {
+        await fetch(`${BASE_URL}/auth/logout`, {
+            method: 'POST',
+            credentials: 'include',
+        });
+    } catch (error) {
+        console.error('❌ 로그아웃 실패:', error);
         throw error;
     }
 };

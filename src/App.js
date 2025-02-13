@@ -14,10 +14,19 @@ import BookmarkSermonDetailPage from './components/mypage/BookmarkSermonDetailPa
 const GlobalStyle = createGlobalStyle`
   body {
     cursor: url('http://www.rw-designer.com/cursor-extern.php?id=50627'), auto;
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+      'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+      sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
   
   a {
     cursor: url('http://www.rw-designer.com/cursor-extern.php?id=50627'), pointer;
+    text-decoration: none;
+    color: inherit;
   }
   
   button {
@@ -46,14 +55,7 @@ function App() {
                         <Route path="/auth" element={<AuthCallback />} />
                         <Route path="/signup" element={<SignUpPageSocial />} />
                         <Route path="/signup-bibly" element={<SignUpPageBibly />} />
-                        <Route
-                            path="/main/*"
-                            element={
-                                <ProtectedRoute>
-                                    <MainPage />
-                                </ProtectedRoute>
-                            }
-                        >
+                        <Route path="/main/*" element={<MainPage />}>
                             <Route path="mypage/sermon/:id" element={<BookmarkSermonDetailPage />} />
                         </Route>
                     </Routes>
