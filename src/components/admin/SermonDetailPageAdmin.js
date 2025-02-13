@@ -72,17 +72,8 @@ const SermonDetailPageAdmin = () => {
     const handleDelete = async () => {
         if (window.confirm('정말로 이 설교를 삭제하시겠습니까?')) {
             try {
-                // 북마크 상태 확인
-                const bookmarksResponse = await getBookmarks(sermon.userId);
-                const bookmarkedSermon = bookmarksResponse.sermons.find((b) => b.sermonId === parseInt(id));
-
-                // 북마크가 있다면 삭제
-                if (bookmarkedSermon) {
-                    await deleteBookmark(sermon.userId, bookmarkedSermon.bookmarkId);
-                }
-
                 // 설교 삭제
-                const response = await deleteSermonAdmin(id, sermon.userId);
+                const response = await deleteSermonAdmin(id, currentUserId);
                 if (response.success) {
                     alert('설교가 삭제되었습니다.');
                     navigate(-1);
@@ -162,7 +153,12 @@ const SermonDetailPageAdmin = () => {
             <GlobalStyle />
             <HeaderContainer expanded={isHeaderExpanded} onClick={toggleHeader}>
                 <TopBar>
-                    <BackButton onClick={() => navigate(-1)}>
+                    <BackButton
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(-1);
+                        }}
+                    >
                         <ArrowLeft size={20} />
                         <span>뒤로 가기</span>
                     </BackButton>
@@ -173,10 +169,21 @@ const SermonDetailPageAdmin = () => {
                         </CompactHeader>
                     )}
                     <ActionButtons>
-                        <ActionButton onClick={handleEdit}>
+                        <ActionButton
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleEdit();
+                            }}
+                        >
                             <Pencil size={16} />
                         </ActionButton>
-                        <ActionButton onClick={handleDelete} isDelete>
+                        <ActionButton
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleDelete();
+                            }}
+                            isDelete
+                        >
                             <Trash2 size={16} />
                         </ActionButton>
                     </ActionButtons>

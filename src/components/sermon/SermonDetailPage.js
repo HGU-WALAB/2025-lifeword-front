@@ -34,7 +34,7 @@ const GlobalStyle = createGlobalStyle`
     }
 `;
 
-const SermonDetailPage = ({ isBookmarkView, onDelete, onBookmarkToggle }) => {
+const SermonDetailPage = ({ isBookmarkView, onBookmarkToggle }) => {
     const { id } = useParams();
     const navigate = useNavigate();
     const [sermon, setSermon] = useState(null);
@@ -219,7 +219,12 @@ const SermonDetailPage = ({ isBookmarkView, onDelete, onBookmarkToggle }) => {
             <GlobalStyle />
             <HeaderContainer expanded={isHeaderExpanded} onClick={toggleHeader}>
                 <TopBar>
-                    <BackButton onClick={() => navigate(-1)}>
+                    <BackButton
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(-1);
+                        }}
+                    >
                         <ArrowLeft size={20} />
                         <span>뒤로 가기</span>
                     </BackButton>
