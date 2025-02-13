@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import styled, { createGlobalStyle } from 'styled-components';
-import { getSermonDetail, deleteSermonAdmin } from '../../services/APIService';
+import { getSermonDetail, deleteSermonAdmin, getBookmarks, deleteBookmark } from '../../services/APIService';
 import { ArrowLeft, Pencil, Trash2, Printer, ChevronDown } from 'lucide-react';
+import { useUserState } from '../../recoil/utils';
 
 const GlobalStyle = createGlobalStyle`
     @media print {
@@ -38,6 +39,7 @@ const SermonDetailPageAdmin = () => {
     const navigate = useNavigate();
     const [sermon, setSermon] = useState(null);
     const [loading, setLoading] = useState(true);
+    const { userId: currentUserId, isAdmin } = useUserState();
     const currentPath = window.location.pathname;
     const [isHeaderExpanded, setIsHeaderExpanded] = useState(false);
     const [showGuide, setShowGuide] = useState(true);
@@ -70,9 +72,23 @@ const SermonDetailPageAdmin = () => {
     const handleDelete = async () => {
         if (window.confirm('정말로 이 설교를 삭제하시겠습니까?')) {
             try {
-                await deleteSermonAdmin(id, sermon.userId);
-                alert('설교가 삭제되었습니다.');
-                navigate('/main/admin/sermons');
+                // 북마크 상태 확인
+                const bookmarksResponse = await getBookmarks(sermon.userId);
+                const bookmarkedSermon = bookmarksResponse.sermons.find((b) => b.sermonId === parseInt(id));
+
+                // 북마크가 있다면 삭제
+                if (bookmarkedSermon) {
+                    await deleteBookmark(sermon.userId, bookmarkedSermon.bookmarkId);
+                }
+
+                // 설교 삭제
+                const response = await deleteSermonAdmin(id, sermon.userId);
+                if (response.success) {
+                    alert('설교가 삭제되었습니다.');
+                    navigate(-1);
+                } else {
+                    alert('설교 삭제에 실패했습니다.');
+                }
             } catch (error) {
                 console.error('Error deleting sermon:', error);
                 alert('설교 삭제 중 오류가 발생했습니다.');

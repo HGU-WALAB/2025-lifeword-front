@@ -15,7 +15,7 @@ import {
 import { useUserState } from '../../recoil/utils';
 import { useRecoilValue } from 'recoil';
 import { isNavExpandedState } from '../../recoil/atoms';
-import { getFilteredSermonListAdmin, deleteSermonAdmin } from '../../services/APIService';
+import { getFilteredSermonListAdmin, deleteSermonAdmin, getBookmarks, deleteBookmark } from '../../services/APIService';
 
 const WORSHIP_TYPES = [
     '새벽예배',
@@ -341,11 +341,25 @@ const SermonManagementPage = () => {
         setCurrentPage(1);
     };
 
-    const handleDelete = async (sermonId) => {
+    const handleDelete = async (sermon) => {
         try {
-            await deleteSermonAdmin(sermonId, selectedSermonUserId);
-            setShowDeleteModal(false);
-            fetchSermons();
+            // 북마크 상태 확인
+            const bookmarksResponse = await getBookmarks(sermon.userId);
+            const bookmarkedSermon = bookmarksResponse.sermons.find((b) => b.sermonId === sermon.sermonId);
+
+            // 북마크가 있다면 삭제
+            if (bookmarkedSermon) {
+                await deleteBookmark(sermon.userId, bookmarkedSermon.bookmarkId);
+            }
+
+            // 설교 삭제
+            const response = await deleteSermonAdmin(sermon.sermonId, sermon.userId);
+            if (response.success) {
+                alert('설교가 삭제되었습니다.');
+                fetchSermons();
+            } else {
+                alert('설교 삭제에 실패했습니다.');
+            }
         } catch (error) {
             console.error('Error deleting sermon:', error);
             alert('설교 삭제 중 오류가 발생했습니다.');
@@ -586,8 +600,7 @@ const SermonManagementPage = () => {
                                             delete
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                setSermonToDelete(sermon.sermonId);
-                                                setSelectedSermonUserId(sermon.userId);
+                                                setSermonToDelete(sermon);
                                                 setShowDeleteModal(true);
                                             }}
                                         >
@@ -694,6 +707,7 @@ const SermonManagementPage = () => {
                         <ConfirmButton
                             onClick={() => {
                                 handleDelete(sermonToDelete);
+                                setShowDeleteModal(false);
                             }}
                         >
                             삭제

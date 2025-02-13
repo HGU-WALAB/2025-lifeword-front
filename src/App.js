@@ -9,6 +9,7 @@ import MainPage from './pages/MainPage';
 import AuthCallback from './components/login/AuthCallback';
 import SignUpPageSocial from './components/login/SignUpPageSocial';
 import SignUpPageBibly from './components/login/SignUpPageBibly';
+import BookmarkSermonDetailPage from './components/mypage/BookmarkSermonDetailPage';
 
 const GlobalStyle = createGlobalStyle`
   body {
@@ -52,7 +53,9 @@ function App() {
                                     <MainPage />
                                 </ProtectedRoute>
                             }
-                        />
+                        >
+                            <Route path="mypage/sermon/:id" element={<BookmarkSermonDetailPage />} />
+                        </Route>
                     </Routes>
                 </Router>
             </ParallaxProvider>
