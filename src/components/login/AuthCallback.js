@@ -11,14 +11,12 @@ const AuthCallback = () => {
         const urlParams = new URLSearchParams(window.location.search);
         const code = urlParams.get('code');
         const provider = urlParams.get('state');
-        console.log(`✅ 받은 ${provider} Authorization Code:`, code);
 
         if (code) {
             const authFunction = provider === 'kakao' ? authenticateKakaoUser : authenticateGoogleUser;
 
             authFunction(code)
                 .then((data) => {
-                    console.log(`✅ ${provider} 로그인 성공! 받은 데이터:`, data);
                     if (data.exists) {
                         setUserState({
                             isLoggedIn: true,
@@ -33,7 +31,7 @@ const AuthCallback = () => {
                             state: {
                                 userId: data.userId,
                                 userEmail: data.email,
-                                provider: provider, // provider 정보도 전달
+                                provider: provider,
                             },
                         });
                     }
@@ -44,7 +42,6 @@ const AuthCallback = () => {
                             state: { provider: provider },
                         });
                     } else {
-                        console.error(`❌ ${provider} 로그인 실패:`, error);
                         navigate('/', { replace: true });
                     }
                 });

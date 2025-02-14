@@ -1,15 +1,15 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
 import { ParallaxProvider } from 'react-scroll-parallax';
-import { RecoilRoot, useRecoilValue } from 'recoil';
+import { RecoilRoot } from 'recoil';
 import { createGlobalStyle } from 'styled-components';
-import { isLoggedInState } from './recoil/atoms';
 import Onboarding from './Onboarding/Onboarding';
 import MainPage from './pages/MainPage';
 import AuthCallback from './components/login/AuthCallback';
 import SignUpPageSocial from './components/login/SignUpPageSocial';
 import SignUpPageBibly from './components/login/SignUpPageBibly';
 import BookmarkSermonDetailPage from './components/mypage/BookmarkSermonDetailPage';
+import { checkAuth } from './services/APIService';
 
 const GlobalStyle = createGlobalStyle`
   body {
@@ -35,13 +35,34 @@ const GlobalStyle = createGlobalStyle`
 `;
 
 const ProtectedRoute = ({ children }) => {
-    const isLoggedIn = useRecoilValue(isLoggedInState);
+    const navigate = useNavigate();
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
 
-    if (!isLoggedIn) {
-        return <Navigate to="/" replace />;
+    useEffect(() => {
+        const verifyAuth = async () => {
+            try {
+                const isAuthed = await checkAuth();
+                setIsAuthenticated(isAuthed);
+                if (!isAuthed) {
+                    navigate('/', { replace: true });
+                }
+            } catch (error) {
+                console.error('Auth verification failed:', error);
+                navigate('/', { replace: true });
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        verifyAuth();
+    }, [navigate]);
+
+    if (isLoading) {
+        return <div>Loading...</div>;
     }
 
-    return children;
+    return isAuthenticated ? children : null;
 };
 
 function App() {
@@ -55,7 +76,14 @@ function App() {
                         <Route path="/auth" element={<AuthCallback />} />
                         <Route path="/signup" element={<SignUpPageSocial />} />
                         <Route path="/signup-bibly" element={<SignUpPageBibly />} />
-                        <Route path="/main/*" element={<MainPage />}>
+                        <Route
+                            path="/main/*"
+                            element={
+                                <ProtectedRoute>
+                                    <MainPage />
+                                </ProtectedRoute>
+                            }
+                        >
                             <Route path="mypage/sermon/:id" element={<BookmarkSermonDetailPage />} />
                         </Route>
                     </Routes>

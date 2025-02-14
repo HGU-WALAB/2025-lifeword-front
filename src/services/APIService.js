@@ -1,12 +1,25 @@
 import axios from 'axios';
 
 const BASE_URL = 'http://172.18.130.17:8080';
+const API_PREFIX = '/api/v1';
 
 // axios 인스턴스 생성 및 기본 설정
 const axiosInstance = axios.create({
-    baseURL: BASE_URL,
-    withCredentials: true, // 모든 요청에 credentials 포함
+    baseURL: `${BASE_URL}${API_PREFIX}`,
+    withCredentials: true,
+    headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+    },
 });
+
+// auth 관련 요청을 위한 별도 함수
+const authRequest = async (endpoint, options) => {
+    return fetch(`${BASE_URL}/auth${endpoint}`, {
+        ...options,
+        credentials: 'include',
+    });
+};
 
 // User 관련 API
 export const verifyUser = async (email, setUserState) => {
@@ -205,22 +218,28 @@ export const searchBibles = async (keyword) => {
 // 카카오 로그인
 export const authenticateKakaoUser = async (code) => {
     try {
-        const response = await fetch(`${BASE_URL}/auth/login/kakao`, {
+        const response = await authRequest('/login/kakao', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                Accept: 'application/json',
             },
             body: JSON.stringify({ code }),
-            credentials: 'include',
+            mode: 'cors',
         });
 
         if (!response.ok) {
             const errorText = await response.text();
-            throw new Error(errorText);
+            throw new Error(`카카오 인증 중 오류 발생: ${errorText}`);
         }
+
+        // 응답 헤더 확인 (디버깅용)
+        console.log('Response headers:', [...response.headers.entries()]);
+        console.log('Cookies after login:', document.cookie);
 
         const data = await response.json();
         console.log('✅ 카카오 로그인 성공! 받은 데이터:', data);
+
         return data;
     } catch (error) {
         console.error('❌ 카카오 로그인 실패:', error);
@@ -245,19 +264,27 @@ export const getKakaoUserInfo = async (access_token) => {
 // 구글 로그인
 export const authenticateGoogleUser = async (code) => {
     try {
-        const response = await fetch(`${BASE_URL}/auth/login/google`, {
+        // 기존 세션 쿠키 삭제
+        document.cookie = 'JSESSIONID=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+
+        const response = await authRequest('/login/google', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                Accept: 'application/json',
             },
             body: JSON.stringify({ code }),
-            credentials: 'include',
+            mode: 'cors',
         });
 
         if (!response.ok) {
             const errorText = await response.text();
-            throw new Error(errorText);
+            throw new Error(`구글 인증 중 오류 발생: ${errorText}`);
         }
+
+        // 응답 헤더에서 쿠키 확인 (디버깅용)
+        console.log('Response headers:', response.headers);
+        console.log('Cookies after login:', document.cookie);
 
         const data = await response.json();
         console.log('✅ 구글 로그인 성공! 받은 데이터:', data);
@@ -426,9 +453,8 @@ export const updateSermonAdmin = async (sermonId, sermonData) => {
 // 일반 로그인
 export const loginUser = async (email, password) => {
     try {
-        const response = await fetch(`${BASE_URL}/auth/login?email=${email}&password=${password}`, {
+        const response = await authRequest(`/login?email=${email}&password=${password}`, {
             method: 'POST',
-            credentials: 'include',
         });
         return await response.json();
     } catch (error) {
@@ -440,12 +466,33 @@ export const loginUser = async (email, password) => {
 // 로그아웃
 export const logout = async () => {
     try {
-        await fetch(`${BASE_URL}/auth/logout`, {
+        await authRequest('/logout', {
             method: 'POST',
-            credentials: 'include',
         });
     } catch (error) {
         console.error('❌ 로그아웃 실패:', error);
         throw error;
+    }
+};
+
+// 세션 체크 API 추가
+export const checkAuth = async () => {
+    try {
+        const response = await fetch(`${BASE_URL}/auth/auth/check`, {
+            method: 'GET',
+            credentials: 'include',
+            headers: {
+                accept: '*/*',
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error('Unauthorized');
+        }
+
+        return true;
+    } catch (error) {
+        console.error('Auth check failed:', error);
+        return false;
     }
 };
