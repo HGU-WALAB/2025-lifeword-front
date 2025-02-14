@@ -243,6 +243,10 @@ const DetailValue = styled.p`
 
 const SecurityCard = styled.div`
     background: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     border-radius: 16px;
     padding: 1.5rem;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
@@ -283,13 +287,6 @@ const ChangePasswordButton = styled.button`
         background: #3a2570;
         transform: translateY(-1px);
     }
-`;
-
-const SectionTitle = styled.h2`
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: #1a1a1a;
-    margin: 0 0 1.5rem 0;
 `;
 
 const BookmarkSection = styled.div`

@@ -639,7 +639,6 @@ const SermonListPage = () => {
 const Container = styled.div`
     padding: 40px 60px;
     min-height: 91vh;
-    background-color: #f8f9fa;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     width: 100%;
     flex: 1;
