@@ -59,43 +59,47 @@ const MyPage = () => {
   return (
     <Container>
       <HeaderSection>
-        <HeaderIcon>
-          <User size={32} />
-        </HeaderIcon>
-        <Column>
-          <UserDetails>
-            <DetailRow>
-              <DetailText>이름 / 지역 / 교회</DetailText>
-            </DetailRow>
-            <DetailRow>
+        <ColumnContainer>
+          <UserInfoContainer>
+            <HeaderIcon>
+              <User size={32} />
+            </HeaderIcon>
+            <UserDetails>
+              <DetailRow>
+                <DetailText>이름 / 지역 / 교회</DetailText>
+              </DetailRow>
+              <DetailRow>
+                <CardIcon>
+                  <Mail size={20} />
+                  <Value>{userEmail}</Value>
+                </CardIcon>
+              </DetailRow>
+            </UserDetails>
+          </UserInfoContainer>
+
+          <Column>
+            <InfoCard>
               <CardIcon>
-                <Mail size={20} />
-                <Value> {userEmail}</Value>
+                <Award size={20} />
               </CardIcon>
-            </DetailRow>
-          </UserDetails>
-        </Column>
+              <Label>직분</Label>
+              <Value>{job}</Value>
+            </InfoCard>
+          </Column>
 
-        <Column>
-          <InfoCard>
-            <CardIcon>
-              <Award size={20} />
-            </CardIcon>
-            <Label>직분</Label>
-            <Value>{job}</Value>
-          </InfoCard>
-        </Column>
-        <Column>
-          <InfoCard>
-            <CardIcon>
-              <Shield size={20} />
-            </CardIcon>
-            <Label>권한</Label>
-            <Value>{isAdmin ? "관리자" : "일반 사용자"}</Value>
-          </InfoCard>
-        </Column>
+          <Column>
+            <InfoCard>
+              <CardIcon>
+                <Shield size={20} />
+              </CardIcon>
+              <Label>권한</Label>
+              <Value>{isAdmin ? "관리자" : "일반 사용자"}</Value>
+            </InfoCard>
+          </Column>
+        </ColumnContainer>
 
-        <Column>
+        {/* 비밀번호 변경 Section */}
+        <PasswordColumn>
           <PasswordManagement>
             <PasswordRow>
               <CardIcon>
@@ -107,7 +111,7 @@ const MyPage = () => {
               비밀번호 변경하기
             </ChangePasswordButton>
           </PasswordManagement>
-        </Column>
+        </PasswordColumn>
       </HeaderSection>
 
       {showPasswordModal && (
@@ -146,14 +150,30 @@ const Container = styled.div`
 const HeaderSection = styled.div`
   padding: 20px 40px;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
   flex-wrap: wrap;
-  gap: 20px;
+  justify-content: space-between;
+  align-items: flex-start;
   background: white;
   border: 1px solid #e1e1e1;
   border-radius: 12px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  gap: 20px;
+
+  @media (max-width: 1024px) {
+    flex-direction: column;
+    align-items: center;
+  }
+`;
+
+const ColumnContainer = styled.div`
+  display: flex;
+  flex: 1;
+  gap: 20px;
+
+  @media (max-width: 1024px) {
+    flex-direction: column;
+    width: 100%;
+  }
 `;
 
 const Column = styled.div`
@@ -162,19 +182,28 @@ const Column = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
+
+  @media (max-width: 1024px) {
+    width: 100%;
+  }
 `;
 
 const UserDetails = styled.div`
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
+  min-width: 200px;
+  white-space: nowrap;
+
+  @media (max-width: 1024px) {
+    align-items: center;
+  }
 `;
 
 const DetailRow = styled.div`
-
   display: flex;
-  flexDirection: 'row',
-alignItems: 'center',
+  flex-direction: row;
+  align-items: center;
   margin-bottom: 8px;
 `;
 
@@ -182,6 +211,20 @@ const DetailText = styled.span`
   font-size: 1.1rem;
   color: #333;
   font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+`;
+
+const PasswordColumn = styled.div`
+  flex: 1;
+  min-width: 250px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  @media (max-width: 1024px) {
+    width: 100%;
+  }
 `;
 
 const PasswordManagement = styled.div`
@@ -201,8 +244,22 @@ const BookmarkSection = styled.div`
   margin-top: 30px;
 `;
 
+const UserInfoContainer = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  flex-wrap: nowrap;
+
+  @media (max-width: 1024px) {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+`;
+
 const HeaderIcon = styled.div`
-  width: 2rem;
+  width: 3rem;
+  height: 3rem;
   background: #4f3296;
   color: white;
   padding: 1rem;
