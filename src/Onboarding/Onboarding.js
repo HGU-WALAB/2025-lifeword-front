@@ -201,29 +201,34 @@ const LoginButtons = styled.div`
   margin-right: auto;
 `;
 
-const KakaoLoginButton = styled.button`
-  width: 100%;
+const ButtonBase = styled.button`
+  flex: 1;
+  min-width: 180px;
   padding: 1rem 2rem;
-  font-size: 1.8rem;
-  background-color: #fee500;
-  color: #000000;
-  border: none;
+  font-size: 1.6rem;
   border-radius: 12px;
   cursor: pointer;
   transition: transform 0.2s ease;
+  white-space: nowrap;
+`;
+
+const KakaoLoginButton = styled(ButtonBase)`
+  background-color: #fee500;
+  color: #000000;
+  border: none;
 
   &:hover {
     transform: translateY(-2px);
   }
 `;
 
-const GoogleLoginButton = styled(KakaoLoginButton)`
+const GoogleLoginButton = styled(ButtonBase)`
   background-color: #ffffff;
   color: #000000;
   border: 1px solid #dddddd;
 `;
 
-const LoginButton = styled(GoogleLoginButton)`
+const LoginButton = styled(ButtonBase)`
   background-color: transparent;
   color: #ffffff;
   border: 1px solid #ffffff;
