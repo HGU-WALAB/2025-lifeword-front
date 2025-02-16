@@ -65,7 +65,7 @@ const MyPage = () => {
                             <User size={32} color="#fff" />
                         </ProfileAvatar>
                         <ProfileInfo>
-                            <ProfileName>홍길동</ProfileName>
+                            <ProfileName>김현중</ProfileName>
                             <ProfileEmail>{userEmail}</ProfileEmail>
                         </ProfileInfo>
                     </ProfileHeader>
