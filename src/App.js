@@ -11,28 +11,18 @@ import SignUpPageSocial from './components/login/SignUpPageSocial';
 import SignUpPageBibly from './components/login/SignUpPageBibly';
 
 const GlobalStyle = createGlobalStyle`
-  body {
-    cursor: url('http://www.rw-designer.com/cursor-extern.php?id=50627'), auto;
-  }
-  
-  a {
-    cursor: url('http://www.rw-designer.com/cursor-extern.php?id=50627'), pointer;
-  }
-  
-  button {
-    cursor: url('http://www.rw-designer.com/cursor-extern.php?id=50627'), pointer;
-  }
-`;
-
-const ProtectedRoute = ({ children }) => {
-    const isLoggedIn = useRecoilValue(isLoggedInState);
-
-    if (!isLoggedIn) {
-        return <Navigate to="/" replace />;
+    body {
+        cursor: url('http://www.rw-designer.com/cursor-extern.php?id=50627'), auto;
     }
 
-    return children;
-};
+    a {
+        cursor: url('http://www.rw-designer.com/cursor-extern.php?id=50627'), pointer;
+    }
+
+    button {
+        cursor: url('http://www.rw-designer.com/cursor-extern.php?id=50627'), pointer;
+    }
+`;
 
 function App() {
     return (
@@ -45,14 +35,7 @@ function App() {
                         <Route path="/auth" element={<AuthCallback />} />
                         <Route path="/signup" element={<SignUpPageSocial />} />
                         <Route path="/signup-bibly" element={<SignUpPageBibly />} />
-                        <Route
-                            path="/main/*"
-                            element={
-                                <ProtectedRoute>
-                                    <MainPage />
-                                </ProtectedRoute>
-                            }
-                        />
+                        <Route path="/main/*" element={<MainPage />} />
                     </Routes>
                 </Router>
             </ParallaxProvider>

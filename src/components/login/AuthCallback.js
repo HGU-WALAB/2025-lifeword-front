@@ -1,93 +1,31 @@
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-    getKakaoToken,
-    getKakaoUserInfo,
-    verifyUser,
-    getGoogleToken,
-    getGoogleUserInfo,
-    updateUserProvider,
-} from '../../services/APIService';
-import { useSetUserState } from '../../recoil/utils';
+import { authenticateGoogleUser } from '../../services/APIService';
 
 const AuthCallback = () => {
     const navigate = useNavigate();
-    const setUserState = useSetUserState();
 
     useEffect(() => {
-        const processLogin = async () => {
-            try {
-                const url = new URL(window.location.href);
-                const code = url.searchParams.get('code');
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('code');
+        console.log("✅ 받은 Google Authorization Code:", code); // 로그 추가
 
-                if (!code) {
-                    throw new Error('No authorization code found');
-                }
-
-                let userEmail, uid, provider;
-                const isGoogle = url.searchParams.get('scope')?.includes('email');
-
-                if (isGoogle) {
-                    const tokenData = await getGoogleToken(code);
-                    if (!tokenData.access_token) {
-                        throw new Error('Failed to get Google access token');
-                    }
-                    const userInfo = await getGoogleUserInfo(tokenData.access_token);
-                    uid = userInfo.id;
-                    userEmail = userInfo.email;
-                    provider = 'google';
-                } else {
-                    const tokenData = await getKakaoToken(code);
-                    if (!tokenData.access_token) {
-                        throw new Error('Failed to get Kakao access token');
-                    }
-                    const userInfo = await getKakaoUserInfo(tokenData.access_token);
-                    uid = userInfo.id;
-                    userEmail = userInfo.kakao_account?.email;
-                    provider = 'kakao';
-                }
-
-                const verifyResult = await verifyUser(userEmail, setUserState);
-
-                if (!verifyResult.success || verifyResult.data === null) {
-                    navigate('/signup', {
-                        state: {
-                            userId: `${provider}_${uid}`,
-                            userEmail: userEmail,
-                        },
-                        replace: true,
-                    });
-                    return;
-                }
-
-                await updateUserProvider(userEmail, provider, uid);
-
-                setUserState({
-                    isLoggedIn: true,
-                    userId: verifyResult.data.userId,
-                    userEmail: userEmail,
-                    job: verifyResult.data.job,
-                    admin: verifyResult.data.admin,
+        if (code) {
+            authenticateGoogleUser(code)
+                .then((data) => {
+                    console.log("✅ Google 로그인 성공!", data);
+                    console.log("✅ Access Token:", data.access_token);
+                    console.log("✅ User Info:", data.user);
+                    navigate('/main', { replace: true });
+                })
+                .catch((error) => {
+                    console.error("❌ Google 로그인 실패", error);
+                    navigate('/', { replace: true });
                 });
+        }
+    }, [navigate]);
 
-                navigate('/main', { replace: true });
-            } catch (error) {
-                console.error('Login process failed:', error);
-                setUserState({
-                    isLoggedIn: false,
-                    userId: '',
-                    userEmail: '',
-                    job: '',
-                    admin: false,
-                });
-                navigate('/', { replace: true });
-            }
-        };
-
-        processLogin();
-    }, [navigate, setUserState]);
-
-    return <div>로그인 처리중...</div>;
+    return <div>Google 로그인 중...</div>;
 };
 
 export default AuthCallback;

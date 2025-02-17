@@ -1,7 +1,8 @@
 import axios from 'axios';
 
-const BASE_URL = 'http://walab.handong.edu:8080/naimkim_1/api/v1';
-
+const BASE_UR1L = 'http://walab.handong.edu:8080/naimkim_1/api/v1';
+const BASE_URL = 'http://localhost:8080/api/v1';
+const BASE_URL2='http://localhost:8080/auth';
 // User 관련 API
 export const verifyUser = async (email, setUserState) => {
     try {
@@ -45,9 +46,13 @@ export const login = async (email, password, setUserState) => {
     }
 };
 
-export const createUser = async (userData) => {
+export const createUser = async ({ email, name, oauthProvider }) => {
     try {
-        const { data } = await axios.post(`${BASE_URL}/users`, userData);
+        const { data } = await axios.post(`${BASE_URL}/users`, {
+            email,
+            name,
+            oauthProvider
+        });
         return data;
     } catch (error) {
         console.error('Error creating user:', error);
@@ -344,6 +349,61 @@ export const getGoogleUserInfo = async (access_token) => {
         return data;
     } catch (error) {
         console.error('Error getting Google user info:', error);
+        throw error;
+    }
+};
+// 백엔드로 OAuth 로그인 요청
+export const loginWithKakao = async (code) => {
+    try {
+        const { data } = await axios.post(`${BASE_URL}/auth/login/kakao`, { code }, { withCredentials: true });
+        return data;
+    } catch (error) {
+        console.error('Error logging in with Kakao:', error);
+        throw error;
+    }
+};
+
+export const loginWithGoogle = async () => {
+    try {
+        // Google OAuth 인증 URL 생성
+        const GOOGLE_AUTH_URL = `https://accounts.google.com/o/oauth2/auth?client_id=${process.env.REACT_APP_GOOGLE_CLIENT_ID}&redirect_uri=${process.env.REACT_APP_GOOGLE_REDIRECT_URI}&response_type=code&scope=email%20profile`;
+
+        // 사용자가 Google 로그인 버튼을 클릭하면 이 URL로 리디렉트
+        window.location.href = GOOGLE_AUTH_URL;
+    } catch (error) {
+        console.error('Google 로그인 오류:', error);
+        throw error;
+    }
+};
+
+export const authenticateGoogleUser = async (code) => {
+    try {
+        const response = await axios.post(`${BASE_URL2}/login/google`, { code });
+        console.log("✅ Google 로그인 성공!", response.data);
+
+        return response.data;
+    } catch (error) {
+        console.error("❌ Google 로그인 실패:", error);
+        throw error;
+    }
+};
+// 📌 카카오 로그인 후 백엔드로 코드 전달
+export const authenticateKakaoUser = async (code) => {
+    try {
+        const response = await fetch("http://localhost:8080/auth/login/kakao", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ code }),
+            credentials: "include", // ✅ 세션 유지
+        });
+
+        const data = await response.json();
+        console.log("✅ 카카오 로그인 성공! 받은 데이터:", data);
+        return data;
+    } catch (error) {
+        console.error("❌ 카카오 로그인 실패:", error);
         throw error;
     }
 };
