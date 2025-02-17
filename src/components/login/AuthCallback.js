@@ -1,31 +1,54 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { authenticateGoogleUser } from '../../services/APIService';
+import { authenticateKakaoUser, authenticateGoogleUser } from '../../services/APIService';
+import { useSetUserState } from '../../recoil/utils';
 
 const AuthCallback = () => {
     const navigate = useNavigate();
+    const setUserState = useSetUserState();
 
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
         const code = urlParams.get('code');
-        console.log("✅ 받은 Google Authorization Code:", code); // 로그 추가
+        const provider = urlParams.get('state');
 
         if (code) {
-            authenticateGoogleUser(code)
+            const authFunction = provider === 'kakao' ? authenticateKakaoUser : authenticateGoogleUser;
+
+            authFunction(code)
                 .then((data) => {
-                    console.log("✅ Google 로그인 성공!", data);
-                    console.log("✅ Access Token:", data.access_token);
-                    console.log("✅ User Info:", data.user);
-                    navigate('/main', { replace: true });
+                    if (data.exists) {
+                        setUserState({
+                            isLoggedIn: true,
+                            userId: data.userId,
+                            userEmail: data.email,
+                            job: data.job,
+                            role: data.role,
+                        });
+                        navigate('/main', { replace: true });
+                    } else {
+                        navigate('/signup', {
+                            state: {
+                                userId: data.userId,
+                                userEmail: data.email,
+                                provider: provider,
+                            },
+                        });
+                    }
                 })
                 .catch((error) => {
-                    console.error("❌ Google 로그인 실패", error);
-                    navigate('/', { replace: true });
+                    if (error.message.includes('찾을 수 없음')) {
+                        navigate('/signup', {
+                            state: { provider: provider },
+                        });
+                    } else {
+                        navigate('/', { replace: true });
+                    }
                 });
         }
-    }, [navigate]);
+    }, [navigate, setUserState]);
 
-    return <div>Google 로그인 중...</div>;
+    return <div>로그인 처리 중...</div>;
 };
 
 export default AuthCallback;

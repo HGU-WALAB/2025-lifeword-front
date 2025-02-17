@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import styled, { createGlobalStyle } from 'styled-components';
-import { getSermonDetail, deleteSermon, getBookmarks, createBookmark, deleteBookmark } from '../../services/APIService';
-import { ArrowLeft, Pencil, Trash2, Printer, ChevronDown, Bookmark } from 'lucide-react';
+import { getSermonDetail, deleteSermonAdmin, getBookmarks, deleteBookmark } from '../../services/APIService';
+import { ArrowLeft, Pencil, Trash2, Printer, ChevronDown } from 'lucide-react';
 import { useUserState } from '../../recoil/utils';
 
 const GlobalStyle = createGlobalStyle`
@@ -34,18 +34,15 @@ const GlobalStyle = createGlobalStyle`
     }
 `;
 
-const SermonDetailPage = ({ isBookmarkView, onBookmarkToggle }) => {
+const SermonDetailPageAdmin = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const [sermon, setSermon] = useState(null);
     const [loading, setLoading] = useState(true);
     const { userId: currentUserId, isAdmin } = useUserState();
     const currentPath = window.location.pathname;
-    const isAdminPage = currentPath.includes('/admin/sermons');
     const [isHeaderExpanded, setIsHeaderExpanded] = useState(false);
     const [showGuide, setShowGuide] = useState(true);
-    const [isBookmarked, setIsBookmarked] = useState(false);
-    const [bookmarkId, setBookmarkId] = useState(null);
 
     useEffect(() => {
         const fetchSermonDetail = async () => {
@@ -72,33 +69,11 @@ const SermonDetailPage = ({ isBookmarkView, onBookmarkToggle }) => {
         return () => clearTimeout(timer);
     }, []);
 
-    useEffect(() => {
-        const checkBookmarkStatus = async () => {
-            try {
-                const response = await getBookmarks(currentUserId);
-                const bookmarkedSermon = response.sermons.find((b) => b.sermonId === parseInt(id));
-                if (bookmarkedSermon) {
-                    setIsBookmarked(true);
-                    setBookmarkId(bookmarkedSermon.bookmarkId);
-                }
-            } catch (error) {
-                console.error('Error checking bookmark status:', error);
-            }
-        };
-
-        if (currentUserId && id) {
-            checkBookmarkStatus();
-        }
-    }, [currentUserId, id]);
-
     const handleDelete = async () => {
         if (window.confirm('정말로 이 설교를 삭제하시겠습니까?')) {
             try {
-                const targetUserId = isAdminPage ? sermon.userId : currentUserId;
-                if (isBookmarked) {
-                    await deleteBookmark(currentUserId, bookmarkId);
-                }
-                const response = await deleteSermon(id, targetUserId);
+                // 설교 삭제
+                const response = await deleteSermonAdmin(id, currentUserId);
                 if (response.success) {
                     alert('설교가 삭제되었습니다.');
                     navigate(-1);
@@ -113,11 +88,7 @@ const SermonDetailPage = ({ isBookmarkView, onBookmarkToggle }) => {
     };
 
     const handleEdit = () => {
-        if (currentPath.includes('/admin/sermons')) {
-            navigate(`/main/admin/sermons/edit/${id}`);
-        } else {
-            navigate(`/main/sermon-list/edit/${id}`);
-        }
+        navigate(`/main/admin/sermons/edit/${id}`);
     };
 
     const toggleHeader = () => {
@@ -169,43 +140,6 @@ const SermonDetailPage = ({ isBookmarkView, onBookmarkToggle }) => {
         document.body.removeChild(printContainer);
     };
 
-    const toggleBookmark = async () => {
-        try {
-            if (isBookmarkView && onBookmarkToggle) {
-                await onBookmarkToggle();
-            } else {
-                if (isBookmarked) {
-                    const deleteResponse = await deleteBookmark(currentUserId, bookmarkId);
-                    if (deleteResponse.success) {
-                        setIsBookmarked(false);
-                        setBookmarkId(null);
-                        alert('북마크가 삭제되었습니다.');
-                    }
-                } else {
-                    const response = await createBookmark(currentUserId, null, parseInt(id), true);
-                    if (response.success) {
-                        setIsBookmarked(true);
-                        setBookmarkId(response.data.bookmarkId);
-                        alert('북마크가 추가되었습니다.');
-                    }
-                }
-                // 북마크 상태 변경 후 북마크 목록 다시 확인
-                const bookmarksResponse = await getBookmarks(currentUserId);
-                const bookmarkedSermon = bookmarksResponse.sermons.find((b) => b.sermonId === parseInt(id));
-                if (bookmarkedSermon) {
-                    setIsBookmarked(true);
-                    setBookmarkId(bookmarkedSermon.bookmarkId);
-                } else {
-                    setIsBookmarked(false);
-                    setBookmarkId(null);
-                }
-            }
-        } catch (error) {
-            console.error('Error toggling bookmark:', error);
-            alert('북마크 처리 중 오류가 발생했습니다.');
-        }
-    };
-
     if (loading) {
         return <LoadingText>로딩 중...</LoadingText>;
     }
@@ -238,35 +172,27 @@ const SermonDetailPage = ({ isBookmarkView, onBookmarkToggle }) => {
                         <ActionButton
                             onClick={(e) => {
                                 e.stopPropagation();
-                                toggleBookmark();
+                                handleEdit();
                             }}
-                            isBookmark={true}
-                            active={isBookmarked}
                         >
-                            <Bookmark size={16} />
+                            <Pencil size={16} />
                         </ActionButton>
-                        {(sermon?.userId === currentUserId || (isAdmin && isAdminPage)) && (
-                            <>
-                                <ActionButton
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleEdit();
-                                    }}
-                                >
-                                    <Pencil size={16} />
-                                </ActionButton>
-                                <ActionButton
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleDelete();
-                                    }}
-                                    isDelete
-                                >
-                                    <Trash2 size={16} />
-                                </ActionButton>
-                            </>
-                        )}
+                        <ActionButton
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleDelete();
+                            }}
+                            isDelete
+                        >
+                            <Trash2 size={16} />
+                        </ActionButton>
                     </ActionButtons>
+                    {showGuide && (
+                        <GuideMessage>
+                            <span>클릭하여 더 자세한 내용을 확인해보세요</span>
+                            <ChevronDown className="bounce" size={24} />
+                        </GuideMessage>
+                    )}
                 </TopBar>
                 {isHeaderExpanded && (
                     <>
@@ -359,20 +285,23 @@ const HeaderContainer = styled.div`
     cursor: pointer;
 `;
 
+const TopBar = styled.div`
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+`;
+
 const CompactHeader = styled.div`
     display: block;
+    flex: 1;
     padding: 8px 16px;
+    text-align: center;
 `;
 
 const CompactTitle = styled.h1`
     font-size: 1.25rem;
     color: #333;
     margin: 0;
-`;
-
-const TopBar = styled.div`
-    display: flex;
-    justify-content: space-between;
 `;
 
 const BackButton = styled.button`
@@ -412,33 +341,17 @@ const ActionButton = styled.button`
     height: 36px;
     border-radius: 50%;
     border: none;
-    background: ${(props) => {
-        if (props.isDelete) return '#fee2e2';
-        if (props.isBookmark) return props.active ? '#fef9c3' : '#f3f4f6';
-        return '#f3f4f6';
-    }};
-    color: ${(props) => {
-        if (props.isDelete) return '#dc2626';
-        if (props.isBookmark) return props.active ? '#eab308' : '#4f3296';
-        return '#4f3296';
-    }};
+    background: ${(props) => (props.isDelete ? '#fee2e2' : '#f3f4f6')};
+    color: ${(props) => (props.isDelete ? '#dc2626' : '#4f3296')};
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: background 0.2s ease, color 0.2s ease;
 
     &:hover {
-        background: ${(props) => {
-            if (props.isDelete) return '#fecaca';
-            if (props.isBookmark) return props.active ? '#fef08a' : '#e5e7eb';
-            return '#e5e7eb';
-        }};
-        color: ${(props) => {
-            if (props.isDelete) return '#b91c1c';
-            if (props.isBookmark) return props.active ? '#ca8a04' : '#3a2570';
-            return '#3a2570';
-        }};
+        background: ${(props) => (props.isDelete ? '#fecaca' : '#e5e7eb')};
+        color: ${(props) => (props.isDelete ? '#b91c1c' : '#3a2570')};
     }
 `;
 
@@ -746,4 +659,4 @@ const GuideMessage = styled.div`
     }
 `;
 
-export default SermonDetailPage;
+export default SermonDetailPageAdmin;

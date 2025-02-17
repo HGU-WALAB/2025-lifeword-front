@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
-import { Search, LayoutGrid, List, RefreshCcw, ChevronDown } from 'lucide-react';
-import { getPublicSermons, getUserSermons, searchSermons, getFilteredSermons } from '../../services/APIService';
+import { Search, LayoutGrid, List, RefreshCcw, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useUserState } from '../../recoil/utils';
 import { useRecoilValue } from 'recoil';
 import { isNavExpandedState } from '../../recoil/atoms';
+import { getFilteredSermonList } from '../../services/APIService';
 
 const WORSHIP_TYPES = [
     '새벽예배',
@@ -101,6 +101,7 @@ const SermonListPage = () => {
     const isNavExpanded = useRecoilValue(isNavExpandedState);
     const { userId } = useUserState();
     const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
 
     const [filters, setFilters] = useState({
         worshipTypes: [],
@@ -118,129 +119,101 @@ const SermonListPage = () => {
         },
     });
 
-    // expandedFilters 상태를 객체로 변경
+    // expandedFilters 상태를 객체로!
     const [expandedFilters, setExpandedFilters] = useState({
         bible: false,
         worship: false,
         date: false,
     });
 
-    // 페이지네이션
-    const indexOfLastSermon = currentPage * itemsPerPage;
-    const indexOfFirstSermon = indexOfLastSermon - itemsPerPage;
-    const currentSermons = sermons.slice(indexOfFirstSermon, indexOfLastSermon);
-    const totalPages = Math.ceil(sermons.length / itemsPerPage);
+    const currentSermons = sermons;
 
-    // 페이지 변경 핸들러
-    const handlePageChange = (pageNumber) => {
-        setCurrentPage(pageNumber);
-        window.scrollTo(0, 0);
+    const getModeFromCategory = (category) => {
+        switch (category) {
+            case 'my-all':
+                return 1;
+            case 'my-public':
+                return 2;
+            case 'my-private':
+                return 3;
+            default:
+                return 0;
+        }
     };
 
-    useEffect(() => {
-        if (searchTerm) {
-            handleSearch();
-        } else {
-            fetchSermons();
+    const getSortParam = (sortValue) => {
+        switch (sortValue) {
+            case 'oldest':
+                return 'asc';
+            case 'recently-modified':
+                return 'recent';
+            default:
+                return 'desc';
         }
-    }, [selectedCategory, sortBy, filters, searchTerm]);
+    };
 
     const fetchSermons = async () => {
         try {
-            let response;
+            const params = {
+                userId,
+                keyword: searchTerm || null,
+                searchType: searchTerm ? 2 : null,
+                sort: getSortParam(sortBy),
+                worshipTypes: filters.worshipTypes,
+                scripture: filters.bibleBooks,
+                page: currentPage,
+                size: itemsPerPage,
+                mode: getModeFromCategory(selectedCategory),
+                startDate: dateFilter.type === 'range' ? dateFilter.range.startDate : dateFilter.singleDate,
+                endDate: dateFilter.type === 'range' ? dateFilter.range.endDate : dateFilter.singleDate,
+            };
 
-            // 검색어가 있는 경우 검색 결과에 필터 적용
-            if (searchTerm.trim()) {
-                response = await searchSermons(searchTerm);
-
-                // 필터가 적용된 경우 검색 결과를 클라이언트에서 추가 필터링
-                if (filters.worshipTypes.length > 0 || filters.bibleBooks.length > 0 || filters.dateFilter) {
-                    response = response.filter((sermon) => {
-                        const worshipTypeMatch =
-                            filters.worshipTypes.length === 0 || filters.worshipTypes.includes(sermon.worshipType);
-                        const bibleBookMatch =
-                            filters.bibleBooks.length === 0 ||
-                            filters.bibleBooks.some(
-                                (book) =>
-                                    sermon.mainScripture.includes(book) ||
-                                    (sermon.additionalScripture && sermon.additionalScripture.includes(book))
-                            );
-                        // 날짜 필터 적용
-                        let dateMatch = true;
-                        if (filters.dateFilter) {
-                            const sermonDate = new Date(sermon.sermonDate);
-                            if (filters.dateFilter.type === 'single') {
-                                dateMatch = sermonDate.toISOString().split('T')[0] === filters.dateFilter.date;
-                            } else {
-                                const startDate = new Date(filters.dateFilter.range.startDate);
-                                const endDate = new Date(filters.dateFilter.range.endDate);
-                                dateMatch = sermonDate >= startDate && sermonDate <= endDate;
-                            }
-                        }
-                        return worshipTypeMatch && bibleBookMatch && dateMatch;
-                    });
-                }
-            } else {
-                // 기존 필터링 로직
-                if (
-                    filters.worshipTypes.length > 0 ||
-                    filters.bibleBooks.length > 0 ||
-                    filters.dateFilter ||
-                    sortBy !== 'newest'
-                ) {
-                    const filterParams = {
-                        sort: sortBy === 'newest' ? 'desc' : sortBy === 'oldest' ? 'asc' : 'updated',
-                        ...filters,
-                    };
-                    response = await getFilteredSermons(filterParams);
-                } else {
-                    // 기본 카테고리별 조회
-                    switch (selectedCategory) {
-                        case 'public':
-                            response = await getPublicSermons();
-                            break;
-                        case 'my-all':
-                            response = await getUserSermons(userId, 'all');
-                            break;
-                        case 'my-public':
-                            response = await getUserSermons(userId, 'public');
-                            break;
-                        case 'my-private':
-                            response = await getUserSermons(userId, 'private');
-                            break;
-                        default:
-                            response = await getPublicSermons();
-                    }
-                }
-            }
-
-            // 정렬 적용
-            if (response) {
-                if (sortBy === 'newest') {
-                    response.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-                } else if (sortBy === 'oldest') {
-                    response.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-                } else if (sortBy === 'recently-modified') {
-                    response.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
-                }
-            }
-
-            setSermons(response || []);
+            const response = await getFilteredSermonList(params);
+            setSermons(response.content);
+            setTotalPages(response.totalPage);
         } catch (error) {
             console.error('Error fetching sermons:', error);
+            setSermons([]);
         }
     };
 
     const handleSearch = async () => {
-        try {
-            if (searchTerm.trim()) {
-                const response = await searchSermons(searchTerm);
-                setSermons(response || []);
-            }
-        } catch (error) {
-            console.error('Error searching sermons:', error);
-        }
+        setCurrentPage(1);
+        await fetchSermons();
     };
+
+    const handlePageChange = async (pageNumber) => {
+        setCurrentPage(pageNumber);
+        window.scrollTo(0, 0);
+    };
+
+    const toggleFilter = (type, value) => {
+        setFilters((prev) => {
+            const newFilters = { ...prev };
+            if (type === 'worshipTypes' || type === 'bibleBooks') {
+                if (newFilters[type].includes(value)) {
+                    newFilters[type] = newFilters[type].filter((item) => item !== value);
+                } else {
+                    newFilters[type] = [...newFilters[type], value];
+                }
+            }
+            return newFilters;
+        });
+    };
+
+    useEffect(() => {
+        fetchSermons();
+    }, [currentPage, selectedCategory, sortBy, filters, dateFilter, fetchSermons, itemsPerPage]);
+
+    useEffect(() => {
+        const debounceTimer = setTimeout(() => {
+            if (searchTerm) {
+                handleSearch();
+            }
+        }, 300);
+
+        return () => clearTimeout(debounceTimer);
+    }, [searchTerm, handleSearch]);
 
     const resetFilters = () => {
         setFilters({
@@ -257,27 +230,6 @@ const SermonListPage = () => {
                 startDate: '',
                 endDate: '',
             },
-        });
-    };
-
-    // 필터 체크박스 토글 함수
-    const toggleFilter = (type, value) => {
-        setFilters((prev) => {
-            const newFilters = { ...prev };
-            if (type === 'worshipTypes') {
-                if (newFilters.worshipTypes.includes(value)) {
-                    newFilters.worshipTypes = newFilters.worshipTypes.filter((item) => item !== value);
-                } else {
-                    newFilters.worshipTypes = [...newFilters.worshipTypes, value];
-                }
-            } else if (type === 'bibleBooks') {
-                if (newFilters.bibleBooks.includes(value)) {
-                    newFilters.bibleBooks = newFilters.bibleBooks.filter((item) => item !== value);
-                } else {
-                    newFilters.bibleBooks = [...newFilters.bibleBooks, value];
-                }
-            }
-            return newFilters;
         });
     };
 
@@ -345,150 +297,6 @@ const SermonListPage = () => {
             }));
         }
     };
-
-    // 페이지 버튼 렌더링 로직을 별도 함수로 분리
-    const renderPageButtons = () => {
-        const pageButtons = [];
-        const DOTS = '...';
-        const SIBLINGS_COUNT = 1;
-
-        // 첫 페이지 버튼
-        pageButtons.push(
-            <PageButton onClick={() => handlePageChange(1)} disabled={currentPage === 1}>
-                {'<<'}
-            </PageButton>
-        );
-
-        // 이전 페이지 버튼
-        pageButtons.push(
-            <PageButton onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1}>
-                {'<'}
-            </PageButton>
-        );
-
-        // 페이지 번호 버튼들
-        if (totalPages <= 7) {
-            // 전체 페이지가 7개 이하면 모든 페이지 표시
-            for (let i = 1; i <= totalPages; i++) {
-                pageButtons.push(
-                    <PageButton key={i} onClick={() => handlePageChange(i)} active={currentPage === i}>
-                        {i}
-                    </PageButton>
-                );
-            }
-        } else {
-            // 전체 페이지가 7개 초과면 일부만 표시
-            const leftSiblingIndex = Math.max(currentPage - SIBLINGS_COUNT, 1);
-            const rightSiblingIndex = Math.min(currentPage + SIBLINGS_COUNT, totalPages);
-
-            const shouldShowLeftDots = leftSiblingIndex > 2;
-            const shouldShowRightDots = rightSiblingIndex < totalPages - 1;
-
-            if (!shouldShowLeftDots && shouldShowRightDots) {
-                // 왼쪽 dots 없음
-                for (let i = 1; i <= 4; i++) {
-                    pageButtons.push(
-                        <PageButton key={i} onClick={() => handlePageChange(i)} active={currentPage === i}>
-                            {i}
-                        </PageButton>
-                    );
-                }
-                pageButtons.push(
-                    <PageButton key="dots-1" disabled>
-                        {DOTS}
-                    </PageButton>
-                );
-                pageButtons.push(
-                    <PageButton
-                        key={totalPages}
-                        onClick={() => handlePageChange(totalPages)}
-                        active={currentPage === totalPages}
-                    >
-                        {totalPages}
-                    </PageButton>
-                );
-            } else if (shouldShowLeftDots && !shouldShowRightDots) {
-                // 오른쪽 dots 없음
-                pageButtons.push(
-                    <PageButton key={1} onClick={() => handlePageChange(1)} active={currentPage === 1}>
-                        1
-                    </PageButton>
-                );
-                pageButtons.push(
-                    <PageButton key="dots-1" disabled>
-                        {DOTS}
-                    </PageButton>
-                );
-                for (let i = totalPages - 3; i <= totalPages; i++) {
-                    pageButtons.push(
-                        <PageButton key={i} onClick={() => handlePageChange(i)} active={currentPage === i}>
-                            {i}
-                        </PageButton>
-                    );
-                }
-            } else if (shouldShowLeftDots && shouldShowRightDots) {
-                // 양쪽 dots
-                pageButtons.push(
-                    <PageButton key={1} onClick={() => handlePageChange(1)} active={currentPage === 1}>
-                        1
-                    </PageButton>
-                );
-                pageButtons.push(
-                    <PageButton key="dots-1" disabled>
-                        {DOTS}
-                    </PageButton>
-                );
-                for (let i = leftSiblingIndex; i <= rightSiblingIndex; i++) {
-                    pageButtons.push(
-                        <PageButton key={i} onClick={() => handlePageChange(i)} active={currentPage === i}>
-                            {i}
-                        </PageButton>
-                    );
-                }
-                pageButtons.push(
-                    <PageButton key="dots-2" disabled>
-                        {DOTS}
-                    </PageButton>
-                );
-                pageButtons.push(
-                    <PageButton
-                        key={totalPages}
-                        onClick={() => handlePageChange(totalPages)}
-                        active={currentPage === totalPages}
-                    >
-                        {totalPages}
-                    </PageButton>
-                );
-            }
-        }
-
-        // 다음 페이지 버튼
-        pageButtons.push(
-            <PageButton onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages}>
-                {'>'}
-            </PageButton>
-        );
-
-        // 마지막 페이지 버튼
-        pageButtons.push(
-            <PageButton onClick={() => handlePageChange(totalPages)} disabled={currentPage === totalPages}>
-                {'>>'}
-            </PageButton>
-        );
-
-        return pageButtons;
-    };
-
-    // 검색 입력 디바운스
-    useEffect(() => {
-        const debounceTimer = setTimeout(() => {
-            if (searchTerm) {
-                handleSearch();
-            }
-        }, 300);
-
-        return () => clearTimeout(debounceTimer);
-    }, [searchTerm]);
 
     return (
         <Container isNavExpanded={isNavExpanded}>
@@ -695,7 +503,13 @@ const SermonListPage = () => {
                         </ActiveFilters>
                         <Controls>
                             <SelectWrapper>
-                                <Select value={itemsPerPage} onChange={(e) => setItemsPerPage(Number(e.target.value))}>
+                                <Select
+                                    value={itemsPerPage}
+                                    onChange={(e) => {
+                                        setItemsPerPage(Number(e.target.value));
+                                        setCurrentPage(1); // 페이지 사이즈 변경 시 첫 페이지로 리셋
+                                    }}
+                                >
                                     <option value={10}>10개씩 보기</option>
                                     <option value={30}>30개씩 보기</option>
                                     <option value={50}>50개씩 보기</option>
@@ -719,8 +533,8 @@ const SermonListPage = () => {
                     </ControlBar>
 
                     <SermonList viewType={viewType} isNavExpanded={isNavExpanded}>
-                        {currentSermons.length > 0 ? (
-                            currentSermons.map((sermon) => (
+                        {sermons.length > 0 ? (
+                            sermons.map((sermon) => (
                                 <SermonCard
                                     key={sermon.sermonId}
                                     viewType={viewType}
@@ -761,7 +575,61 @@ const SermonListPage = () => {
                             <EmptyState>설교가 없습니다.</EmptyState>
                         )}
                     </SermonList>
-                    <Pagination>{renderPageButtons()}</Pagination>
+                    <Pagination>
+                        <PageButton onClick={() => handlePageChange(1)} disabled={currentPage === 1}>
+                            <ChevronLeft size={16} />
+                            <ChevronLeft size={16} style={{ marginLeft: '-12px' }} />
+                        </PageButton>
+                        <PageButton onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1}>
+                            <ChevronLeft size={20} />
+                        </PageButton>
+
+                        <PageNumbers>
+                            {Array.from({ length: totalPages }, (_, i) => i + 1)
+                                .filter((page) => {
+                                    if (totalPages <= 7) return true;
+                                    if (page === 1) return true;
+                                    if (page === totalPages) return true;
+                                    if (page >= currentPage - 2 && page <= currentPage + 2) return true;
+                                    return false;
+                                })
+                                .map((page, index, array) => {
+                                    if (index > 0 && array[index - 1] !== page - 1) {
+                                        return (
+                                            <React.Fragment key={`ellipsis-${page}`}>
+                                                <Ellipsis>...</Ellipsis>
+                                                <PageNumber
+                                                    active={currentPage === page}
+                                                    onClick={() => handlePageChange(page)}
+                                                >
+                                                    {page}
+                                                </PageNumber>
+                                            </React.Fragment>
+                                        );
+                                    }
+                                    return (
+                                        <PageNumber
+                                            key={page}
+                                            active={currentPage === page}
+                                            onClick={() => handlePageChange(page)}
+                                        >
+                                            {page}
+                                        </PageNumber>
+                                    );
+                                })}
+                        </PageNumbers>
+
+                        <PageButton
+                            onClick={() => handlePageChange(currentPage + 1)}
+                            disabled={currentPage === totalPages}
+                        >
+                            <ChevronRight size={20} />
+                        </PageButton>
+                        <PageButton onClick={() => handlePageChange(totalPages)} disabled={currentPage === totalPages}>
+                            <ChevronRight size={16} />
+                            <ChevronRight size={16} style={{ marginLeft: '-12px' }} />
+                        </PageButton>
+                    </Pagination>
                 </MainContent>
             </ContentWrapper>
         </Container>
@@ -1307,17 +1175,22 @@ const Pagination = styled.div`
 `;
 
 const PageButton = styled.button`
-    padding: 8px 16px;
-    border: 1px solid ${(props) => (props.active ? '#6b4ee6' : '#e1e1e1')};
-    border-radius: 5px;
-    background-color: ${(props) => (props.active ? '#6b4ee6' : 'transparent')};
-    color: ${(props) => (props.active ? '#fff' : '#333')};
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    height: 32px;
+    padding: 0 6px;
+    border: 1px solid #e1e1e1;
+    border-radius: 6px;
+    background-color: white;
+    color: #333;
     cursor: pointer;
-    margin: 0 4px;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
 
-    &:hover {
-        background-color: ${(props) => (props.active ? '#0056b3' : '#f0f0f0')};
+    &:hover:not(:disabled) {
+        background-color: #f8f9fa;
+        border-color: #6b4ee6;
     }
 
     &:disabled {
@@ -1335,7 +1208,7 @@ const CategoryTabs = styled.div`
 
 const TabButton = styled.button`
     padding: 12px 24px;
-    background: ${(props) => (props.active ? '#6b4ee6' : 'white')};
+    background: ${(props) => (props.active ? '#482895' : 'white')};
     color: ${(props) => (props.active ? 'white' : '#666')};
     border: 1px solid ${(props) => (props.active ? '#6b4ee6' : '#e1e1e1')};
     border-radius: 12px;
@@ -1449,6 +1322,40 @@ const ApplyButton = styled.button`
     &:active {
         transform: translateY(0);
     }
+`;
+
+const PageNumbers = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 4px;
+`;
+
+const PageNumber = styled.button`
+    min-width: 32px;
+    height: 32px;
+    padding: 0 6px;
+    border: 1px solid ${(props) => (props.active ? '#6b4ee6' : '#e1e1e1')};
+    border-radius: 6px;
+    background-color: ${(props) => (props.active ? '#6b4ee6' : 'white')};
+    color: ${(props) => (props.active ? 'white' : '#333')};
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+        background-color: ${(props) => (props.active ? '#5a3eb8' : '#f8f9fa')};
+        border-color: #6b4ee6;
+    }
+
+    &:disabled {
+        cursor: not-allowed;
+        opacity: 0.5;
+    }
+`;
+
+const Ellipsis = styled.span`
+    color: #666;
+    padding: 0 4px;
 `;
 
 export default SermonListPage;

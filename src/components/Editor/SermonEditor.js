@@ -18,53 +18,35 @@ class SermonEditor extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            editorHtml: props.value || '',
-            initialHeight: 0, // 초기 높이 저장
+            editorHtml: props.value || props.initialContent || '',
+            isScrolled: false,
         };
         this.quillRef = null;
+        this.handleScroll = this.handleScroll.bind(this);
+    }
+
+    componentDidMount() {
+        window.addEventListener('scroll', this.handleScroll);
+        if (this.props.initialContent && !this.state.editorHtml) {
+            this.setState({ editorHtml: this.props.initialContent });
+        }
+    }
+
+    componentWillUnmount() {
+        window.removeEventListener('scroll', this.handleScroll);
+    }
+
+    handleScroll() {
+        const scrollPosition = window.scrollY;
+        this.setState({ isScrolled: scrollPosition > 100 });
     }
 
     componentDidUpdate(prevProps) {
         if (prevProps.value !== this.props.value) {
             this.setState({ editorHtml: this.props.value });
         }
-    }
-
-    componentDidMount() {
-        if (this.quillRef) {
-            const editor = this.quillRef.getEditor();
-            editor.root.style.fontSize = '14px';
-            editor.format('size', '14px');
-            editor.blur();
-            editor.root.blur();
-
-            // 초기 높이 저장
-            this.setState({
-                initialHeight: editor.root.clientHeight,
-            });
-
-            // 에디터 높이 변화 감지를 위한 ResizeObserver 설정
-            this.resizeObserver = new ResizeObserver((entries) => {
-                for (let entry of entries) {
-                    if (entry.target === editor.root) {
-                        // 현재 높이가 초기 높이보다 클 때만 스크롤
-                        if (entry.target.clientHeight > this.state.initialHeight) {
-                            window.scrollTo({
-                                top: document.documentElement.scrollHeight,
-                                behavior: 'smooth',
-                            });
-                        }
-                    }
-                }
-            });
-
-            this.resizeObserver.observe(editor.root);
-        }
-    }
-
-    componentWillUnmount() {
-        if (this.resizeObserver) {
-            this.resizeObserver.disconnect();
+        if (prevProps.initialContent !== this.props.initialContent) {
+            this.setState({ editorHtml: this.props.initialContent });
         }
     }
 
@@ -102,14 +84,7 @@ class SermonEditor extends Component {
     ];
 
     handleChange = (content) => {
-        this.setState({ editorHtml: content }, () => {
-            if (this.quillRef) {
-                const editor = this.quillRef.getEditor();
-                const length = editor.getLength();
-                editor.setSelection(length, 0);
-            }
-        });
-
+        this.setState({ editorHtml: content });
         if (this.props.onChange) {
             this.props.onChange(content);
         }
@@ -128,7 +103,7 @@ class SermonEditor extends Component {
 
     render() {
         return (
-            <EditorWrapper>
+            <EditorWrapper isScrolled={this.state.isScrolled}>
                 <StyledQuill
                     ref={(el) => {
                         this.quillRef = el;
@@ -149,31 +124,34 @@ const EditorWrapper = styled.div`
     display: flex;
     flex-direction: column;
     width: 100%;
-    height: 60%;
+    position: relative;
+
+    .ql-toolbar {
+        position: sticky;
+        top: ${(props) => (props.isScrolled ? '90px' : 'auto')};
+        z-index: 90;
+        background: white;
+        border: 2px solid #eee;
+        border-bottom: none;
+        border-top-left-radius: ${(props) => (props.isScrolled ? '0' : '8px')};
+        border-top-right-radius: ${(props) => (props.isScrolled ? '0' : '8px')};
+        transition: all 0.2s ease;
+    }
 
     .ql-editor {
         min-height: 580px;
         font-size: 16px;
         line-height: 1.8;
         padding: 24px;
-        overflow: hidden;
     }
 
     .ql-container {
+        height: auto !important;
+        min-height: 580px;
         border: 2px solid #eee;
         border-top: none;
-        height: auto !important;
-        overflow: visible;
-    }
-
-    .ql-toolbar {
-        position: sticky;
-        top: 32px;
-        background: white;
-        z-index: 10;
-        border: 2px solid #eee;
-        border-top-left-radius: 8px;
-        border-top-right-radius: 8px;
+        border-bottom-left-radius: 8px;
+        border-bottom-right-radius: 8px;
     }
 
     .ql-editor::-webkit-scrollbar {
@@ -192,23 +170,6 @@ const EditorWrapper = styled.div`
 
     .ql-editor::-webkit-scrollbar-thumb:hover {
         background: #555;
-    }
-
-    .ql-editor p {
-        margin-bottom: 1.5em;
-    }
-
-    .ql-editor h1,
-    .ql-editor h2,
-    .ql-editor h3 {
-        margin-top: 1.5em;
-        margin-bottom: 0.5em;
-    }
-
-    .ql-container {
-        border-bottom-left-radius: 8px;
-        border-bottom-right-radius: 8px;
-        background: white;
     }
 
     /* 폰트 스타일 */
@@ -412,13 +373,9 @@ const EditorWrapper = styled.div`
 `;
 
 const StyledQuill = styled(ReactQuill)`
-    height: 100%;
+    height: auto;
     display: flex;
     flex-direction: column;
-
-    .ql-container {
-        flex: 1;
-    }
 `;
 
 export default React.forwardRef((props, ref) => {

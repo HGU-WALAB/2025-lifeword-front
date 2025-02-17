@@ -8,6 +8,7 @@ import AddSermonPage from '../components/sermon/AddSermonPage';
 import EditSermonPage from '../components/sermon/EditSermonPage';
 import SermonListPage from '../components/sermon/SermonListPage';
 import SermonDetailPage from '../components/sermon/SermonDetailPage';
+import SermonDetailPageAdmin from '../components/admin/SermonDetailPageAdmin';
 import AdminPage from '../components/admin/AdminPage';
 import UserManagementPage from '../components/admin/UserManagementPage';
 import SermonManagementPage from '../components/admin/SermonManagementPage';
@@ -15,6 +16,7 @@ import MyPage from '../components/mypage/MyPage';
 import { useUserState } from '../recoil/utils';
 import { useRecoilValue } from 'recoil';
 import { isNavExpandedState } from '../recoil/atoms';
+import BookmarkSermonDetailPage from '../components/mypage/BookmarkSermonDetailPage';
 
 const MainPage = () => {
     const { isAdmin } = useUserState();
@@ -31,6 +33,7 @@ const MainPage = () => {
                     <Route path="/add-sermon" element={<AddSermonPage />} />
                     <Route path="/sermon-list/*" element={<SermonListLayout />} />
                     <Route path="/mypage" element={<MyPage />} />
+                    <Route path="mypage/sermon/:id" element={<BookmarkSermonDetailPage />} />
                     {isAdmin && (
                         <>
                             <Route path="/admin" element={<AdminPage />} />
@@ -61,7 +64,7 @@ const AdminSermonLayout = () => {
         <SermonListContainer>
             <Routes>
                 <Route path="/" element={<SermonManagementPage />} />
-                <Route path="/detail/:id" element={<SermonDetailPage />} />
+                <Route path="/detail/:id" element={<SermonDetailPageAdmin />} />
                 <Route path="/edit/:id" element={<EditSermonPage />} />
             </Routes>
         </SermonListContainer>
@@ -72,8 +75,8 @@ const Container = styled.div`
     display: flex;
     min-height: 100vh;
     background-color: #ffffff;
-    
 `;
+
 const MainContent = styled.div`
     flex: 1;
     position: relative;

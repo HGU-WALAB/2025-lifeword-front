@@ -3,7 +3,7 @@ import { ParallaxBanner } from 'react-scroll-parallax';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import { OnboardingGlobalStyles } from '../styles/OnboardingGlobalStyles';
-import LogoWhite from '../assets/LogoWhite.png';
+import LogoLong from '../assets/LogoLong.svg';
 import LoginForm from '../components/login/LoginForm';
 
 const Onboarding = () => {
@@ -18,7 +18,7 @@ const Onboarding = () => {
     return (
         <div style={{ height: '100vh' }}>
             <OnboardingGlobalStyles />
-            <FixedLogo src={LogoWhite} alt="BIBLY" onClick={handleLogoClick} />
+            <FixedLogo src={LogoLong} alt="BIBLY" onClick={handleLogoClick} />
             <ParallaxBanner
                 layers={[
                     {
@@ -234,7 +234,7 @@ const handleKakaoLogin = () => {
         return;
     }
 
-    const kakaoURL = `https://kauth.kakao.com/oauth/authorize?client_id=${REST_API_KEY}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=account_email`;
+    const kakaoURL = `https://kauth.kakao.com/oauth/authorize?client_id=${REST_API_KEY}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=account_email&state=kakao`;
     window.location.href = kakaoURL;
 };
 
@@ -247,6 +247,6 @@ const handleGoogleLogin = () => {
         return;
     }
 
-    const googleURL = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=email profile&access_type=offline&prompt=consent`;
+    const googleURL = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=email profile&access_type=offline&prompt=consent&state=google`;
     window.location.href = googleURL;
 };
