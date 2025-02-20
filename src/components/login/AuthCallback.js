@@ -18,6 +18,8 @@ const AuthCallback = () => {
             authFunction(code)
                 .then((data) => {
                     if (data.exists) {
+                        document.cookie = `jwt=${data.token}; path=/; SameSite=None; Secure`;
+
                         setUserState({
                             isLoggedIn: true,
                             userId: data.userId,
@@ -25,6 +27,7 @@ const AuthCallback = () => {
                             job: data.job,
                             role: data.role,
                         });
+
                         navigate('/main', { replace: true });
                     } else {
                         navigate('/signup', {

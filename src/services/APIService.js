@@ -1,6 +1,10 @@
 import axios from 'axios';
 
-const BASE_URL = 'http://172.18.130.17:8080';
+//const BASE_URL = 'http://172.18.130.17:8080';
+
+//const BASE_URL = 'http://192.168.0.7:8080';
+const BASE_URL='http://localhost:8080';
+
 const API_PREFIX = '/api/v1';
 
 // axios 인스턴스 생성 및 기본 설정
@@ -13,12 +17,29 @@ const axiosInstance = axios.create({
     },
 });
 
+axiosInstance.interceptors.request.use((config) => {
+    const token = getJwtFromCookie(); // ✅ 쿠키에서 JWT 가져오기
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+}, (error) => {
+    return Promise.reject(error);
+});
+
+export default axiosInstance;
+
 // auth 관련 요청을 위한 별도 함수
 const authRequest = async (endpoint, options) => {
     return fetch(`${BASE_URL}/auth${endpoint}`, {
         ...options,
         credentials: 'include',
     });
+};
+const getJwtFromCookie = () => {
+    const cookies = document.cookie.split('; ');
+    const jwtCookie = cookies.find(cookie => cookie.startsWith('jwt='));
+    return jwtCookie ? jwtCookie.split('=')[1] : null;
 };
 
 // User 관련 API
@@ -214,6 +235,10 @@ export const searchBibles = async (keyword) => {
         throw error;
     }
 };
+const setJwtCookie = (token) => {
+    const isSecure = window.location.protocol === 'https:'; // ✅ HTTPS 여부 확인
+    document.cookie = `jwt=${token}; path=/; ${isSecure ? 'Secure; SameSite=None' : ''}`;
+};
 
 // 카카오 로그인
 export const authenticateKakaoUser = async (code) => {
@@ -233,12 +258,10 @@ export const authenticateKakaoUser = async (code) => {
             throw new Error(`카카오 인증 중 오류 발생: ${errorText}`);
         }
 
-        // 응답 헤더 확인 (디버깅용)
-        console.log('Response headers:', [...response.headers.entries()]);
-        console.log('Cookies after login:', document.cookie);
-
         const data = await response.json();
-        console.log('✅ 카카오 로그인 성공! 받은 데이터:', data);
+
+        // ✅ JWT를 쿠키에 저장
+        setJwtCookie(data.token);
 
         return data;
     } catch (error) {
@@ -287,6 +310,8 @@ export const authenticateGoogleUser = async (code) => {
         console.log('Cookies after login:', document.cookie);
 
         const data = await response.json();
+        setJwtCookie(data.token);
+
         console.log('✅ 구글 로그인 성공! 받은 데이터:', data);
         return data;
     } catch (error) {
@@ -469,20 +494,25 @@ export const logout = async () => {
         await authRequest('/logout', {
             method: 'POST',
         });
+
+        // ✅ 쿠키 만료 처리 개선
+        document.cookie = "jwt=; path=/; expires=" + new Date(0).toUTCString();
+
     } catch (error) {
         console.error('❌ 로그아웃 실패:', error);
         throw error;
     }
 };
 
-// 세션 체크 API 추가
+
 export const checkAuth = async () => {
     try {
-        const response = await fetch(`${BASE_URL}/auth/auth/check`, {
+        const response = await fetch(`${BASE_URL}/auth/check`, {
             method: 'GET',
             credentials: 'include',
             headers: {
                 accept: '*/*',
+
             },
         });
 
@@ -496,3 +526,4 @@ export const checkAuth = async () => {
         return false;
     }
 };
+
