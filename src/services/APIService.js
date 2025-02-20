@@ -262,6 +262,7 @@ export const authenticateKakaoUser = async (code) => {
 
         // ✅ JWT를 쿠키에 저장
         setJwtCookie(data.token);
+        console.log('✅ 카카오 로그인 성공! 받은 데이터:', data);
 
         return data;
     } catch (error) {
