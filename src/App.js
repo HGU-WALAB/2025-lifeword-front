@@ -9,7 +9,7 @@ import AuthCallback from './components/login/AuthCallback';
 import SignUpPageSocial from './components/login/SignUpPageSocial';
 import SignUpPageBibly from './components/login/SignUpPageBibly';
 import BookmarkSermonDetailPage from './components/mypage/BookmarkSermonDetailPage';
-import { checkAuth } from './services/APIService';
+import { getJwtFromCookie } from './services/APIService';
 
 const GlobalStyle = createGlobalStyle`
   body {
@@ -42,13 +42,15 @@ const ProtectedRoute = ({ children }) => {
     useEffect(() => {
         const verifyAuth = async () => {
             try {
-                const isAuthed = await checkAuth();
-                setIsAuthenticated(isAuthed);
-                if (!isAuthed) {
+                const jwt = getJwtFromCookie();
+                if (!jwt) {
                     navigate('/', { replace: true });
+                    return;
                 }
+
+                setIsAuthenticated(true);
             } catch (error) {
-                console.error('Auth verification failed:', error);
+                console.error('인증 확인 중 오류 발생:', error);
                 navigate('/', { replace: true });
             } finally {
                 setIsLoading(false);

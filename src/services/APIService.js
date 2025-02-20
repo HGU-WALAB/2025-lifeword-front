@@ -1,9 +1,9 @@
 import axios from 'axios';
 
-//const BASE_URL = 'http://172.18.130.17:8080';
+const BASE_URL = 'http://172.18.130.17:8080';
 
 //const BASE_URL = 'http://192.168.0.7:8080';
-const BASE_URL = 'http://localhost:8080';
+// const BASE_URL = 'http://localhost:8080';
 
 const API_PREFIX = '/api/v1';
 
@@ -16,6 +16,12 @@ const axiosInstance = axios.create({
         Accept: 'application/json',
     },
 });
+
+export const getJwtFromCookie = () => {
+    const cookies = document.cookie.split('; ');
+    const jwtCookie = cookies.find((cookie) => cookie.startsWith('jwt='));
+    return jwtCookie ? jwtCookie.split('=')[1] : null;
+};
 
 axiosInstance.interceptors.request.use(
     (config) => {
@@ -38,11 +44,6 @@ const authRequest = async (endpoint, options) => {
         ...options,
         credentials: 'include',
     });
-};
-const getJwtFromCookie = () => {
-    const cookies = document.cookie.split('; ');
-    const jwtCookie = cookies.find((cookie) => cookie.startsWith('jwt='));
-    return jwtCookie ? jwtCookie.split('=')[1] : null;
 };
 
 // User 관련 API
@@ -504,27 +505,5 @@ export const logout = async () => {
     } catch (error) {
         console.error('❌ 로그아웃 실패:', error);
         throw error;
-    }
-};
-
-// 세션 체크 API 추가
-export const checkAuth = async () => {
-    try {
-        const response = await fetch(`${BASE_URL}/auth/check`, {
-            method: 'GET',
-            credentials: 'include',
-            headers: {
-                accept: '*/*',
-            },
-        });
-
-        if (!response.ok) {
-            throw new Error('Unauthorized');
-        }
-
-        return true;
-    } catch (error) {
-        console.error('Auth check failed:', error);
-        return false;
     }
 };
