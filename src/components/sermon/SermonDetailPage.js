@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import styled, { createGlobalStyle } from 'styled-components';
 import { getSermonDetail, deleteSermon, getBookmarks, createBookmark, deleteBookmark } from '../../services/APIService';
-import { ArrowLeft, Pencil, Trash2, Printer, ChevronDown, Bookmark } from 'lucide-react';
+import { ArrowLeft, Pencil, Trash2, Printer, Bookmark } from 'lucide-react';
 import { useUserState } from '../../recoil/utils';
 
 const GlobalStyle = createGlobalStyle`
@@ -46,14 +46,19 @@ const SermonDetailPage = ({ isBookmarkView, onBookmarkToggle }) => {
     const [showGuide, setShowGuide] = useState(true);
     const [isBookmarked, setIsBookmarked] = useState(false);
     const [bookmarkId, setBookmarkId] = useState(null);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
         const fetchSermonDetail = async () => {
             try {
+                setLoading(true);
+                console.log('Fetching sermon detail for ID:', id); // 디버깅용
                 const data = await getSermonDetail(id);
+                console.log('Received sermon data:', data); // 디버깅용
                 setSermon(data);
             } catch (error) {
                 console.error('Error fetching sermon detail:', error);
+                setError(error);
             } finally {
                 setLoading(false);
             }
@@ -206,13 +211,12 @@ const SermonDetailPage = ({ isBookmarkView, onBookmarkToggle }) => {
         }
     };
 
-    if (loading) {
-        return <LoadingText>로딩 중...</LoadingText>;
-    }
+    if (loading) return <LoadingText>로딩 중...</LoadingText>;
+    if (error) return <EmptyText>설교를 불러오는 중 오류가 발생했습니다.</EmptyText>;
+    if (!sermon) return <EmptyText>설교를 찾을 수 없습니다.</EmptyText>;
 
-    if (!sermon) {
-        return <EmptyText>설교를 찾을 수 없습니다.</EmptyText>;
-    }
+    // 디버깅용 콘솔 로그
+    console.log('Rendering sermon:', sermon);
 
     return (
         <Container>
@@ -230,8 +234,31 @@ const SermonDetailPage = ({ isBookmarkView, onBookmarkToggle }) => {
                     </BackButton>
                     {!isHeaderExpanded && (
                         <CompactHeader>
-                            <Label>설교 제목</Label>
-                            <CompactTitle>{sermon.sermonTitle}</CompactTitle>
+                            <div>
+                                <CompactMeta>
+                                    <CompactDate>
+                                        설교일:{' '}
+                                        {new Date(sermon.sermonDate).toLocaleDateString('ko-KR', {
+                                            year: 'numeric',
+                                            month: 'long',
+                                            day: 'numeric',
+                                        })}
+                                    </CompactDate>
+                                    <CompactDate>
+                                        작성일:{' '}
+                                        {new Date(sermon.createdAt).toLocaleDateString('ko-KR', {
+                                            year: 'numeric',
+                                            month: 'long',
+                                            day: 'numeric',
+                                        })}
+                                    </CompactDate>
+                                </CompactMeta>
+                                <CompactTitle>{sermon.sermonTitle}</CompactTitle>
+                                <CompactScripture>
+                                    <span>{sermon.mainScripture}</span>
+                                    {sermon.additionalScripture && <span>{sermon.additionalScripture}</span>}
+                                </CompactScripture>
+                            </div>
                         </CompactHeader>
                     )}
                     <ActionButtons>
@@ -360,8 +387,55 @@ const HeaderContainer = styled.div`
 `;
 
 const CompactHeader = styled.div`
-    display: block;
-    padding: 8px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    flex: 1;
+    margin: 0 40px;
+    text-align: center;
+`;
+
+const CompactMeta = styled.div`
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: 4px;
+`;
+
+const CompactDate = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #666;
+    font-size: 13px;
+
+    &:not(:last-child)::after {
+        content: '';
+        width: 3px;
+        height: 3px;
+        background: #ccc;
+        border-radius: 50%;
+        margin-left: 8px;
+    }
+`;
+
+const CompactScripture = styled.div`
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    justify-content: center;
+    margin-top: 4px;
+    flex-wrap: wrap;
+
+    span {
+        font-size: 13px;
+        color: #482895;
+        padding: 4px 12px;
+        background: #eee6ff;
+        border-radius: 6px;
+        border: 1px solid #d4c4ff;
+    }
 `;
 
 const CompactTitle = styled.h1`

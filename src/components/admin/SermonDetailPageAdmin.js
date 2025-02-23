@@ -164,8 +164,31 @@ const SermonDetailPageAdmin = () => {
                     </BackButton>
                     {!isHeaderExpanded && (
                         <CompactHeader>
-                            <Label>설교 제목</Label>
-                            <CompactTitle>{sermon.sermonTitle}</CompactTitle>
+                            <div>
+                                <CompactMeta>
+                                    <CompactDate>
+                                        설교일:{' '}
+                                        {new Date(sermon.sermonDate).toLocaleDateString('ko-KR', {
+                                            year: 'numeric',
+                                            month: 'long',
+                                            day: 'numeric',
+                                        })}
+                                    </CompactDate>
+                                    <CompactDate>
+                                        작성일:{' '}
+                                        {new Date(sermon.createdAt).toLocaleDateString('ko-KR', {
+                                            year: 'numeric',
+                                            month: 'long',
+                                            day: 'numeric',
+                                        })}
+                                    </CompactDate>
+                                </CompactMeta>
+                                <CompactTitle>{sermon.sermonTitle}</CompactTitle>
+                                <CompactScripture>
+                                    <span>{sermon.mainScripture}</span>
+                                    {sermon.additionalScripture && <span>{sermon.additionalScripture}</span>}
+                                </CompactScripture>
+                            </div>
                         </CompactHeader>
                     )}
                     <ActionButtons>
@@ -292,10 +315,55 @@ const TopBar = styled.div`
 `;
 
 const CompactHeader = styled.div`
-    display: block;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
     flex: 1;
-    padding: 8px 16px;
+    margin: 0 40px;
     text-align: center;
+`;
+
+const CompactMeta = styled.div`
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: 4px;
+`;
+
+const CompactDate = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #666;
+    font-size: 13px;
+
+    &:not(:last-child)::after {
+        content: '';
+        width: 3px;
+        height: 3px;
+        background: #ccc;
+        border-radius: 50%;
+        margin-left: 8px;
+    }
+`;
+
+const CompactScripture = styled.div`
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    justify-content: center;
+    margin-top: 4px;
+    flex-wrap: wrap;
+
+    span {
+        font-size: 13px;
+        color: #482895;
+        padding: 4px 12px;
+        background: #eee6ff;
+        border-radius: 6px;
+        border: 1px solid #d4c4ff;
+    }
 `;
 
 const CompactTitle = styled.h1`
