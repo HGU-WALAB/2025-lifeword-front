@@ -10,6 +10,7 @@ import AuthCallback from './components/login/AuthCallback';
 import SignUpPageSocial from './components/login/SignUpPageSocial';
 import SignUpPageBibly from './components/login/SignUpPageBibly';
 import BookmarkSermonDetailPage from './components/mypage/BookmarkSermonDetailPage';
+import SermonDetailPage from './components/sermon/SermonDetailPage';
 
 const GlobalStyle = createGlobalStyle`
   body {
@@ -55,6 +56,8 @@ function App() {
                             }
                         >
                             <Route path="mypage/sermon/:id" element={<BookmarkSermonDetailPage />} />
+                            <Route path="sermon-list/:id" element={<SermonDetailPage />} />
+                            <Route path="admin/sermons/:id" element={<SermonDetailPage />} />
                         </Route>
                     </Routes>
                 </Router>
