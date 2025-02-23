@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
-import { Search, LayoutGrid, List, RefreshCcw, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, LayoutGrid, List, RefreshCcw, ChevronDown, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { useUserState } from '../../recoil/utils';
 import { useRecoilValue } from 'recoil';
 import { isNavExpandedState } from '../../recoil/atoms';
@@ -470,6 +470,10 @@ const SermonListPage = () => {
                         >
                             내 비공개 설교
                         </TabButton>
+                        <AddSermonButton onClick={() => navigate('/main/add-sermon')}>
+                            <Plus size={18} className="rotate-icon" />
+                            설교 작성
+                        </AddSermonButton>
                     </CategoryTabs>
 
                     <ControlBar>
@@ -507,7 +511,7 @@ const SermonListPage = () => {
                                     value={itemsPerPage}
                                     onChange={(e) => {
                                         setItemsPerPage(Number(e.target.value));
-                                        setCurrentPage(1); // 페이지 사이즈 변경 시 첫 페이지로 리셋
+                                        setCurrentPage(1);
                                     }}
                                 >
                                     <option value={10}>10개씩 보기</option>
@@ -1347,6 +1351,34 @@ const PageNumber = styled.button`
 const Ellipsis = styled.span`
     color: #666;
     padding: 0 4px;
+`;
+
+const AddSermonButton = styled.button`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: #6b4ee6;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    margin-left: auto;
+    transition: all 0.2s ease;
+
+    &:hover {
+        background: #5a3eb8;
+        transform: translateY(-1px);
+    }
+
+    .rotate-icon {
+        transition: transform 0.3s ease;
+    }
+
+    &:hover .rotate-icon {
+        transform: rotate(90deg);
+    }
 `;
 
 export default SermonListPage;
