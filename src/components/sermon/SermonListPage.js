@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import styled from 'styled-components';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import {
     Search,
     LayoutGrid,
@@ -102,28 +102,39 @@ const BIBLE_BOOKS = [
 
 const SermonListPage = () => {
     const navigate = useNavigate();
+    const location = useLocation();
+    const [searchParams, setSearchParams] = useSearchParams();
+    const { userId, isAdmin } = useUserState();
+
     const [sermons, setSermons] = useState([]);
-    const [viewType, setViewType] = useState('grid');
-    const [selectedCategory, setSelectedCategory] = useState('public');
-    const [searchTerm, setSearchTerm] = useState('');
-    const [itemsPerPage, setItemsPerPage] = useState(10);
-    const [sortBy, setSortBy] = useState('newest');
-    const isNavExpanded = useRecoilValue(isNavExpandedState);
-    const { userId } = useUserState();
-    const [currentPage, setCurrentPage] = useState(1);
+    const [viewType, setViewType] = useState(searchParams.get('viewType') || 'grid');
+    const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || 'public');
+    const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
+    const [itemsPerPage, setItemsPerPage] = useState(Number(searchParams.get('perPage')) || 10);
+    const [sortBy, setSortBy] = useState(searchParams.get('sort') || 'newest');
+    const [currentPage, setCurrentPage] = useState(Number(searchParams.get('page')) || 1);
+    const [showFilters, setShowFilters] = useState(false);
+    const [showCalendar, setShowCalendar] = useState(false);
+    const [loading, setLoading] = useState(false);
     const [totalPages, setTotalPages] = useState(1);
+    const isNavExpanded = useRecoilValue(isNavExpandedState);
+    const { userId: userUserId } = useUserState();
     const [isScrolled, setIsScrolled] = useState(false);
     const filterSectionRef = useRef(null);
     const searchInputRef = useRef(null);
     const scrolledSearchInputRef = useRef(null);
 
-    const [filters, setFilters] = useState({
-        worshipTypes: [],
-        bibleBooks: [],
-        authors: [],
+    const [filters, setFilters] = useState(() => {
+        return {
+            worshipTypes: searchParams.get('worship')?.split(',').filter(Boolean) || [],
+            bibleBooks: searchParams.get('bible')?.split(',').filter(Boolean) || [],
+            authors: [],
+            dateFilter: searchParams.get('dateFilter')
+                ? JSON.parse(decodeURIComponent(searchParams.get('dateFilter')))
+                : null,
+        };
     });
 
-    // 날짜 필터 상태
     const [tempDateFilter, setTempDateFilter] = useState({
         type: 'single',
         singleDate: '',
@@ -139,10 +150,9 @@ const SermonListPage = () => {
         date: false,
     });
 
-    const [mainSearchTerm, setMainSearchTerm] = useState('');
-    const [filterSearchTerm, setFilterSearchTerm] = useState('');
-
-    const [activeSearchTerm, setActiveSearchTerm] = useState('');
+    const [activeSearchTerm, setActiveSearchTerm] = useState(searchParams.get('activeSearch') || '');
+    const [mainSearchTerm, setMainSearchTerm] = useState(searchParams.get('activeSearch') || '');
+    const [filterSearchTerm, setFilterSearchTerm] = useState(searchParams.get('activeSearch') || '');
 
     const currentSermons = sermons;
 
@@ -177,7 +187,7 @@ const SermonListPage = () => {
         async (searchKeyword = null) => {
             try {
                 const params = {
-                    userId,
+                    userId: userUserId,
                     keyword: searchKeyword || searchTerm || null,
                     searchType: searchKeyword || searchTerm ? 2 : null,
                     sort: getSortParam(sortBy),
@@ -206,17 +216,15 @@ const SermonListPage = () => {
                 setSermons([]);
             }
         },
-        [userId, sortBy, filters, currentPage, itemsPerPage, selectedCategory, searchTerm]
+        [userUserId, sortBy, filters, currentPage, itemsPerPage, selectedCategory, searchTerm]
     );
 
-    // 검색어 입력 핸들러 (검색 실행하지 않고 상태만 업데이트)
     const handleSearchChange = (e) => {
         const newTerm = e.target.value;
         setMainSearchTerm(newTerm);
         setFilterSearchTerm(newTerm);
     };
 
-    // 엔터 키 검색 핸들러
     const handleKeyPress = (e) => {
         if (e.key === 'Enter') {
             setCurrentPage(1);
@@ -248,7 +256,6 @@ const SermonListPage = () => {
             return newFilters;
         });
         setCurrentPage(1);
-        fetchSermons();
     };
 
     const resetFilters = () => {
@@ -292,26 +299,28 @@ const SermonListPage = () => {
         fetchSermons();
     };
 
-    const applyDateFilter = () => {
+    const applyDateFilter = async () => {
+        let newFilters;
         if (tempDateFilter.type === 'single' && tempDateFilter.singleDate) {
-            setFilters((prev) => ({
-                ...prev,
-                dateFilter: {
-                    type: 'single',
-                    date: tempDateFilter.singleDate,
-                },
-            }));
+            newFilters = {
+                type: 'single',
+                date: tempDateFilter.singleDate,
+            };
         } else if (tempDateFilter.type === 'range' && tempDateFilter.range.startDate && tempDateFilter.range.endDate) {
-            setFilters((prev) => ({
-                ...prev,
-                dateFilter: {
-                    type: 'range',
-                    ...tempDateFilter.range,
-                },
-            }));
+            newFilters = {
+                type: 'range',
+                ...tempDateFilter.range,
+            };
         }
-        setCurrentPage(1);
-        fetchSermons();
+
+        if (newFilters) {
+            await setFilters((prev) => ({
+                ...prev,
+                dateFilter: newFilters,
+            }));
+            setCurrentPage(1);
+            // fetchSermons는 useEffect를 통해 자동으로 호출됩니다
+        }
     };
 
     const removeFilter = (type, value) => {
@@ -327,7 +336,6 @@ const SermonListPage = () => {
         }
     };
 
-    // 아코디언 토글 함수
     const toggleAccordion = (sectionName) => {
         setExpandedFilters((prev) => ({
             ...prev,
@@ -335,7 +343,6 @@ const SermonListPage = () => {
         }));
     };
 
-    // 날짜 필터 토글 함수
     const toggleDateFilterType = () => {
         setTempDateFilter((prev) => ({
             ...prev,
@@ -372,14 +379,12 @@ const SermonListPage = () => {
                     const buffer = 50;
                     const currentScrollY = window.scrollY;
 
-                    // 스크롤 상태 변경
                     if (currentScrollY > scrollThreshold + buffer && !isScrolled) {
                         setIsScrolled(true);
                     } else if (currentScrollY < scrollThreshold - buffer && isScrolled) {
                         setIsScrolled(false);
                     }
 
-                    // 타이핑 중이 아닐 때만 포커스 이동
                     if (!isTyping) {
                         const activeElement = document.activeElement;
                         const isSearchFocused =
@@ -421,7 +426,6 @@ const SermonListPage = () => {
         };
     }, [isScrolled]);
 
-    // 검색어 태그 제거 핸들러
     const removeSearchTag = () => {
         setActiveSearchTerm('');
         setSearchTerm('');
@@ -439,12 +443,11 @@ const SermonListPage = () => {
 
     const handleDeleteBookmark = async () => {
         try {
-            // 북마크 상태 확인 및 북마크 ID 가져오기
-            const bookmarksResponse = await getBookmarks(userId);
+            const bookmarksResponse = await getBookmarks(userUserId);
             const bookmarkedSermon = bookmarksResponse.sermons.find((b) => b.sermonId === bookmarkToDelete);
 
             if (bookmarkedSermon) {
-                await deleteBookmark(userId, bookmarkedSermon.bookmarkId);
+                await deleteBookmark(userUserId, bookmarkedSermon.bookmarkId);
                 setShowDeleteBookmarkModal(false);
                 setBookmarkToDelete(null);
                 fetchSermons();
@@ -456,6 +459,48 @@ const SermonListPage = () => {
             alert('북마크 삭제 중 오류가 발생했습니다.');
         }
     };
+
+    const updateUrlParams = useCallback(() => {
+        const params = new URLSearchParams();
+
+        if (viewType !== 'grid') params.set('viewType', viewType);
+        if (selectedCategory !== 'public') params.set('category', selectedCategory);
+        if (searchTerm) params.set('search', searchTerm);
+        if (activeSearchTerm) params.set('activeSearch', activeSearchTerm);
+        if (itemsPerPage !== 10) params.set('perPage', itemsPerPage.toString());
+        if (sortBy !== 'newest') params.set('sort', sortBy);
+        if (currentPage !== 1) params.set('page', currentPage.toString());
+
+        if (filters.worshipTypes.length) params.set('worship', filters.worshipTypes.join(','));
+        if (filters.bibleBooks.length) params.set('bible', filters.bibleBooks.join(','));
+        if (filters.dateFilter) params.set('dateFilter', encodeURIComponent(JSON.stringify(filters.dateFilter)));
+
+        setSearchParams(params);
+    }, [
+        viewType,
+        selectedCategory,
+        searchTerm,
+        activeSearchTerm,
+        itemsPerPage,
+        sortBy,
+        currentPage,
+        filters,
+        setSearchParams,
+    ]);
+
+    useEffect(() => {
+        updateUrlParams();
+    }, [
+        viewType,
+        selectedCategory,
+        searchTerm,
+        activeSearchTerm,
+        itemsPerPage,
+        sortBy,
+        currentPage,
+        filters,
+        updateUrlParams,
+    ]);
 
     return (
         <Container isNavExpanded={isNavExpanded}>
@@ -610,7 +655,6 @@ const SermonListPage = () => {
                         </FilterItem>
                     </FilterAccordion>
 
-                    {/* 스크롤 시 표시될 컨트롤 패널 */}
                     <ScrolledControls isVisible={isScrolled}>
                         <SearchBar compact isNavExpanded={isNavExpanded}>
                             <Search size={18} />
@@ -726,7 +770,6 @@ const SermonListPage = () => {
                                     <RemoveButton onClick={removeSearchTag}>×</RemoveButton>
                                 </FilterTag>
                             )}
-                            {/* 날짜 필터 태그 */}
                             {filters.dateFilter?.type === 'single' && filters.dateFilter.date && (
                                 <FilterTag>
                                     <TagText>날짜: {filters.dateFilter.date}</TagText>
@@ -743,7 +786,6 @@ const SermonListPage = () => {
                                         <RemoveButton onClick={() => removeFilter('dateFilter')}>×</RemoveButton>
                                     </FilterTag>
                                 )}
-                            {/* 기존 필터 태그들 */}
                             {filters.bibleBooks.map((book) => (
                                 <FilterTag key={book}>
                                     <TagText>{book}</TagText>

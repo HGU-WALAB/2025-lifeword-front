@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import styled from 'styled-components';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import {
     Search,
     LayoutGrid,
@@ -130,25 +130,31 @@ const ActionButton = styled.button`
 
 const SermonManagementPage = () => {
     const navigate = useNavigate();
-    const [sermons, setSermons] = useState([]);
-    const [viewType, setViewType] = useState('grid');
-    const [selectedCategory, setSelectedCategory] = useState('public');
-    const [searchTerm, setSearchTerm] = useState('');
-    const [itemsPerPage, setItemsPerPage] = useState(10);
-    const [sortBy, setSortBy] = useState('newest');
-    const isNavExpanded = useRecoilValue(isNavExpandedState);
+    const location = useLocation();
+    const [searchParams, setSearchParams] = useSearchParams();
     const { userId } = useUserState();
-    const [currentPage, setCurrentPage] = useState(1);
+    const [sermons, setSermons] = useState([]);
+    const [viewType, setViewType] = useState(searchParams.get('viewType') || 'grid');
+    const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || 'all');
+    const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
+    const [itemsPerPage, setItemsPerPage] = useState(Number(searchParams.get('perPage')) || 10);
+    const [sortBy, setSortBy] = useState(searchParams.get('sort') || 'newest');
+    const [currentPage, setCurrentPage] = useState(Number(searchParams.get('page')) || 1);
+    const isNavExpanded = useRecoilValue(isNavExpandedState);
     const [totalPages, setTotalPages] = useState(1);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [sermonToDelete, setSermonToDelete] = useState(null);
     const [selectedSermonUserId, setSelectedSermonUserId] = useState(null);
 
-    const [filters, setFilters] = useState({
-        worshipTypes: [],
-        bibleBooks: [],
-        authors: [],
-        dateFilter: null,
+    const [filters, setFilters] = useState(() => {
+        return {
+            worshipTypes: searchParams.get('worship')?.split(',').filter(Boolean) || [],
+            bibleBooks: searchParams.get('bible')?.split(',').filter(Boolean) || [],
+            authors: [],
+            dateFilter: searchParams.get('dateFilter')
+                ? JSON.parse(decodeURIComponent(searchParams.get('dateFilter')))
+                : null,
+        };
     });
 
     const [expandedFilters, setExpandedFilters] = useState({
@@ -158,9 +164,9 @@ const SermonManagementPage = () => {
     });
 
     // 검색 관련 상태
-    const [mainSearchTerm, setMainSearchTerm] = useState('');
-    const [filterSearchTerm, setFilterSearchTerm] = useState('');
-    const [activeSearchTerm, setActiveSearchTerm] = useState('');
+    const [activeSearchTerm, setActiveSearchTerm] = useState(searchParams.get('activeSearch') || '');
+    const [mainSearchTerm, setMainSearchTerm] = useState(searchParams.get('activeSearch') || '');
+    const [filterSearchTerm, setFilterSearchTerm] = useState(searchParams.get('activeSearch') || '');
     const [isScrolled, setIsScrolled] = useState(false);
 
     const searchInputRef = useRef(null);
@@ -354,25 +360,28 @@ const SermonManagementPage = () => {
     };
 
     // 날짜 필터 적용 함수
-    const applyDateFilter = () => {
+    const applyDateFilter = async () => {
+        let newFilters;
         if (tempDateFilter.type === 'single' && tempDateFilter.singleDate) {
-            setFilters((prev) => ({
-                ...prev,
-                dateFilter: {
-                    type: 'single',
-                    date: tempDateFilter.singleDate,
-                },
-            }));
+            newFilters = {
+                type: 'single',
+                date: tempDateFilter.singleDate,
+            };
         } else if (tempDateFilter.type === 'range' && tempDateFilter.range.startDate && tempDateFilter.range.endDate) {
-            setFilters((prev) => ({
-                ...prev,
-                dateFilter: {
-                    type: 'range',
-                    ...tempDateFilter.range,
-                },
-            }));
+            newFilters = {
+                type: 'range',
+                ...tempDateFilter.range,
+            };
         }
-        setCurrentPage(1);
+
+        if (newFilters) {
+            await setFilters((prev) => ({
+                ...prev,
+                dateFilter: newFilters,
+            }));
+            setCurrentPage(1);
+            // fetchSermons는 useEffect를 통해 자동으로 호출됩니다
+        }
     };
 
     // 필터 제거 함수
@@ -432,7 +441,7 @@ const SermonManagementPage = () => {
         }));
     };
 
-    // 날짜 입력 핸들러 수정
+    // 날짜 입력 핸들러
     const handleSingleDateChange = (e) => {
         setTempDateFilter((prev) => ({
             ...prev,
@@ -450,7 +459,7 @@ const SermonManagementPage = () => {
         }));
     };
 
-    // 날짜 필터 토글 함수 추가
+    // 날짜 필터 토글 함수
     const toggleDateFilterType = () => {
         setTempDateFilter((prev) => ({
             ...prev,
@@ -498,6 +507,50 @@ const SermonManagementPage = () => {
     useEffect(() => {
         fetchSermons();
     }, [fetchSermons, filters]);
+
+    // URL 파라미터 업데이트 함수
+    const updateUrlParams = useCallback(() => {
+        const params = new URLSearchParams();
+
+        if (viewType !== 'grid') params.set('viewType', viewType);
+        if (selectedCategory !== 'all') params.set('category', selectedCategory);
+        if (searchTerm) params.set('search', searchTerm);
+        if (activeSearchTerm) params.set('activeSearch', activeSearchTerm);
+        if (itemsPerPage !== 10) params.set('perPage', itemsPerPage.toString());
+        if (sortBy !== 'newest') params.set('sort', sortBy);
+        if (currentPage !== 1) params.set('page', currentPage.toString());
+
+        if (filters.worshipTypes.length) params.set('worship', filters.worshipTypes.join(','));
+        if (filters.bibleBooks.length) params.set('bible', filters.bibleBooks.join(','));
+        if (filters.dateFilter) params.set('dateFilter', encodeURIComponent(JSON.stringify(filters.dateFilter)));
+
+        setSearchParams(params);
+    }, [
+        viewType,
+        selectedCategory,
+        searchTerm,
+        activeSearchTerm,
+        itemsPerPage,
+        sortBy,
+        currentPage,
+        filters,
+        setSearchParams,
+    ]);
+
+    // URL 파라미터 변경 시 상태 업데이트
+    useEffect(() => {
+        updateUrlParams();
+    }, [
+        viewType,
+        selectedCategory,
+        searchTerm,
+        activeSearchTerm,
+        itemsPerPage,
+        sortBy,
+        currentPage,
+        filters,
+        updateUrlParams,
+    ]);
 
     return (
         <Container isNavExpanded={isNavExpanded}>
