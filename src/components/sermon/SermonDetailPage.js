@@ -31,7 +31,7 @@ import SermonEditor from '../Editor/SermonEditor';
 const GlobalStyle = createGlobalStyle`
     @media print {
         @page {
-            margin: 0;
+            margin: 20mm;
             size: auto;
         }
         
@@ -43,7 +43,6 @@ const GlobalStyle = createGlobalStyle`
         .print-container {
             visibility: visible;
             position: relative;
-            padding: 20mm;
             margin: 0;
             width: 100%;
         }
@@ -54,9 +53,13 @@ const GlobalStyle = createGlobalStyle`
             color-adjust: exact !important;
             print-color-adjust: exact !important;
         }
+
+        /* 페이지 나눔 시 내용이 잘리지 않도록 설정 */
+        p, h1, h2, h3, h4, h5, h6 {
+            break-inside: avoid;
+        }
     }
 
-    // 모달이 열려있을 때 body 스크롤 방지
     body {
         overflow: ${(props) => (props.hideScroll ? 'hidden' : 'auto')};
     }
@@ -242,48 +245,143 @@ const SermonDetailPage = ({ isBookmarkView, onBookmarkToggle }) => {
     };
 
     const handlePrint = () => {
-        const printContainer = document.createElement('div');
-        printContainer.className = 'print-container';
+        const printContent = document.createElement('div');
+        printContent.className = 'print-container';
 
+        // 메타 정보 섹션 추가
+        const metaSection = document.createElement('div');
+        metaSection.className = 'print-meta-section';
+        metaSection.innerHTML = `
+            <h1>${sermon.sermonTitle}</h1>
+            <div class="print-meta-info">
+                <div class="print-scripture">
+                    <strong>본문:</strong> ${sermon.mainScripture}
+                    ${sermon.additionalScripture ? `<br/>${sermon.additionalScripture}` : ''}
+                </div>
+                <div class="print-details">
+                    <p><strong>설교자:</strong> ${sermon.ownerName}</p>
+                    <p><strong>설교일:</strong> ${new Date(sermon.sermonDate).toLocaleDateString('ko-KR', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                    })}</p>
+                    <p><strong>예배:</strong> ${sermon.worshipType}</p>
+                </div>
+                ${
+                    sermon.summary
+                        ? `
+                    <div class="print-summary">
+                        <strong>요약:</strong>
+                        <p>${sermon.summary}</p>
+                    </div>
+                `
+                        : ''
+                }
+            </div>
+        `;
+
+        // 기존 내용 추가
         const content = document.querySelector('#printable-content').cloneNode(true);
-        printContainer.appendChild(content);
 
-        const style = document.createElement('style');
-        style.textContent = `
-        @media print {
-            body > *:not(.print-container) {
-                display: none;
-            }
-            .print-container {
-                width: 100%;
-                padding: 20mm;
-                margin: 0;
-                left: 0;
-                position: absolute;
-                box-sizing: border-box;
-            }
-            .print-container #printable-content {
-                width: 100% !important;
-                position: relative !important;
-                margin: 0 !important;
-                padding: 0 !important;
-                left: 0 !important;
-            }
-            .print-container .sermon-content {
-                margin: 0 !important;
-                padding: 0 !important;
-                max-width: 100% !important;
-            }
-        }
-    `;
+        printContent.appendChild(metaSection);
+        printContent.appendChild(content);
 
-        document.body.appendChild(style);
-        document.body.appendChild(printContainer);
+        const printWindow = window.open('', '', 'width=800,height=600');
+        printWindow.document.write(`
+            <html>
+                <head>
+                    <style>
+                        @page {
+                            margin: 20mm;
+                            size: auto;
+                        }
+                        body {
+                            font-family: 'Noto Sans KR', sans-serif;
+                            line-height: 1.6;
+                            color: #333;
+                            -webkit-print-color-adjust: exact !important;
+                            print-color-adjust: exact !important;
+                        }
+                        .print-container {
+                            max-width: 100%;
+                        }
+                        .print-meta-section {
+                            margin-bottom: 40px;
+                            padding-bottom: 20px;
+                            border-bottom: 2px solid #e9ecef;
+                        }
+                        .print-meta-section h1 {
+                            font-size: 28px;
+                            margin-bottom: 24px;
+                            color: #333;
+                            font-weight: 600;
+                        }
+                        .print-meta-info {
+                            font-size: 14px;
+                            color: #495057;
+                        }
+                        .print-scripture {
+                            margin-bottom: 20px;
+                            padding: 16px;
+                            background: #f8f9fa;
+                            border-radius: 8px;
+                            border: 1px solid #e9ecef;
+                        }
+                        .print-scripture strong {
+                            color: #4f3296;
+                            display: block;
+                            margin-bottom: 8px;
+                        }
+                        .print-details {
+                            margin-bottom: 20px;
+                            display: grid;
+                            grid-template-columns: repeat(3, 1fr);
+                            gap: 16px;
+                        }
+                        .print-details p {
+                            margin: 4px 0;
+                        }
+                        .print-details strong {
+                            color: #4f3296;
+                            display: block;
+                            margin-bottom: 4px;
+                        }
+                        .print-summary {
+                            background: #f8f9fa;
+                            padding: 16px;
+                            border-radius: 8px;
+                            border: 1px solid #e9ecef;
+                        }
+                        .print-summary strong {
+                            color: #4f3296;
+                            display: block;
+                            margin-bottom: 8px;
+                        }
+                        .print-summary p {
+                            margin: 0;
+                            color: #495057;
+                        }
+                        /* 기존 컨텐츠 스타일 유지 */
+                        ${ContentStyles}
 
-        window.print();
+                        /* 페이지 나눔 시 내용이 잘리지 않도록 설정 */
+                        p, h1, h2, h3, h4, h5, h6 {
+                            break-inside: avoid;
+                        }
+                    </style>
+                </head>
+                <body>
+                    ${printContent.outerHTML}
+                </body>
+            </html>
+        `);
 
-        document.body.removeChild(style);
-        document.body.removeChild(printContainer);
+        printWindow.document.close();
+        printWindow.focus();
+        setTimeout(() => {
+            printWindow.print();
+            printWindow.close();
+        }, 250);
     };
 
     const toggleBookmark = async () => {

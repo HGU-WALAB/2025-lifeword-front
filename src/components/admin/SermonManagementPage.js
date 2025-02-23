@@ -11,6 +11,7 @@ import {
     ChevronRight,
     Edit2,
     Trash2,
+    BookOpen,
 } from 'lucide-react';
 import { useUserState } from '../../recoil/utils';
 import { useRecoilValue } from 'recoil';
@@ -816,6 +817,10 @@ const SermonManagementPage = () => {
                                             <Scripture>{sermon.additionalScripture}</Scripture>
                                         )}
                                         <WorshipType>{sermon.worshipType}</WorshipType>
+                                        <ReferenceCount>
+                                            <BookOpen size={14} />
+                                            {sermon.textCount || 0}개의 참조
+                                        </ReferenceCount>
                                     </SermonInfo>
                                     <SermonSummary>{sermon.summary}</SermonSummary>
                                     <ActionButtons>
@@ -1700,6 +1705,22 @@ const ApplyButton = styled.button`
 
     &:active {
         transform: translateY(0);
+    }
+`;
+
+const ReferenceCount = styled.span`
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: #6b4ee6;
+    background: #f8f9fa;
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid #e9ecef;
+
+    svg {
+        color: #6b4ee6;
     }
 `;
 
