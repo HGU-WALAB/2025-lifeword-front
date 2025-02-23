@@ -15,7 +15,7 @@ import {
 import { useUserState } from '../../recoil/utils';
 import { useRecoilValue } from 'recoil';
 import { isNavExpandedState } from '../../recoil/atoms';
-import { getFilteredSermonList } from '../../services/APIService';
+import { getFilteredSermonList, deleteBookmark, getBookmarks } from '../../services/APIService';
 
 const WORSHIP_TYPES = [
     '새벽예배',
@@ -145,6 +145,9 @@ const SermonListPage = () => {
     const [activeSearchTerm, setActiveSearchTerm] = useState('');
 
     const currentSermons = sermons;
+
+    const [showDeleteBookmarkModal, setShowDeleteBookmarkModal] = useState(false);
+    const [bookmarkToDelete, setBookmarkToDelete] = useState(null);
 
     const getModeFromCategory = (category) => {
         switch (category) {
@@ -426,6 +429,32 @@ const SermonListPage = () => {
         setFilterSearchTerm('');
         setCurrentPage(1);
         fetchSermons('');
+    };
+
+    const onClickBookmark = (e, sermonId) => {
+        e.stopPropagation();
+        setBookmarkToDelete(sermonId);
+        setShowDeleteBookmarkModal(true);
+    };
+
+    const handleDeleteBookmark = async () => {
+        try {
+            // 북마크 상태 확인 및 북마크 ID 가져오기
+            const bookmarksResponse = await getBookmarks(userId);
+            const bookmarkedSermon = bookmarksResponse.sermons.find((b) => b.sermonId === bookmarkToDelete);
+
+            if (bookmarkedSermon) {
+                await deleteBookmark(userId, bookmarkedSermon.bookmarkId);
+                setShowDeleteBookmarkModal(false);
+                setBookmarkToDelete(null);
+                fetchSermons();
+            } else {
+                throw new Error('북마크를 찾을 수 없습니다.');
+            }
+        } catch (error) {
+            console.error('Error deleting bookmark:', error);
+            alert('북마크 삭제 중 오류가 발생했습니다.');
+        }
     };
 
     return (
@@ -768,7 +797,7 @@ const SermonListPage = () => {
                                     onClick={() => navigate(`/main/sermon-list/detail/${sermon.sermonId}`)}
                                 >
                                     {sermon.bookmarked && (
-                                        <BookmarkIcon>
+                                        <BookmarkIcon onClick={(e) => onClickBookmark(e, sermon.sermonId)}>
                                             <Bookmark size={18} fill="#6b4ee6" strokeWidth={2.5} />
                                         </BookmarkIcon>
                                     )}
@@ -851,6 +880,19 @@ const SermonListPage = () => {
                     </Pagination>
                 </MainContent>
             </ContentWrapper>
+
+            {showDeleteBookmarkModal && (
+                <DeleteBookmarkModal>
+                    <ModalContent>
+                        <h3>북마크 삭제</h3>
+                        <p>이 설교의 북마크를 삭제하시겠습니까?</p>
+                        <ButtonGroup>
+                            <ConfirmButton onClick={handleDeleteBookmark}>삭제</ConfirmButton>
+                            <CancelButton onClick={() => setShowDeleteBookmarkModal(false)}>취소</CancelButton>
+                        </ButtonGroup>
+                    </ModalContent>
+                </DeleteBookmarkModal>
+            )}
         </Container>
     );
 };
@@ -1704,6 +1746,78 @@ const BookmarkIcon = styled.div`
         transform: translateY(-2px);
         box-shadow: 0 4px 12px rgba(107, 78, 230, 0.2);
         background: white;
+    }
+`;
+
+const DeleteBookmarkModal = styled.div`
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+`;
+
+const ModalContent = styled.div`
+    background: white;
+    padding: 24px;
+    border-radius: 16px;
+    width: 320px;
+    text-align: center;
+
+    h3 {
+        margin-bottom: 12px;
+        color: #333;
+        font-size: 18px;
+        font-weight: 600;
+    }
+
+    p {
+        margin-bottom: 24px;
+        color: #666;
+        font-size: 14px;
+    }
+`;
+
+const ButtonGroup = styled.div`
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+`;
+
+const ConfirmButton = styled.button`
+    padding: 8px 24px;
+    background: #6b4ee6;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+        background: #5a3eb8;
+    }
+`;
+
+const CancelButton = styled.button`
+    padding: 8px 24px;
+    background: #f1f3f5;
+    color: #666;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+        background: #e9ecef;
     }
 `;
 
