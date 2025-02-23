@@ -27,11 +27,11 @@ const AuthCallback = () => {
         authFunction(code)
             .then((data) => {
                 if (data.exists) {
-                    document.cookie = `jwt=${data.token}; path=/; SameSite=None; Secure`;
 
                     setUserState({
                         isLoggedIn: true,
                         userId: data.userId,
+                        userName:data.name,
                         userEmail: data.email,
                         job: data.job,
                         role: data.role,
