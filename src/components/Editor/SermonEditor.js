@@ -18,7 +18,7 @@ class SermonEditor extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            editorHtml: props.value || props.initialContent || '',
+            editorHtml: props.initialContent || '',
             isScrolled: false,
         };
         this.quillRef = null;
@@ -83,19 +83,20 @@ class SermonEditor extends Component {
         'blockquote',
     ];
 
-    handleChange = (content) => {
-        this.setState({ editorHtml: content });
+    handleChange = (html) => {
+        this.setState({ editorHtml: html });
         if (this.props.onChange) {
-            this.props.onChange(content);
+            this.props.onChange(html);
         }
     };
 
-    clearEditor() {
-        if (this.quillRef) {
-            const editor = this.quillRef.getEditor();
-            editor.setContents([]);
-        }
-    }
+    clearEditor = () => {
+        this.setState({ editorHtml: '' });
+    };
+
+    getContent = () => {
+        return this.state.editorHtml;
+    };
 
     getEditor() {
         return this.quillRef.getEditor();
@@ -386,6 +387,12 @@ export default React.forwardRef((props, ref) => {
             if (editorRef.current) {
                 editorRef.current.clearEditor();
             }
+        },
+        getContent: () => {
+            if (editorRef.current) {
+                return editorRef.current.getContent();
+            }
+            return '';
         },
     }));
 

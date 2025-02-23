@@ -1,9 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import styled, { createGlobalStyle } from 'styled-components';
-import { getSermonDetail, deleteSermonAdmin, getBookmarks, deleteBookmark } from '../../services/APIService';
-import { ArrowLeft, Pencil, Trash2, Printer, ChevronDown } from 'lucide-react';
+import {
+    getSermonDetail,
+    deleteSermonAdmin,
+    getTextList,
+    deleteText,
+    getTextDetail,
+    updateText,
+} from '../../services/APIService';
+import { ArrowLeft, Pencil, Trash2, Printer, ChevronDown, BookOpen, X, ChevronLeft } from 'lucide-react';
 import { useUserState } from '../../recoil/utils';
+import SermonEditor from '../Editor/SermonEditor';
 
 const GlobalStyle = createGlobalStyle`
     @media print {
@@ -32,6 +40,84 @@ const GlobalStyle = createGlobalStyle`
             print-color-adjust: exact !important;
         }
     }
+
+    body {
+        overflow: ${(props) => (props.hideScroll ? 'hidden' : 'auto')};
+    }
+`;
+
+const ContentStyles = `
+    /* 폰트 크기 */
+    .ql-size-8px { font-size: 8px; }
+    .ql-size-9px { font-size: 9px; }
+    .ql-size-10px { font-size: 10px; }
+    .ql-size-11px { font-size: 11px; }
+    .ql-size-12px { font-size: 12px; }
+    .ql-size-14px { font-size: 14px; }
+    .ql-size-16px { font-size: 16px; }
+    .ql-size-18px { font-size: 18px; }
+    .ql-size-24px { font-size: 24px; }
+    .ql-size-36px { font-size: 36px; }
+    .ql-size-48px { font-size: 48px; }
+    .ql-size-72px { font-size: 72px; }
+    .ql-size-96px { font-size: 96px; }
+
+    /* 폰트 스타일 */
+    .ql-font-noto-sans-kr { font-family: 'Noto Sans KR', sans-serif; }
+    .ql-font-nanum-gothic { font-family: 'Nanum Gothic', sans-serif; }
+    .ql-font-nanum-myeongjo { font-family: 'Nanum Myeongjo', serif; }
+    .ql-font-nanum-pen-script { font-family: 'Nanum Pen Script', cursive; }
+    .ql-font-poor-story { font-family: 'Poor Story', cursive; }
+    .ql-font-jua { font-family: 'Jua', sans-serif; }
+
+    /* 정렬 */
+    .ql-align-center { text-align: center; }
+    .ql-align-right { text-align: right; }
+    .ql-align-justify { text-align: justify; }
+
+    /* 들여쓰기 */
+    .ql-indent-1 { padding-left: 3em; }
+    .ql-indent-2 { padding-left: 6em; }
+    .ql-indent-3 { padding-left: 9em; }
+    .ql-indent-4 { padding-left: 12em; }
+    .ql-indent-5 { padding-left: 15em; }
+    .ql-indent-6 { padding-left: 18em; }
+    .ql-indent-7 { padding-left: 21em; }
+    .ql-indent-8 { padding-left: 24em; }
+
+    /* 기본 스타일 */
+    p { margin: 0 0 1em 0; }
+    strong { font-weight: bold; }
+    em { font-style: italic; }
+    u { text-decoration: underline; }
+    s { text-decoration: line-through; }
+
+    /* 제목 스타일 */
+    h1, h2, h3, h4, h5, h6 {
+        margin: 1.5em 0 0.5em;
+        line-height: 1.2;
+        font-weight: 600;
+    }
+    h1 { font-size: 2em; }
+    h2 { font-size: 1.75em; }
+    h3 { font-size: 1.5em; }
+    h4 { font-size: 1.25em; }
+    h5 { font-size: 1em; }
+    h6 { font-size: 0.875em; }
+
+    /* 리스트 */
+    ul, ol {
+        padding-left: 1.5em;
+        margin: 0 0 1em 0;
+    }
+
+    /* 인용구 */
+    blockquote {
+        border-left: 4px solid #ccc;
+        margin: 1em 0;
+        padding-left: 16px;
+        font-style: italic;
+    }
 `;
 
 const SermonDetailPageAdmin = () => {
@@ -43,6 +129,15 @@ const SermonDetailPageAdmin = () => {
     const currentPath = window.location.pathname;
     const [isHeaderExpanded, setIsHeaderExpanded] = useState(false);
     const [showGuide, setShowGuide] = useState(true);
+    const [showReferenceModal, setShowReferenceModal] = useState(false);
+    const [references, setReferences] = useState([]);
+    const [selectedReference, setSelectedReference] = useState(null);
+    const [selectedReferenceDetail, setSelectedReferenceDetail] = useState(null);
+    const [editingText, setEditingText] = useState(null);
+    const [textTitle, setTextTitle] = useState('');
+    const [isDraft, setIsDraft] = useState(false);
+    const [isEditMode, setIsEditMode] = useState(false);
+    const editorRef = useRef(null);
 
     useEffect(() => {
         const fetchSermonDetail = async () => {
@@ -96,48 +191,380 @@ const SermonDetailPageAdmin = () => {
     };
 
     const handlePrint = () => {
-        const printContainer = document.createElement('div');
-        printContainer.className = 'print-container';
+        const printContent = document.createElement('div');
+        printContent.className = 'print-container';
 
+        // 메타 정보 섹션 추가
+        const metaSection = document.createElement('div');
+        metaSection.className = 'print-meta-section';
+        metaSection.innerHTML = `
+            <h1>${sermon.sermonTitle}</h1>
+            <div class="print-meta-info">
+                <div class="print-scripture">
+                    <strong>본문:</strong> ${sermon.mainScripture}
+                    ${sermon.additionalScripture ? `<br/>${sermon.additionalScripture}` : ''}
+                </div>
+                <div class="print-details">
+                    <p><strong>설교자:</strong> ${sermon.ownerName}</p>
+                    <p><strong>설교일:</strong> ${new Date(sermon.sermonDate).toLocaleDateString('ko-KR', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                    })}</p>
+                    <p><strong>예배:</strong> ${sermon.worshipType}</p>
+                </div>
+                ${
+                    sermon.summary
+                        ? `
+                    <div class="print-summary">
+                        <strong>요약:</strong>
+                        <p>${sermon.summary}</p>
+                    </div>
+                `
+                        : ''
+                }
+            </div>
+        `;
+
+        // 기존 내용 추가
         const content = document.querySelector('#printable-content').cloneNode(true);
-        printContainer.appendChild(content);
 
-        const style = document.createElement('style');
-        style.textContent = `
-        @media print {
-            body > *:not(.print-container) {
-                display: none;
-            }
-            .print-container {
-                width: 100%;
-                padding: 20mm;
-                margin: 0;
-                left: 0;
-                position: absolute;
-                box-sizing: border-box;
-            }
-            .print-container #printable-content {
-                width: 100% !important;
-                position: relative !important;
-                margin: 0 !important;
-                padding: 0 !important;
-                left: 0 !important;
-            }
-            .print-container .sermon-content {
-                margin: 0 !important;
-                padding: 0 !important;
-                max-width: 100% !important;
+        printContent.appendChild(metaSection);
+        printContent.appendChild(content);
+
+        const printWindow = window.open('', '', 'width=800,height=600');
+        printWindow.document.write(`
+            <html>
+                <head>
+                    <style>
+                        @page {
+                            margin: 20mm;
+                            size: auto;
+                        }
+                        body {
+                            font-family: 'Noto Sans KR', sans-serif;
+                            line-height: 1.6;
+                            color: #333;
+                            -webkit-print-color-adjust: exact !important;
+                            print-color-adjust: exact !important;
+                        }
+                        .print-container {
+                            max-width: 100%;
+                        }
+                        .print-meta-section {
+                            margin-bottom: 40px;
+                            padding-bottom: 20px;
+                            border-bottom: 2px solid #e9ecef;
+                        }
+                        .print-meta-section h1 {
+                            font-size: 28px;
+                            margin-bottom: 24px;
+                            color: #333;
+                            font-weight: 600;
+                        }
+                        .print-meta-info {
+                            font-size: 14px;
+                            color: #495057;
+                        }
+                        .print-scripture {
+                            margin-bottom: 20px;
+                            padding: 16px;
+                            background: #f8f9fa;
+                            border-radius: 8px;
+                            border: 1px solid #e9ecef;
+                        }
+                        .print-scripture strong {
+                            color: #4f3296;
+                            display: block;
+                            margin-bottom: 8px;
+                        }
+                        .print-details {
+                            margin-bottom: 20px;
+                            display: grid;
+                            grid-template-columns: repeat(3, 1fr);
+                            gap: 16px;
+                        }
+                        .print-details p {
+                            margin: 4px 0;
+                        }
+                        .print-details strong {
+                            color: #4f3296;
+                            display: block;
+                            margin-bottom: 4px;
+                        }
+                        .print-summary {
+                            background: #f8f9fa;
+                            padding: 16px;
+                            border-radius: 8px;
+                            border: 1px solid #e9ecef;
+                        }
+                        .print-summary strong {
+                            color: #4f3296;
+                            display: block;
+                            margin-bottom: 8px;
+                        }
+                        .print-summary p {
+                            margin: 0;
+                            color: #495057;
+                        }
+                        /* 기존 컨텐츠 스타일 유지 */
+                        ${ContentStyles}
+
+                        /* 페이지 나눔 시 내용이 잘리지 않도록 설정 */
+                        p, h1, h2, h3, h4, h5, h6 {
+                            break-inside: avoid;
+                        }
+                    </style>
+                </head>
+                <body>
+                    ${printContent.outerHTML}
+                </body>
+            </html>
+        `);
+
+        printWindow.document.close();
+        printWindow.focus();
+        setTimeout(() => {
+            printWindow.print();
+            printWindow.close();
+        }, 250);
+    };
+
+    const fetchReferences = async () => {
+        try {
+            const data = await getTextList(id, currentUserId);
+            setReferences(data);
+        } catch (error) {
+            console.error('Error fetching references:', error);
+        }
+    };
+
+    const fetchReferenceDetail = async (sermonId, textId) => {
+        try {
+            const data = await getTextDetail(sermonId, textId, currentUserId);
+            setSelectedReferenceDetail(data);
+        } catch (error) {
+            console.error('Error fetching reference detail:', error);
+            alert('참조 내용을 불러오는 중 오류가 발생했습니다.');
+        }
+    };
+
+    const handleReferenceSelect = async (reference) => {
+        setSelectedReference(reference);
+        await fetchReferenceDetail(id, reference.id);
+    };
+
+    const handleReferenceDelete = async (textId) => {
+        if (window.confirm('정말 삭제하시겠습니까?')) {
+            try {
+                await deleteText(textId, currentUserId);
+                await fetchReferences();
+                setSelectedReference(null);
+                alert('삭제되었습니다.');
+            } catch (error) {
+                console.error('Error deleting reference:', error);
+                alert('삭제 중 오류가 발생했습니다.');
             }
         }
-    `;
+    };
 
-        document.body.appendChild(style);
-        document.body.appendChild(printContainer);
+    const handleReferenceEdit = async (text) => {
+        try {
+            // 상세 내용을 가져옴
+            const detailData = await getTextDetail(id, text.id, currentUserId);
+            setEditingText({
+                ...text,
+                textContent: detailData.textContent,
+            });
+            setTextTitle(text.textTitle);
+            setIsDraft(text.draft);
+            setIsEditMode(true);
+        } catch (error) {
+            console.error('Error fetching text detail for edit:', error);
+            alert('내용을 불러오는 중 오류가 발생했습니다.');
+        }
+    };
 
-        window.print();
+    const handleTextSubmit = async () => {
+        try {
+            const textContent = editorRef.current?.getContent();
+            if (!textTitle.trim()) {
+                alert('제목을 입력해주세요.');
+                return;
+            }
+            if (!textContent) {
+                alert('내용을 입력해주세요.');
+                return;
+            }
 
-        document.body.removeChild(style);
-        document.body.removeChild(printContainer);
+            if (editingText) {
+                // 수정
+                await updateText(editingText.id, currentUserId, textTitle, isDraft, textContent);
+                alert('수정되었습니다.');
+            }
+
+            // 초기화 및 목록 새로고침
+            setIsEditMode(false);
+            setEditingText(null);
+            setIsDraft(false);
+            setTextTitle('');
+            editorRef.current?.clearEditor();
+            await fetchReferences();
+
+            // 상세 내용도 다시 가져오기
+            if (selectedReference) {
+                await fetchReferenceDetail(id, selectedReference.id);
+            }
+        } catch (error) {
+            console.error('Error submitting text:', error);
+            alert('저장 중 오류가 발생했습니다.');
+        }
+    };
+
+    const renderModalContent = () => {
+        if (isEditMode) {
+            return (
+                <ModalContent onClick={(e) => e.stopPropagation()}>
+                    <ModalHeader>
+                        <HeaderLeft>
+                            <BackButton
+                                onClick={() => {
+                                    setIsEditMode(false);
+                                    setEditingText(null);
+                                    setTextTitle('');
+                                    setIsDraft(false);
+                                }}
+                            >
+                                <ChevronLeft size={20} />
+                            </BackButton>
+                            <h2>{editingText ? '참조 수정' : '새 참조 작성'}</h2>
+                        </HeaderLeft>
+                        <HeaderRight>
+                            <SaveButton onClick={handleTextSubmit}>저장</SaveButton>
+                        </HeaderRight>
+                    </ModalHeader>
+                    <EditorContainer>
+                        <EditorHeader>
+                            <TitleInput
+                                value={textTitle}
+                                onChange={(e) => setTextTitle(e.target.value)}
+                                placeholder="제목을 입력하세요"
+                            />
+                            <DraftToggle>
+                                <input
+                                    type="checkbox"
+                                    checked={isDraft}
+                                    onChange={(e) => setIsDraft(e.target.checked)}
+                                    id="draftToggle"
+                                />
+                                <label htmlFor="draftToggle">임시저장</label>
+                            </DraftToggle>
+                        </EditorHeader>
+                        <EditorWrapper>
+                            <SermonEditor ref={editorRef} initialContent={editingText?.textContent || ''} />
+                        </EditorWrapper>
+                    </EditorContainer>
+                </ModalContent>
+            );
+        }
+
+        if (selectedReference) {
+            return (
+                <ModalContent onClick={(e) => e.stopPropagation()}>
+                    <ModalHeader>
+                        <HeaderLeft>
+                            <BackButton onClick={() => setSelectedReference(null)}>
+                                <ChevronLeft size={20} />
+                            </BackButton>
+                            <h2>{selectedReference.textTitle}</h2>
+                        </HeaderLeft>
+                        <HeaderRight>
+                            <IconButton onClick={() => handleReferenceEdit(selectedReference)}>
+                                <Pencil size={18} />
+                            </IconButton>
+                            <IconButton isDelete onClick={() => handleReferenceDelete(selectedReference.id)}>
+                                <Trash2 size={18} />
+                            </IconButton>
+                            <IconButton
+                                onClick={() => {
+                                    setShowReferenceModal(false);
+                                    setSelectedReference(null);
+                                    setSelectedReferenceDetail(null);
+                                }}
+                            >
+                                <X size={18} />
+                            </IconButton>
+                        </HeaderRight>
+                    </ModalHeader>
+                    <ReferenceDetail>
+                        <ReferenceInfo>
+                            <InfoItem>
+                                <ReferenceLabel>작성자</ReferenceLabel>
+                                <Value>{selectedReferenceDetail?.userName || '알 수 없음'}</Value>
+                            </InfoItem>
+                            <InfoItem>
+                                <ReferenceLabel>작성일</ReferenceLabel>
+                                <Value>
+                                    {new Date(
+                                        selectedReferenceDetail?.textCreatedAt || selectedReference.textCreatedAt
+                                    ).toLocaleDateString('ko-KR', {
+                                        year: 'numeric',
+                                        month: 'long',
+                                        day: 'numeric',
+                                    })}
+                                </Value>
+                            </InfoItem>
+                        </ReferenceInfo>
+                        <ReferenceContent
+                            dangerouslySetInnerHTML={{
+                                __html: selectedReferenceDetail?.textContent || '로딩 중...',
+                            }}
+                        />
+                    </ReferenceDetail>
+                </ModalContent>
+            );
+        }
+
+        return (
+            <ModalContent onClick={(e) => e.stopPropagation()}>
+                <ModalHeader>
+                    <h2>참조 목록</h2>
+                    <HeaderRight>
+                        <IconButton onClick={() => setShowReferenceModal(false)}>
+                            <X size={18} />
+                        </IconButton>
+                    </HeaderRight>
+                </ModalHeader>
+                <ReferenceList>
+                    {references.length === 0 ? (
+                        <EmptyState>
+                            <p>등록된 참조가 없습니다.</p>
+                        </EmptyState>
+                    ) : (
+                        references.map((reference) => (
+                            <ReferenceItem key={reference.id} onClick={() => handleReferenceSelect(reference)}>
+                                <ReferenceItemContent>
+                                    <h3>{reference.textTitle}</h3>
+                                    <ReferenceMetaInfo>
+                                        <span>작성자: {reference.userName || '알 수 없음'}</span>
+                                        <span>•</span>
+                                        <span>{new Date(reference.textCreatedAt).toLocaleDateString()}</span>
+                                    </ReferenceMetaInfo>
+                                </ReferenceItemContent>
+                                <ActionButtons onClick={(e) => e.stopPropagation()}>
+                                    <IconButton small onClick={() => handleReferenceEdit(reference)}>
+                                        <Pencil size={14} />
+                                    </IconButton>
+                                    <IconButton small isDelete onClick={() => handleReferenceDelete(reference.id)}>
+                                        <Trash2 size={14} />
+                                    </IconButton>
+                                </ActionButtons>
+                            </ReferenceItem>
+                        ))
+                    )}
+                </ReferenceList>
+            </ModalContent>
+        );
     };
 
     if (loading) {
@@ -149,142 +576,157 @@ const SermonDetailPageAdmin = () => {
     }
 
     return (
-        <Container>
-            <GlobalStyle />
-            <HeaderContainer expanded={isHeaderExpanded} onClick={toggleHeader}>
-                <TopBar>
-                    <BackButton
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(-1);
-                        }}
-                    >
-                        <ArrowLeft size={20} />
-                        <span>뒤로 가기</span>
-                    </BackButton>
-                    {!isHeaderExpanded && (
-                        <CompactHeader>
-                            <div>
-                                <CompactMeta>
-                                    <CompactDate>
-                                        설교일:{' '}
-                                        {new Date(sermon.sermonDate).toLocaleDateString('ko-KR', {
-                                            year: 'numeric',
-                                            month: 'long',
-                                            day: 'numeric',
-                                        })}
-                                    </CompactDate>
-                                    <CompactDate>
-                                        작성일:{' '}
-                                        {new Date(sermon.createdAt).toLocaleDateString('ko-KR', {
-                                            year: 'numeric',
-                                            month: 'long',
-                                            day: 'numeric',
-                                        })}
-                                    </CompactDate>
-                                </CompactMeta>
-                                <CompactTitle>{sermon.sermonTitle}</CompactTitle>
-                                <CompactScripture>
-                                    <span>{sermon.mainScripture}</span>
-                                    {sermon.additionalScripture && <span>{sermon.additionalScripture}</span>}
-                                </CompactScripture>
-                            </div>
-                        </CompactHeader>
-                    )}
-                    <ActionButtons>
-                        <ActionButton
+        <>
+            <GlobalStyle hideScroll={showReferenceModal} />
+            <Container>
+                <HeaderContainer expanded={isHeaderExpanded} onClick={toggleHeader}>
+                    <TopBar>
+                        <BackButton
                             onClick={(e) => {
                                 e.stopPropagation();
-                                handleEdit();
+                                navigate(-1);
                             }}
                         >
-                            <Pencil size={16} />
-                        </ActionButton>
-                        <ActionButton
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                handleDelete();
-                            }}
-                            isDelete
-                        >
-                            <Trash2 size={16} />
-                        </ActionButton>
-                    </ActionButtons>
-                    {showGuide && (
-                        <GuideMessage>
-                            <span>클릭하여 더 자세한 내용을 확인해보세요</span>
-                            <ChevronDown className="bounce" size={24} />
-                        </GuideMessage>
-                    )}
-                </TopBar>
-                {isHeaderExpanded && (
-                    <>
-                        <MetaInfo>
-                            <FormSectionLong>
-                                <Author>작성자: {sermon.ownerName}</Author>
-                                <DateInfo>
-                                    <SermonDate>
-                                        {new Date(sermon.sermonDate).toLocaleDateString('ko-KR', {
-                                            year: 'numeric',
-                                            month: 'long',
-                                            day: 'numeric',
-                                        })}
-                                    </SermonDate>
-                                    <CreatedDate>
-                                        작성일:{' '}
-                                        {new Date(sermon.createdAt).toLocaleDateString('ko-KR', {
-                                            year: 'numeric',
-                                            month: 'long',
-                                            day: 'numeric',
-                                        })}
-                                    </CreatedDate>
-                                </DateInfo>
-                            </FormSectionLong>
-                            <FormSection>
-                                <Label>설교 제목</Label>
-                                <Title>{sermon.sermonTitle}</Title>
-                            </FormSection>
-                        </MetaInfo>
-                        <ScriptureInfo>
-                            <FormSection>
-                                <Label>성경 본문</Label>
-                                <ScriptureContainer>
-                                    <Scripture>{sermon.mainScripture}</Scripture>
-                                    {sermon.additionalScripture && <Scripture>{sermon.additionalScripture}</Scripture>}
-                                </ScriptureContainer>
-                            </FormSection>
-                        </ScriptureInfo>
-                        <ExtraInfo>
-                            <SectionContainer>
-                                <SectionLabel>요약</SectionLabel>
-                                <SectionBox>{sermon.summary}</SectionBox>
-                            </SectionContainer>
-                            {sermon.notes && (
+                            <ArrowLeft size={20} />
+                            <span>뒤로 가기</span>
+                        </BackButton>
+                        {!isHeaderExpanded && (
+                            <CompactHeader>
+                                <div>
+                                    <CompactMeta>
+                                        <CompactDate>
+                                            설교일:{' '}
+                                            {new Date(sermon.sermonDate).toLocaleDateString('ko-KR', {
+                                                year: 'numeric',
+                                                month: 'long',
+                                                day: 'numeric',
+                                            })}
+                                        </CompactDate>
+                                        <CompactDate>
+                                            작성일:{' '}
+                                            {new Date(sermon.createdAt).toLocaleDateString('ko-KR', {
+                                                year: 'numeric',
+                                                month: 'long',
+                                                day: 'numeric',
+                                            })}
+                                        </CompactDate>
+                                    </CompactMeta>
+                                    <CompactTitle>{sermon.sermonTitle}</CompactTitle>
+                                    <CompactScripture>
+                                        <span>{sermon.mainScripture}</span>
+                                        {sermon.additionalScripture && <span>{sermon.additionalScripture}</span>}
+                                    </CompactScripture>
+                                </div>
+                            </CompactHeader>
+                        )}
+                        <HeaderButtonGroup>
+                            <ReferenceButton
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setShowReferenceModal(true);
+                                    fetchReferences();
+                                }}
+                            >
+                                <BookOpen />
+                                참조
+                            </ReferenceButton>
+                            <ActionButton
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleEdit();
+                                }}
+                            >
+                                <Pencil size={16} />
+                            </ActionButton>
+                            <ActionButton
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDelete();
+                                }}
+                                isDelete
+                            >
+                                <Trash2 size={16} />
+                            </ActionButton>
+                        </HeaderButtonGroup>
+                        {showGuide && (
+                            <GuideMessage>
+                                <span>클릭하여 더 자세한 내용을 확인해보세요</span>
+                                <ChevronDown className="bounce" size={24} />
+                            </GuideMessage>
+                        )}
+                    </TopBar>
+                    {isHeaderExpanded && (
+                        <>
+                            <MetaInfo>
+                                <FormSectionLong>
+                                    <Author>작성자: {sermon.ownerName}</Author>
+                                    <DateInfo>
+                                        <SermonDate>
+                                            {new Date(sermon.sermonDate).toLocaleDateString('ko-KR', {
+                                                year: 'numeric',
+                                                month: 'long',
+                                                day: 'numeric',
+                                            })}
+                                        </SermonDate>
+                                        <CreatedDate>
+                                            작성일:{' '}
+                                            {new Date(sermon.createdAt).toLocaleDateString('ko-KR', {
+                                                year: 'numeric',
+                                                month: 'long',
+                                                day: 'numeric',
+                                            })}
+                                        </CreatedDate>
+                                    </DateInfo>
+                                </FormSectionLong>
+                                <FormSection>
+                                    <Label>설교 제목</Label>
+                                    <Title>{sermon.sermonTitle}</Title>
+                                </FormSection>
+                            </MetaInfo>
+                            <ScriptureInfo>
+                                <FormSection>
+                                    <Label>성경 본문</Label>
+                                    <ScriptureContainer>
+                                        <Scripture>{sermon.mainScripture}</Scripture>
+                                        {sermon.additionalScripture && (
+                                            <Scripture>{sermon.additionalScripture}</Scripture>
+                                        )}
+                                    </ScriptureContainer>
+                                </FormSection>
+                            </ScriptureInfo>
+                            <ExtraInfo>
                                 <SectionContainer>
-                                    <SectionLabel>노트</SectionLabel>
-                                    <SectionBox>{sermon.notes}</SectionBox>
+                                    <SectionLabel>요약</SectionLabel>
+                                    <SectionBox>{sermon.summary}</SectionBox>
                                 </SectionContainer>
-                            )}
-                        </ExtraInfo>
-                    </>
-                )}
-            </HeaderContainer>
-            <ContentSection>
-                <Label>설교 내용</Label>
-                <div id="printable-content">
-                    <Content
-                        className="sermon-content"
-                        dangerouslySetInnerHTML={{
-                            __html: sermon.contents[0]?.contentText || '',
-                        }}
-                    />
-                </div>
-            </ContentSection>
-            <PrintButton onClick={handlePrint}>
-                <Printer size={18} />
-                인쇄하기
-            </PrintButton>
-        </Container>
+                                {sermon.notes && (
+                                    <SectionContainer>
+                                        <SectionLabel>노트</SectionLabel>
+                                        <SectionBox>{sermon.notes}</SectionBox>
+                                    </SectionContainer>
+                                )}
+                            </ExtraInfo>
+                        </>
+                    )}
+                </HeaderContainer>
+                <ContentSection>
+                    <Label>설교 내용</Label>
+                    <div id="printable-content">
+                        <Content
+                            className="sermon-content"
+                            dangerouslySetInnerHTML={{
+                                __html: sermon.contents[0]?.contentText || '',
+                            }}
+                        />
+                    </div>
+                </ContentSection>
+                <PrintButton onClick={handlePrint}>
+                    <Printer size={18} />
+                    인쇄하기
+                </PrintButton>
+            </Container>
+            {showReferenceModal && <Modal>{renderModalContent()}</Modal>}
+        </>
     );
 };
 
@@ -399,9 +841,35 @@ const BackButton = styled.button`
     }
 `;
 
-const ActionButtons = styled.div`
+const HeaderButtonGroup = styled.div`
     display: flex;
     gap: 8px;
+    align-items: center;
+`;
+
+const ReferenceButton = styled.button`
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    color: #495057;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+        background: #f1f3f5;
+        border-color: #dee2e6;
+    }
+
+    svg {
+        width: 16px;
+        height: 16px;
+    }
 `;
 
 const ActionButton = styled.button`
@@ -542,93 +1010,10 @@ const ContentSection = styled.div`
 
 const Content = styled.div`
     font-size: 16px;
-    line-height: 1.8;
-    color: #333;
-
-    h1,
-    h2,
-    h3,
-    h4,
-    h5,
-    h6 {
-        margin: 1.5em 0 0.5em;
-        color: #212a3e;
-        font-weight: 600;
-        line-height: 1.3;
-    }
-
-    h1 {
-        font-size: 2em;
-    }
-    h2 {
-        font-size: 1.75em;
-    }
-    h3 {
-        font-size: 1.5em;
-    }
-    h4 {
-        font-size: 1.25em;
-    }
-    h5 {
-        font-size: 1.1em;
-    }
-    h6 {
-        font-size: 1em;
-    }
-
-    p {
-        margin: 1em 0;
-        line-height: 1.8;
-    }
-
-    ul,
-    ol {
-        padding-left: 1.5em;
-        margin: 1em 0;
-    }
-
-    li {
-        margin: 0.5em 0;
-    }
-
-    blockquote {
-        border-left: 4px solid #4f3296;
-        margin: 1.5em 0;
-        padding: 1em 1.5em;
-        background: #f8f9fa;
-        color: #666;
-        font-style: italic;
-    }
-
-    img {
-        max-width: 100%;
-        height: auto;
-        border-radius: 8px;
-        margin: 1em 0;
-    }
-
-    a {
-        color: #4f3296;
-        text-decoration: none;
-        &:hover {
-            text-decoration: underline;
-        }
-    }
-
-    pre {
-        background: #f8f9fa;
-        padding: 1em;
-        border-radius: 8px;
-        overflow-x: auto;
-        margin: 1em 0;
-    }
-
-    code {
-        background: #f3f4f6;
-        padding: 0.2em 0.4em;
-        border-radius: 4px;
-        font-size: 0.9em;
-    }
+    line-height: 1.6;
+    color: #495057;
+    padding: 20px;
+    ${ContentStyles}
 `;
 
 const LoadingText = styled.div`
@@ -724,6 +1109,256 @@ const GuideMessage = styled.div`
         60% {
             transform: translateY(4px);
         }
+    }
+`;
+
+const Modal = styled.div`
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    padding: 20px;
+`;
+
+const ModalContent = styled.div`
+    background: white;
+    width: 95%;
+    max-width: 1200px;
+    height: 90vh;
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+`;
+
+const ModalHeader = styled.div`
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    border-bottom: 1px solid #e9ecef;
+
+    h2 {
+        font-size: 20px;
+        color: #343a40;
+        margin: 0;
+    }
+`;
+
+const HeaderLeft = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 12px;
+`;
+
+const HeaderRight = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+`;
+
+const IconButton = styled.button`
+    width: ${(props) => (props.small ? '28px' : '36px')};
+    height: ${(props) => (props.small ? '28px' : '36px')};
+    border-radius: 8px;
+    border: none;
+    background: ${(props) => (props.isDelete ? '#fee2e2' : '#f8f9fa')};
+    color: ${(props) => (props.isDelete ? '#dc2626' : '#495057')};
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+        background: ${(props) => (props.isDelete ? '#fecaca' : '#f1f3f5')};
+    }
+`;
+
+const ReferenceDetail = styled.div`
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+`;
+
+const ReferenceInfo = styled.div`
+    display: flex;
+    gap: 24px;
+    margin-bottom: 24px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid #e9ecef;
+`;
+
+const InfoItem = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+`;
+
+const ReferenceLabel = styled.span`
+    font-size: 12px;
+    color: #868e96;
+`;
+
+const Value = styled.span`
+    font-size: 14px;
+    color: #495057;
+`;
+
+const ReferenceContent = styled.div`
+    font-size: 16px;
+    line-height: 1.6;
+    color: #495057;
+    padding: 20px;
+    ${ContentStyles}
+`;
+
+const ReferenceList = styled.div`
+    padding: 20px 24px;
+    overflow-y: auto;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+`;
+
+const ReferenceItem = styled.div`
+    padding: 16px;
+    background: #f8f9fa;
+    border-radius: 12px;
+    border: 1px solid #e9ecef;
+    transition: all 0.2s ease;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+
+    &:hover {
+        background: #f1f3f5;
+        border-color: #dee2e6;
+    }
+`;
+
+const ReferenceItemContent = styled.div`
+    h3 {
+        font-size: 16px;
+        color: #343a40;
+        margin: 0 0 8px 0;
+    }
+`;
+
+const ReferenceMetaInfo = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: #868e96;
+
+    span {
+        &:nth-child(2) {
+            color: #ced4da;
+        }
+    }
+`;
+
+const EmptyState = styled.div`
+    text-align: center;
+    padding: 48px 0;
+    color: #868e96;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+`;
+
+const ActionButtons = styled.div`
+    display: flex;
+    gap: 8px;
+`;
+
+const EditorContainer = styled.div`
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding: 20px;
+`;
+
+const EditorHeader = styled.div`
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+`;
+
+const TitleInput = styled.input`
+    flex: 1;
+    padding: 12px;
+    font-size: 16px;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    margin-right: 16px;
+
+    &:focus {
+        outline: none;
+        border-color: #4f3296;
+    }
+`;
+
+const DraftToggle = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    input {
+        width: 16px;
+        height: 16px;
+    }
+
+    label {
+        font-size: 14px;
+        color: #495057;
+        user-select: none;
+    }
+`;
+
+const EditorWrapper = styled.div`
+    flex: 1;
+    overflow: hidden;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+
+    .quill {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .ql-container {
+        flex: 1;
+        overflow: auto;
+    }
+`;
+
+const SaveButton = styled.button`
+    padding: 8px 24px;
+    background: #4f3296;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+        background: #3a2570;
     }
 `;
 
