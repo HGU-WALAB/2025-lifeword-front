@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const BASE_URL = 'http://walab.handong.edu:8080/naimkim_1/api/v1';
+const BASE_URL = 'https://walab.info:8443/lifeword/api/v1';
 
 // User 관련 API
 export const verifyUser = async (email, setUserState) => {
@@ -404,6 +404,84 @@ export const updateSermonAdmin = async (sermonId, sermonData) => {
         return data;
     } catch (error) {
         console.error('Error updating sermon:', error);
+        throw error;
+    }
+};
+
+// Text 관련 API
+export const createText = async (sermonId, userId, isDraft, textTitle, textContent) => {
+    try {
+        const { data } = await axios.post(
+            `${BASE_URL}/text/create`,
+            { textContent },
+            {
+                params: {
+                    sermonId,
+                    userId,
+                    isDraft,
+                    textTitle,
+                },
+            }
+        );
+        return data;
+    } catch (error) {
+        console.error('Error creating text:', error);
+        throw error;
+    }
+};
+
+export const updateText = async (textId, userId, textTitle, isDraft, textContent) => {
+    try {
+        const { data } = await axios.patch(
+            `${BASE_URL}/text/update/${textId}`,
+            { textContent },
+            {
+                params: {
+                    userId,
+                    textTitle,
+                    isDraft,
+                },
+            }
+        );
+        return data;
+    } catch (error) {
+        console.error('Error updating text:', error);
+        throw error;
+    }
+};
+
+export const getTextList = async (sermonId, userId) => {
+    try {
+        const { data } = await axios.get(`${BASE_URL}/text/list/${sermonId}`, {
+            params: { userId },
+        });
+        return data;
+    } catch (error) {
+        console.error('Error getting text list:', error);
+        throw error;
+    }
+};
+
+export const getTextDetail = async (sermonId, textId, userId) => {
+    try {
+        const { data } = await axios.get(`${BASE_URL}/text/${sermonId}/${textId}`, {
+            params: { userId },
+        });
+        return data;
+    } catch (error) {
+        console.error('Error getting text detail:', error);
+        throw error;
+    }
+};
+
+export const deleteText = async (textId, userId) => {
+    try {
+        const { data } = await axios.delete(`${BASE_URL}/text/delete/${textId}`, {
+            params: { userId },
+        });
+        return data;
+    } catch (error) {
+        console.error('Error deleting text:', error);
         throw error;
     }
 };

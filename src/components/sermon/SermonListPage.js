@@ -1,11 +1,22 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import styled from 'styled-components';
-import { useNavigate } from 'react-router-dom';
-import { Search, LayoutGrid, List, RefreshCcw, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
+import {
+    Search,
+    LayoutGrid,
+    List,
+    RefreshCcw,
+    ChevronDown,
+    ChevronLeft,
+    ChevronRight,
+    Plus,
+    Bookmark,
+    BookOpen,
+} from 'lucide-react';
 import { useUserState } from '../../recoil/utils';
 import { useRecoilValue } from 'recoil';
 import { isNavExpandedState } from '../../recoil/atoms';
-import { getFilteredSermonList } from '../../services/APIService';
+import { getFilteredSermonList, deleteBookmark, getBookmarks } from '../../services/APIService';
 
 const WORSHIP_TYPES = [
     '새벽예배',
@@ -92,25 +103,40 @@ const BIBLE_BOOKS = [
 
 const SermonListPage = () => {
     const navigate = useNavigate();
-    const [sermons, setSermons] = useState([]);
-    const [viewType, setViewType] = useState('grid');
-    const [selectedCategory, setSelectedCategory] = useState('public');
-    const [searchTerm, setSearchTerm] = useState('');
-    const [itemsPerPage, setItemsPerPage] = useState(10);
-    const [sortBy, setSortBy] = useState('newest');
-    const isNavExpanded = useRecoilValue(isNavExpandedState);
-    const { userId } = useUserState();
-    const [currentPage, setCurrentPage] = useState(1);
-    const [totalPages, setTotalPages] = useState(1);
+    const location = useLocation();
+    const [searchParams, setSearchParams] = useSearchParams();
+    const { userId, isAdmin } = useUserState();
 
-    const [filters, setFilters] = useState({
-        worshipTypes: [],
-        bibleBooks: [],
-        authors: [],
+    const [sermons, setSermons] = useState([]);
+    const [viewType, setViewType] = useState(searchParams.get('viewType') || 'grid');
+    const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || 'public');
+    const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
+    const [itemsPerPage, setItemsPerPage] = useState(Number(searchParams.get('perPage')) || 10);
+    const [sortBy, setSortBy] = useState(searchParams.get('sort') || 'newest');
+    const [currentPage, setCurrentPage] = useState(Number(searchParams.get('page')) || 1);
+    const [showFilters, setShowFilters] = useState(false);
+    const [showCalendar, setShowCalendar] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [totalPages, setTotalPages] = useState(1);
+    const isNavExpanded = useRecoilValue(isNavExpandedState);
+    const { userId: userUserId } = useUserState();
+    const [isScrolled, setIsScrolled] = useState(false);
+    const filterSectionRef = useRef(null);
+    const searchInputRef = useRef(null);
+    const scrolledSearchInputRef = useRef(null);
+
+    const [filters, setFilters] = useState(() => {
+        return {
+            worshipTypes: searchParams.get('worship')?.split(',').filter(Boolean) || [],
+            bibleBooks: searchParams.get('bible')?.split(',').filter(Boolean) || [],
+            authors: [],
+            dateFilter: searchParams.get('dateFilter')
+                ? JSON.parse(decodeURIComponent(searchParams.get('dateFilter')))
+                : null,
+        };
     });
 
-    // 날짜 필터 상태
-    const [dateFilter, setDateFilter] = useState({
+    const [tempDateFilter, setTempDateFilter] = useState({
         type: 'single',
         singleDate: '',
         range: {
@@ -119,14 +145,20 @@ const SermonListPage = () => {
         },
     });
 
-    // expandedFilters 상태를 객체로!
     const [expandedFilters, setExpandedFilters] = useState({
         bible: false,
         worship: false,
         date: false,
     });
 
+    const [activeSearchTerm, setActiveSearchTerm] = useState(searchParams.get('activeSearch') || '');
+    const [mainSearchTerm, setMainSearchTerm] = useState(searchParams.get('activeSearch') || '');
+    const [filterSearchTerm, setFilterSearchTerm] = useState(searchParams.get('activeSearch') || '');
+
     const currentSermons = sermons;
+
+    const [showDeleteBookmarkModal, setShowDeleteBookmarkModal] = useState(false);
+    const [bookmarkToDelete, setBookmarkToDelete] = useState(null);
 
     const getModeFromCategory = (category) => {
         switch (category) {
@@ -152,39 +184,60 @@ const SermonListPage = () => {
         }
     };
 
-    const fetchSermons = useCallback(async () => {
-        try {
-            const params = {
-                userId,
-                keyword: searchTerm || null,
-                searchType: searchTerm ? 2 : null,
-                sort: getSortParam(sortBy),
-                worshipTypes: filters.worshipTypes,
-                scripture: filters.bibleBooks,
-                page: currentPage,
-                size: itemsPerPage,
-                mode: getModeFromCategory(selectedCategory),
-                startDate: dateFilter.type === 'range' ? dateFilter.range.startDate : dateFilter.singleDate,
-                endDate: dateFilter.type === 'range' ? dateFilter.range.endDate : dateFilter.singleDate,
-            };
+    const fetchSermons = useCallback(
+        async (searchKeyword = null) => {
+            try {
+                const params = {
+                    userId: userUserId,
+                    keyword: searchKeyword || searchTerm || null,
+                    searchType: searchKeyword || searchTerm ? 2 : null,
+                    sort: getSortParam(sortBy),
+                    worshipTypes: filters.worshipTypes,
+                    scripture: filters.bibleBooks,
+                    page: currentPage,
+                    size: itemsPerPage,
+                    mode: getModeFromCategory(selectedCategory),
+                    startDate: filters.dateFilter
+                        ? filters.dateFilter.type === 'range'
+                            ? filters.dateFilter.startDate
+                            : filters.dateFilter.date
+                        : null,
+                    endDate: filters.dateFilter
+                        ? filters.dateFilter.type === 'range'
+                            ? filters.dateFilter.endDate
+                            : filters.dateFilter.date
+                        : null,
+                };
 
-            const response = await getFilteredSermonList(params);
-            setSermons(response.content);
-            setTotalPages(response.totalPage);
-        } catch (error) {
-            console.error('Error fetching sermons:', error);
-            setSermons([]);
+                const response = await getFilteredSermonList(params);
+                setSermons(response.content);
+                setTotalPages(response.totalPage);
+            } catch (error) {
+                console.error('Error fetching sermons:', error);
+                setSermons([]);
+            }
+        },
+        [userUserId, sortBy, filters, currentPage, itemsPerPage, selectedCategory, searchTerm]
+    );
+
+    const handleSearchChange = (e) => {
+        const newTerm = e.target.value;
+        setMainSearchTerm(newTerm);
+        setFilterSearchTerm(newTerm);
+    };
+
+    const handleKeyPress = (e) => {
+        if (e.key === 'Enter') {
+            setCurrentPage(1);
+            setActiveSearchTerm(e.target.value);
+            setSearchTerm(e.target.value);
+            fetchSermons(e.target.value);
         }
-    }, [userId, searchTerm, sortBy, filters, currentPage, itemsPerPage, selectedCategory, dateFilter]);
+    };
 
     useEffect(() => {
         fetchSermons();
     }, [fetchSermons]);
-
-    const handleSearch = async () => {
-        setCurrentPage(1);
-        await fetchSermons();
-    };
 
     const handlePageChange = async (pageNumber) => {
         setCurrentPage(pageNumber);
@@ -203,17 +256,8 @@ const SermonListPage = () => {
             }
             return newFilters;
         });
+        setCurrentPage(1);
     };
-
-    useEffect(() => {
-        const debounceTimer = setTimeout(() => {
-            if (searchTerm) {
-                handleSearch();
-            }
-        }, 300);
-
-        return () => clearTimeout(debounceTimer);
-    }, [searchTerm, handleSearch]);
 
     const resetFilters = () => {
         setFilters({
@@ -223,7 +267,7 @@ const SermonListPage = () => {
             dateFilter: null,
         });
         setSortBy('newest');
-        setDateFilter({
+        setTempDateFilter({
             type: 'single',
             singleDate: '',
             range: {
@@ -231,17 +275,55 @@ const SermonListPage = () => {
                 endDate: '',
             },
         });
+        setSearchTerm('');
+        setMainSearchTerm('');
+        setFilterSearchTerm('');
+        setActiveSearchTerm('');
+        setCurrentPage(1);
+        fetchSermons('');
     };
 
-    // 아코디언 토글 함수
-    const toggleAccordion = (sectionName) => {
-        setExpandedFilters((prev) => ({
+    const removeDateFilter = () => {
+        setFilters((prev) => ({
             ...prev,
-            [sectionName]: !prev[sectionName],
+            dateFilter: null,
         }));
+        setTempDateFilter({
+            type: 'single',
+            singleDate: '',
+            range: {
+                startDate: '',
+                endDate: '',
+            },
+        });
+        setCurrentPage(1);
+        fetchSermons();
     };
 
-    // 필터 태그 제거 함수
+    const applyDateFilter = async () => {
+        let newFilters;
+        if (tempDateFilter.type === 'single' && tempDateFilter.singleDate) {
+            newFilters = {
+                type: 'single',
+                date: tempDateFilter.singleDate,
+            };
+        } else if (tempDateFilter.type === 'range' && tempDateFilter.range.startDate && tempDateFilter.range.endDate) {
+            newFilters = {
+                type: 'range',
+                ...tempDateFilter.range,
+            };
+        }
+
+        if (newFilters) {
+            await setFilters((prev) => ({
+                ...prev,
+                dateFilter: newFilters,
+            }));
+            setCurrentPage(1);
+            // fetchSermons는 useEffect를 통해 자동으로 호출됩니다
+        }
+    };
+
     const removeFilter = (type, value) => {
         if (type === 'dateFilter') {
             removeDateFilter();
@@ -250,70 +332,195 @@ const SermonListPage = () => {
                 ...prev,
                 [type]: prev[type].filter((item) => item !== value),
             }));
+            setCurrentPage(1);
+            fetchSermons();
         }
     };
 
-    // 날짜 필터 제거 함수
-    const removeDateFilter = () => {
-        setFilters((prev) => ({
+    const toggleAccordion = (sectionName) => {
+        setExpandedFilters((prev) => ({
             ...prev,
-            dateFilter: null,
+            [sectionName]: !prev[sectionName],
         }));
-        setDateFilter({
-            type: 'single',
-            singleDate: '',
-            range: {
-                startDate: '',
-                endDate: '',
-            },
-        });
     };
 
-    // 날짜 필터 토글 함수
     const toggleDateFilterType = () => {
-        setDateFilter((prev) => ({
+        setTempDateFilter((prev) => ({
             ...prev,
             type: prev.type === 'single' ? 'range' : 'single',
         }));
     };
 
-    // 날짜 필터 적용 함수
-    const applyDateFilter = () => {
-        if (dateFilter.type === 'single' && dateFilter.singleDate) {
-            setFilters((prev) => ({
-                ...prev,
-                dateFilter: {
-                    type: 'single',
-                    date: dateFilter.singleDate,
-                },
-            }));
-        } else if (dateFilter.type === 'range' && dateFilter.range.startDate && dateFilter.range.endDate) {
-            setFilters((prev) => ({
-                ...prev,
-                dateFilter: {
-                    type: 'range',
-                    ...dateFilter.range,
-                },
-            }));
+    useEffect(() => {
+        let lastScrollY = window.scrollY;
+        let ticking = false;
+        let isTyping = false;
+
+        const handleInputFocus = () => {
+            isTyping = true;
+        };
+
+        const handleInputBlur = () => {
+            isTyping = false;
+        };
+
+        if (searchInputRef.current) {
+            searchInputRef.current.addEventListener('focus', handleInputFocus);
+            searchInputRef.current.addEventListener('blur', handleInputBlur);
+        }
+        if (scrolledSearchInputRef.current) {
+            scrolledSearchInputRef.current.addEventListener('focus', handleInputFocus);
+            scrolledSearchInputRef.current.addEventListener('blur', handleInputBlur);
+        }
+
+        const handleScroll = () => {
+            if (!ticking) {
+                window.requestAnimationFrame(() => {
+                    const scrollThreshold = 200;
+                    const buffer = 50;
+                    const currentScrollY = window.scrollY;
+
+                    if (currentScrollY > scrollThreshold + buffer && !isScrolled) {
+                        setIsScrolled(true);
+                    } else if (currentScrollY < scrollThreshold - buffer && isScrolled) {
+                        setIsScrolled(false);
+                    }
+
+                    if (!isTyping) {
+                        const activeElement = document.activeElement;
+                        const isSearchFocused =
+                            activeElement === searchInputRef.current ||
+                            activeElement === scrolledSearchInputRef.current;
+
+                        if (isSearchFocused) {
+                            if (isScrolled && scrolledSearchInputRef.current) {
+                                scrolledSearchInputRef.current.focus();
+                                const len = scrolledSearchInputRef.current.value.length;
+                                scrolledSearchInputRef.current.setSelectionRange(len, len);
+                            } else if (!isScrolled && searchInputRef.current) {
+                                searchInputRef.current.focus();
+                                const len = searchInputRef.current.value.length;
+                                searchInputRef.current.setSelectionRange(len, len);
+                            }
+                        }
+                    }
+
+                    lastScrollY = currentScrollY;
+                    ticking = false;
+                });
+                ticking = true;
+            }
+        };
+
+        window.addEventListener('scroll', handleScroll, { passive: true });
+
+        return () => {
+            window.removeEventListener('scroll', handleScroll);
+            if (searchInputRef.current) {
+                searchInputRef.current.removeEventListener('focus', handleInputFocus);
+                searchInputRef.current.removeEventListener('blur', handleInputBlur);
+            }
+            if (scrolledSearchInputRef.current) {
+                scrolledSearchInputRef.current.removeEventListener('focus', handleInputFocus);
+                scrolledSearchInputRef.current.removeEventListener('blur', handleInputBlur);
+            }
+        };
+    }, [isScrolled]);
+
+    const removeSearchTag = () => {
+        setActiveSearchTerm('');
+        setSearchTerm('');
+        setMainSearchTerm('');
+        setFilterSearchTerm('');
+        setCurrentPage(1);
+        fetchSermons('');
+    };
+
+    const onClickBookmark = (e, sermonId) => {
+        e.stopPropagation();
+        setBookmarkToDelete(sermonId);
+        setShowDeleteBookmarkModal(true);
+    };
+
+    const handleDeleteBookmark = async () => {
+        try {
+            const bookmarksResponse = await getBookmarks(userUserId);
+            const bookmarkedSermon = bookmarksResponse.sermons.find((b) => b.sermonId === bookmarkToDelete);
+
+            if (bookmarkedSermon) {
+                await deleteBookmark(userUserId, bookmarkedSermon.bookmarkId);
+                setShowDeleteBookmarkModal(false);
+                setBookmarkToDelete(null);
+                fetchSermons();
+            } else {
+                throw new Error('북마크를 찾을 수 없습니다.');
+            }
+        } catch (error) {
+            console.error('Error deleting bookmark:', error);
+            alert('북마크 삭제 중 오류가 발생했습니다.');
         }
     };
 
+    const updateUrlParams = useCallback(() => {
+        const params = new URLSearchParams();
+
+        if (viewType !== 'grid') params.set('viewType', viewType);
+        if (selectedCategory !== 'public') params.set('category', selectedCategory);
+        if (searchTerm) params.set('search', searchTerm);
+        if (activeSearchTerm) params.set('activeSearch', activeSearchTerm);
+        if (itemsPerPage !== 10) params.set('perPage', itemsPerPage.toString());
+        if (sortBy !== 'newest') params.set('sort', sortBy);
+        if (currentPage !== 1) params.set('page', currentPage.toString());
+
+        if (filters.worshipTypes.length) params.set('worship', filters.worshipTypes.join(','));
+        if (filters.bibleBooks.length) params.set('bible', filters.bibleBooks.join(','));
+        if (filters.dateFilter) params.set('dateFilter', encodeURIComponent(JSON.stringify(filters.dateFilter)));
+
+        setSearchParams(params);
+    }, [
+        viewType,
+        selectedCategory,
+        searchTerm,
+        activeSearchTerm,
+        itemsPerPage,
+        sortBy,
+        currentPage,
+        filters,
+        setSearchParams,
+    ]);
+
+    useEffect(() => {
+        updateUrlParams();
+    }, [
+        viewType,
+        selectedCategory,
+        searchTerm,
+        activeSearchTerm,
+        itemsPerPage,
+        sortBy,
+        currentPage,
+        filters,
+        updateUrlParams,
+    ]);
+
     return (
         <Container isNavExpanded={isNavExpanded}>
-            <SearchSection>
-                <SearchBar>
+            <SearchSection isScrolled={isScrolled}>
+                <SearchBar isNavExpanded={isNavExpanded}>
                     <Search size={20} />
                     <input
+                        ref={searchInputRef}
                         type="text"
                         placeholder="설교 제목, 본문, 작성자 검색..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
+                        value={mainSearchTerm}
+                        onChange={handleSearchChange}
+                        onKeyPress={handleKeyPress}
                     />
                 </SearchBar>
             </SearchSection>
 
             <ContentWrapper isNavExpanded={isNavExpanded}>
-                <FilterSection>
+                <FilterSection ref={filterSectionRef}>
                     <FilterHeader>
                         <h3>필터</h3>
                         <ResetButton onClick={resetFilters}>
@@ -339,7 +546,7 @@ const SermonListPage = () => {
                             </FilterItemHeader>
                             <FilterContent isExpanded={expandedFilters.bible}>
                                 {BIBLE_BOOKS.map((book) => (
-                                    <FilterCheckbox key={book}>
+                                    <FilterCheckbox key={book} isDateFilter={false}>
                                         <input
                                             type="checkbox"
                                             checked={filters.bibleBooks.includes(book)}
@@ -367,7 +574,7 @@ const SermonListPage = () => {
                             </FilterItemHeader>
                             <FilterContent isExpanded={expandedFilters.worship}>
                                 {WORSHIP_TYPES.map((type) => (
-                                    <FilterCheckbox key={type}>
+                                    <FilterCheckbox key={type} isDateFilter={false}>
                                         <input
                                             type="checkbox"
                                             checked={filters.worshipTypes.includes(type)}
@@ -394,25 +601,25 @@ const SermonListPage = () => {
                                 <DateFilterContainer>
                                     <DateTypeToggle>
                                         <DateTypeButton
-                                            active={dateFilter.type === 'single'}
-                                            onClick={() => toggleDateFilterType()}
+                                            active={tempDateFilter.type === 'single'}
+                                            onClick={toggleDateFilterType}
                                         >
                                             단일 날짜
                                         </DateTypeButton>
                                         <DateTypeButton
-                                            active={dateFilter.type === 'range'}
-                                            onClick={() => toggleDateFilterType()}
+                                            active={tempDateFilter.type === 'range'}
+                                            onClick={toggleDateFilterType}
                                         >
                                             기간 설정
                                         </DateTypeButton>
                                     </DateTypeToggle>
 
-                                    {dateFilter.type === 'single' ? (
+                                    {tempDateFilter.type === 'single' ? (
                                         <DateInput
                                             type="date"
-                                            value={dateFilter.singleDate}
+                                            value={tempDateFilter.singleDate}
                                             onChange={(e) =>
-                                                setDateFilter((prev) => ({
+                                                setTempDateFilter((prev) => ({
                                                     ...prev,
                                                     singleDate: e.target.value,
                                                 }))
@@ -422,9 +629,9 @@ const SermonListPage = () => {
                                         <DateRangeInput>
                                             <input
                                                 type="date"
-                                                value={dateFilter.range.startDate}
+                                                value={tempDateFilter.range.startDate}
                                                 onChange={(e) =>
-                                                    setDateFilter((prev) => ({
+                                                    setTempDateFilter((prev) => ({
                                                         ...prev,
                                                         range: { ...prev.range, startDate: e.target.value },
                                                     }))
@@ -433,9 +640,9 @@ const SermonListPage = () => {
                                             <span>~</span>
                                             <input
                                                 type="date"
-                                                value={dateFilter.range.endDate}
+                                                value={tempDateFilter.range.endDate}
                                                 onChange={(e) =>
-                                                    setDateFilter((prev) => ({
+                                                    setTempDateFilter((prev) => ({
                                                         ...prev,
                                                         range: { ...prev.range, endDate: e.target.value },
                                                     }))
@@ -448,6 +655,86 @@ const SermonListPage = () => {
                             </FilterContent>
                         </FilterItem>
                     </FilterAccordion>
+
+                    <ScrolledControls isVisible={isScrolled}>
+                        <SearchBar compact isNavExpanded={isNavExpanded}>
+                            <Search size={18} />
+                            <input
+                                ref={scrolledSearchInputRef}
+                                type="text"
+                                placeholder="설교 제목, 본문, 작성자 검색..."
+                                value={filterSearchTerm}
+                                onChange={handleSearchChange}
+                                onKeyPress={handleKeyPress}
+                            />
+                        </SearchBar>
+
+                        <Divider />
+
+                        <CategoryTabs compact>
+                            <TabButton
+                                active={selectedCategory === 'public'}
+                                onClick={() => setSelectedCategory('public')}
+                            >
+                                공개 설교
+                            </TabButton>
+                            <TabButton
+                                active={selectedCategory === 'my-all'}
+                                onClick={() => setSelectedCategory('my-all')}
+                            >
+                                내 설교 전체
+                            </TabButton>
+                            <TabButton
+                                active={selectedCategory === 'my-public'}
+                                onClick={() => setSelectedCategory('my-public')}
+                            >
+                                내 공개 설교
+                            </TabButton>
+                            <TabButton
+                                active={selectedCategory === 'my-private'}
+                                onClick={() => setSelectedCategory('my-private')}
+                            >
+                                내 비공개 설교
+                            </TabButton>
+                        </CategoryTabs>
+
+                        <AddSermonButton compact onClick={() => navigate('/main/add-sermon')}>
+                            <Plus size={18} className="rotate-icon" />
+                            설교 작성
+                        </AddSermonButton>
+
+                        <Divider />
+
+                        <Controls compact>
+                            <SelectWrapper>
+                                <Select
+                                    value={itemsPerPage}
+                                    onChange={(e) => {
+                                        setItemsPerPage(Number(e.target.value));
+                                        setCurrentPage(1);
+                                    }}
+                                >
+                                    <option value={10}>10개씩 보기</option>
+                                    <option value={30}>30개씩 보기</option>
+                                    <option value={50}>50개씩 보기</option>
+                                    <option value={100}>100개씩 보기</option>
+                                </Select>
+                                <Select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+                                    <option value="newest">최신순</option>
+                                    <option value="oldest">오래된순</option>
+                                    <option value="recently-modified">최근 수정순</option>
+                                </Select>
+                            </SelectWrapper>
+                            <ViewToggle>
+                                <ToggleButton active={viewType === 'grid'} onClick={() => setViewType('grid')}>
+                                    <LayoutGrid size={20} />
+                                </ToggleButton>
+                                <ToggleButton active={viewType === 'list'} onClick={() => setViewType('list')}>
+                                    <List size={20} />
+                                </ToggleButton>
+                            </ViewToggle>
+                        </Controls>
+                    </ScrolledControls>
                 </FilterSection>
 
                 <MainContent>
@@ -470,10 +757,36 @@ const SermonListPage = () => {
                         >
                             내 비공개 설교
                         </TabButton>
+                        <AddSermonButton onClick={() => navigate('/main/add-sermon')}>
+                            <Plus size={18} className="rotate-icon" />
+                            설교 작성
+                        </AddSermonButton>
                     </CategoryTabs>
 
                     <ControlBar>
                         <ActiveFilters>
+                            {activeSearchTerm && (
+                                <FilterTag>
+                                    <TagText>검색어: {activeSearchTerm}</TagText>
+                                    <RemoveButton onClick={removeSearchTag}>×</RemoveButton>
+                                </FilterTag>
+                            )}
+                            {filters.dateFilter?.type === 'single' && filters.dateFilter.date && (
+                                <FilterTag>
+                                    <TagText>날짜: {filters.dateFilter.date}</TagText>
+                                    <RemoveButton onClick={() => removeFilter('dateFilter')}>×</RemoveButton>
+                                </FilterTag>
+                            )}
+                            {filters.dateFilter?.type === 'range' &&
+                                filters.dateFilter.startDate &&
+                                filters.dateFilter.endDate && (
+                                    <FilterTag>
+                                        <TagText>
+                                            기간: {filters.dateFilter.startDate} ~ {filters.dateFilter.endDate}
+                                        </TagText>
+                                        <RemoveButton onClick={() => removeFilter('dateFilter')}>×</RemoveButton>
+                                    </FilterTag>
+                                )}
                             {filters.bibleBooks.map((book) => (
                                 <FilterTag key={book}>
                                     <TagText>{book}</TagText>
@@ -486,20 +799,6 @@ const SermonListPage = () => {
                                     <RemoveButton onClick={() => removeFilter('worshipTypes', type)}>×</RemoveButton>
                                 </FilterTag>
                             ))}
-                            {filters.dateFilter && (
-                                <FilterTag>
-                                    <TagText>
-                                        {filters.dateFilter.type === 'single'
-                                            ? new Date(filters.dateFilter.date).toLocaleDateString()
-                                            : `${new Date(
-                                                  filters.dateFilter.startDate
-                                              ).toLocaleDateString()} ~ ${new Date(
-                                                  filters.dateFilter.endDate
-                                              ).toLocaleDateString()}`}
-                                    </TagText>
-                                    <RemoveButton onClick={() => removeFilter('dateFilter')}>×</RemoveButton>
-                                </FilterTag>
-                            )}
                         </ActiveFilters>
                         <Controls>
                             <SelectWrapper>
@@ -507,7 +806,7 @@ const SermonListPage = () => {
                                     value={itemsPerPage}
                                     onChange={(e) => {
                                         setItemsPerPage(Number(e.target.value));
-                                        setCurrentPage(1); // 페이지 사이즈 변경 시 첫 페이지로 리셋
+                                        setCurrentPage(1);
                                     }}
                                 >
                                     <option value={10}>10개씩 보기</option>
@@ -540,6 +839,11 @@ const SermonListPage = () => {
                                     viewType={viewType}
                                     onClick={() => navigate(`/main/sermon-list/detail/${sermon.sermonId}`)}
                                 >
+                                    {sermon.bookmarked && (
+                                        <BookmarkIcon onClick={(e) => onClickBookmark(e, sermon.sermonId)}>
+                                            <Bookmark size={18} fill="#6b4ee6" strokeWidth={2.5} />
+                                        </BookmarkIcon>
+                                    )}
                                     <SermonDate>
                                         {new Date(sermon.sermonDate).toLocaleDateString('ko-KR', {
                                             year: 'numeric',
@@ -554,6 +858,10 @@ const SermonListPage = () => {
                                             <Scripture>{sermon.additionalScripture}</Scripture>
                                         )}
                                         <WorshipType>{sermon.worshipType}</WorshipType>
+                                        <ReferenceCount>
+                                            <BookOpen size={14} />
+                                            {sermon.textCount || 0}개의 참조
+                                        </ReferenceCount>
                                     </SermonInfo>
                                     <SermonSummary>{sermon.summary}</SermonSummary>
                                 </SermonCard>
@@ -619,6 +927,19 @@ const SermonListPage = () => {
                     </Pagination>
                 </MainContent>
             </ContentWrapper>
+
+            {showDeleteBookmarkModal && (
+                <DeleteBookmarkModal>
+                    <ModalContent>
+                        <h3>북마크 삭제</h3>
+                        <p>이 설교의 북마크를 삭제하시겠습니까?</p>
+                        <ButtonGroup>
+                            <ConfirmButton onClick={handleDeleteBookmark}>삭제</ConfirmButton>
+                            <CancelButton onClick={() => setShowDeleteBookmarkModal(false)}>취소</CancelButton>
+                        </ButtonGroup>
+                    </ModalContent>
+                </DeleteBookmarkModal>
+            )}
         </Container>
     );
 };
@@ -632,7 +953,7 @@ const Container = styled.div`
 `;
 
 const SearchSection = styled.div`
-    display: flex;
+    display: ${(props) => (props.isScrolled ? 'none' : 'flex')};
     justify-content: center;
     align-items: center;
     margin-bottom: 40px;
@@ -673,6 +994,24 @@ const SearchBar = styled.div`
         border-color: #6b4ee6;
         box-shadow: 0 0 0 3px rgba(107, 78, 230, 0.1);
     }
+
+    ${(props) =>
+        props.compact &&
+        `
+        padding: 4px 8px;
+        height: 32px;
+        width: ${props.isNavExpanded ? '180px' : '150px'};
+        
+        input {
+            font-size: 12px;
+        }
+        
+        svg {
+            width: 14px;
+            height: 14px;
+            margin-right: 8px;
+        }
+    `}
 `;
 
 const ContentWrapper = styled.div`
@@ -685,7 +1024,9 @@ const ContentWrapper = styled.div`
 
 const FilterSection = styled.div`
     background: white;
-    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    padding: 8px;
     border-radius: 16px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     border: 1px solid #e5e7eb;
@@ -700,6 +1041,7 @@ const FilterHeader = styled.div`
     display: flex;
     justify-content: space-between;
     align-items: center;
+    padding-left: 10px;
     margin-bottom: 24px;
 
     h3 {
@@ -745,6 +1087,10 @@ const FilterItem = styled.div`
     border-radius: 12px;
     overflow: hidden;
     transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
 
     &:hover {
         border-color: #6b4ee6;
@@ -776,23 +1122,23 @@ const FilterContent = styled.div`
     max-height: ${(props) => (props.isExpanded ? '400px' : '0')};
     opacity: ${(props) => (props.isExpanded ? '1' : '0')};
     overflow-y: ${(props) => (props.isExpanded ? 'auto' : 'hidden')};
+    overflow-x: hidden;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     padding: ${(props) => (props.isExpanded ? '16px' : '0')};
     background: white;
     transform-origin: top;
     transform: ${(props) => (props.isExpanded ? 'scaleY(1)' : 'scaleY(0)')};
 
-    /* 체크박스 그리드 레이아웃 */
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    width: 100%;
 
-    /* 날짜 선택기는 그리드 제외 */
     &.date-picker {
         display: block;
+        padding: ${(props) => (props.isExpanded ? '16px' : '0')};
     }
 
-    /* 스크롤바 스타일링 */
     &::-webkit-scrollbar {
         width: 6px;
     }
@@ -815,21 +1161,21 @@ const FilterContent = styled.div`
 const FilterCheckbox = styled.label`
     display: flex;
     align-items: center;
-    padding: 8px;
+    padding: 4px 6px;
     cursor: pointer;
     transition: all 0.2s ease;
     border-radius: 6px;
     font-size: 13px;
+    white-space: nowrap;
+    width: ${(props) => (props.isDateFilter ? 'auto' : '100%')};
+    justify-content: flex-start;
 
     &:hover {
         background: #f8f9fa;
     }
 
     span {
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        padding-left: 24px;
+        padding-left: 20px;
     }
 `;
 
@@ -898,13 +1244,27 @@ const RemoveButton = styled.button`
 
 const Controls = styled.div`
     display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
     align-items: center;
+    justify-content: space-between;
+
+    ${(props) =>
+        props.compact &&
+        `
+        select {
+            font-size: 11px;
+            padding: 2px 6px;
+            height: 24px;
+            max-width: 120px;
+        }
+    `}
 `;
 
 const SelectWrapper = styled.div`
     display: flex;
-    gap: 8px;
-    margin-right: 10px;
+    flex-wrap: wrap;
+    gap: 6px;
 `;
 
 const Select = styled.select`
@@ -931,10 +1291,11 @@ const Select = styled.select`
 const ViewToggle = styled.div`
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 4px;
+    gap: 4px;
+    padding: 2px;
     background: #f8f9fa;
-    border-radius: 8px;
+    border-radius: 6px;
+    height: 28px;
 `;
 
 const ToggleButton = styled.button`
@@ -975,8 +1336,8 @@ const SermonList = styled.div`
 
 const SermonCard = styled.div`
     ${(props) =>
-        props.viewType === 'grid' &&
-        `
+        props.viewType === 'grid'
+            ? `
         min-height: 220px;
         padding: 20px;
         background: white;
@@ -988,6 +1349,7 @@ const SermonCard = styled.div`
         display: flex;
         flex-direction: column;
         gap: 8px;
+        position: relative;
 
         ${SermonDate} {
             font-size: 14px;
@@ -1010,23 +1372,18 @@ const SermonCard = styled.div`
             -webkit-line-clamp: 3;
             margin-top: 8px;
         }
-    `}
-
-    padding: 20px;
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    border: 1px solid #e5e7eb;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-
-    ${(props) =>
-        props.viewType === 'list' &&
-        `
+    `
+            : `
+        padding: 20px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        border: 1px solid #e5e7eb;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         display: grid;
         grid-template-columns: 300px 1fr;
         gap: 40px;
-        padding: 20px 32px;
         height: 167px;
         position: relative;
 
@@ -1192,9 +1549,21 @@ const PageButton = styled.button`
 
 const CategoryTabs = styled.div`
     display: flex;
-    gap: 12px;
-    margin-bottom: 40px;
-    padding: 0;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: ${(props) => (props.compact ? '0' : '40px')};
+    width: 100%;
+
+    ${(props) =>
+        props.compact &&
+        `
+        button {
+            padding: 4px 8px;
+            font-size: 11px;
+            height: 24px;
+            white-space: nowrap;
+        }
+    `}
 `;
 
 const TabButton = styled.button`
@@ -1230,7 +1599,6 @@ const DateFilterContainer = styled.div`
 const DateTypeToggle = styled.div`
     display: flex;
     gap: 8px;
-    width: 100%;
 `;
 
 const DateTypeButton = styled.button`
@@ -1303,7 +1671,7 @@ const ApplyButton = styled.button`
     font-size: 13px;
     cursor: pointer;
     transition: all 0.2s ease;
-    width: 100%;
+    width: 67%;
 
     &:hover {
         background: #5a3eb8;
@@ -1312,6 +1680,55 @@ const ApplyButton = styled.button`
 
     &:active {
         transform: translateY(0);
+    }
+`;
+
+const ScrolledControls = styled.div`
+    position: static;
+    background: white;
+    padding: 16px;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    display: ${(props) => (props.isVisible ? 'flex' : 'none')};
+`;
+
+const Divider = styled.hr`
+    border: none;
+    height: 1px;
+    background-color: #e5e7eb;
+    margin: 0;
+`;
+
+const AddSermonButton = styled.button`
+    display: flex;
+    align-items: center;
+    padding: 8px 16px;
+    background: #6b4ee6;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    width: 100px;
+    margin-left: ${(props) => (props.compact ? '0' : 'auto')};
+    transition: all 0.2s ease;
+
+    &:hover {
+        background: #5a3eb8;
+        transform: translateY(-1px);
+    }
+
+    .rotate-icon {
+        transition: transform 0.3s ease;
+    }
+
+    &:hover .rotate-icon {
+        transform: rotate(90deg);
     }
 `;
 
@@ -1347,6 +1764,124 @@ const PageNumber = styled.button`
 const Ellipsis = styled.span`
     color: #666;
     padding: 0 4px;
+`;
+
+const BookmarkIcon = styled.div`
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    color: #6b4ee6;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 50%;
+    padding: 6px;
+    box-shadow: 0 2px 8px rgba(107, 78, 230, 0.15);
+    transition: all 0.2s ease;
+    border: 1px solid rgba(107, 78, 230, 0.1);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1;
+
+    svg {
+        width: 18px;
+        height: 18px;
+        stroke-width: 2.5px;
+    }
+
+    &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(107, 78, 230, 0.2);
+        background: white;
+    }
+`;
+
+const DeleteBookmarkModal = styled.div`
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+`;
+
+const ModalContent = styled.div`
+    background: white;
+    padding: 24px;
+    border-radius: 16px;
+    width: 320px;
+    text-align: center;
+
+    h3 {
+        margin-bottom: 12px;
+        color: #333;
+        font-size: 18px;
+        font-weight: 600;
+    }
+
+    p {
+        margin-bottom: 24px;
+        color: #666;
+        font-size: 14px;
+    }
+`;
+
+const ButtonGroup = styled.div`
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+`;
+
+const ConfirmButton = styled.button`
+    padding: 8px 24px;
+    background: #6b4ee6;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+        background: #5a3eb8;
+    }
+`;
+
+const CancelButton = styled.button`
+    padding: 8px 24px;
+    background: #f1f3f5;
+    color: #666;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+        background: #e9ecef;
+    }
+`;
+
+const ReferenceCount = styled.span`
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: #6b4ee6;
+    background: #f8f9fa;
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid #e9ecef;
+
+    svg {
+        color: #6b4ee6;
+    }
 `;
 
 export default SermonListPage;

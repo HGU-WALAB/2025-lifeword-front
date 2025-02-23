@@ -11,7 +11,7 @@ const MyPage = () => {
     const [newPasswordConfirm, setNewPasswordConfirm] = useState('');
     const [passwordMatchMessage, setPasswordMatchMessage] = useState('');
     const [showPasswordModal, setShowPasswordModal] = useState(false);
-    const { userEmail, userJob: job, isAdmin } = useUserState();
+    const { userEmail, userJob: job, isAdmin, userName } = useUserState();
 
     const handlePasswordChange = async () => {
         if (!newPassword) {
@@ -65,7 +65,7 @@ const MyPage = () => {
                             <User size={32} color="#fff" />
                         </ProfileAvatar>
                         <ProfileInfo>
-                            <ProfileName>김현중</ProfileName>
+                            <ProfileName>{userName}</ProfileName>
                             <ProfileEmail>{userEmail}</ProfileEmail>
                         </ProfileInfo>
                     </ProfileHeader>
