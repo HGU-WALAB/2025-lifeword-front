@@ -124,7 +124,7 @@ const SignUpPageSocial = () => {
         <Container>
             <FormWrapper>
                 <Title>회원가입</Title>
-                <Description>BIBLY에서 사용할 정보를 입력해주세요.</Description>
+                <Description>LIFE WORD에서 사용할 정보를 입력해주세요.</Description>
 
                 <div id="recaptcha-container"></div>
 
