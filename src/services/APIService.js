@@ -237,7 +237,7 @@ export const searchBibles = async (keyword) => {
 };
 const setJwtCookie = (token) => {
     const isSecure = window.location.protocol === 'https:'; // ✅ HTTPS 여부 확인
-    document.cookie = `jwt=${token}; path=/; ${isSecure ? 'Secure; SameSite=None' : ''}`;
+  //  document.cookie = `jwt=${token}; path=/; ${isSecure ? 'Secure; SameSite=None' : ''}`;
 };
 
 // 카카오 로그인
