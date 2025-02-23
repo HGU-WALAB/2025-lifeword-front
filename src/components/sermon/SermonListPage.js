@@ -339,7 +339,7 @@ const SermonListPage = () => {
                             </FilterItemHeader>
                             <FilterContent isExpanded={expandedFilters.bible}>
                                 {BIBLE_BOOKS.map((book) => (
-                                    <FilterCheckbox key={book}>
+                                    <FilterCheckbox key={book} isDateFilter={false}>
                                         <input
                                             type="checkbox"
                                             checked={filters.bibleBooks.includes(book)}
@@ -367,7 +367,7 @@ const SermonListPage = () => {
                             </FilterItemHeader>
                             <FilterContent isExpanded={expandedFilters.worship}>
                                 {WORSHIP_TYPES.map((type) => (
-                                    <FilterCheckbox key={type}>
+                                    <FilterCheckbox key={type} isDateFilter={false}>
                                         <input
                                             type="checkbox"
                                             checked={filters.worshipTypes.includes(type)}
@@ -689,7 +689,9 @@ const ContentWrapper = styled.div`
 
 const FilterSection = styled.div`
     background: white;
-    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    padding: 8px;
     border-radius: 16px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     border: 1px solid #e5e7eb;
@@ -704,6 +706,7 @@ const FilterHeader = styled.div`
     display: flex;
     justify-content: space-between;
     align-items: center;
+    padding-left: 10px;
     margin-bottom: 24px;
 
     h3 {
@@ -749,6 +752,10 @@ const FilterItem = styled.div`
     border-radius: 12px;
     overflow: hidden;
     transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
 
     &:hover {
         border-color: #6b4ee6;
@@ -780,23 +787,23 @@ const FilterContent = styled.div`
     max-height: ${(props) => (props.isExpanded ? '400px' : '0')};
     opacity: ${(props) => (props.isExpanded ? '1' : '0')};
     overflow-y: ${(props) => (props.isExpanded ? 'auto' : 'hidden')};
+    overflow-x: hidden;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     padding: ${(props) => (props.isExpanded ? '16px' : '0')};
     background: white;
     transform-origin: top;
     transform: ${(props) => (props.isExpanded ? 'scaleY(1)' : 'scaleY(0)')};
 
-    /* 체크박스 그리드 레이아웃 */
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    width: 100%;
 
-    /* 날짜 선택기는 그리드 제외 */
     &.date-picker {
         display: block;
+        padding: ${(props) => (props.isExpanded ? '16px' : '0')};
     }
 
-    /* 스크롤바 스타일링 */
     &::-webkit-scrollbar {
         width: 6px;
     }
@@ -819,21 +826,21 @@ const FilterContent = styled.div`
 const FilterCheckbox = styled.label`
     display: flex;
     align-items: center;
-    padding: 8px;
+    padding: 4px 6px;
     cursor: pointer;
     transition: all 0.2s ease;
     border-radius: 6px;
     font-size: 13px;
+    white-space: nowrap;
+    width: ${(props) => (props.isDateFilter ? 'auto' : '100%')};
+    justify-content: flex-start;
 
     &:hover {
         background: #f8f9fa;
     }
 
     span {
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        padding-left: 24px;
+        padding-left: 20px;
     }
 `;
 
@@ -1234,7 +1241,6 @@ const DateFilterContainer = styled.div`
 const DateTypeToggle = styled.div`
     display: flex;
     gap: 8px;
-    width: 100%;
 `;
 
 const DateTypeButton = styled.button`
@@ -1307,7 +1313,7 @@ const ApplyButton = styled.button`
     font-size: 13px;
     cursor: pointer;
     transition: all 0.2s ease;
-    width: 100%;
+    width: 67%;
 
     &:hover {
         background: #5a3eb8;
