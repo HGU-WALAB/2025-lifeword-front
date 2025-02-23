@@ -148,10 +148,28 @@ const SermonManagementPage = () => {
         worshipTypes: [],
         bibleBooks: [],
         authors: [],
+        dateFilter: null,
     });
 
-    // 날짜 필터 상태
-    const [dateFilter, setDateFilter] = useState({
+    const [expandedFilters, setExpandedFilters] = useState({
+        bible: false,
+        worship: false,
+        date: false,
+    });
+
+    // 검색 관련 상태
+    const [mainSearchTerm, setMainSearchTerm] = useState('');
+    const [filterSearchTerm, setFilterSearchTerm] = useState('');
+    const [activeSearchTerm, setActiveSearchTerm] = useState('');
+    const [isScrolled, setIsScrolled] = useState(false);
+
+    const searchInputRef = useRef(null);
+    const scrolledSearchInputRef = useRef(null);
+    const filterSectionRef = useRef(null);
+
+    const currentSermons = sermons;
+
+    const [tempDateFilter, setTempDateFilter] = useState({
         type: 'single',
         singleDate: '',
         range: {
@@ -159,39 +177,6 @@ const SermonManagementPage = () => {
             endDate: '',
         },
     });
-
-    // expandedFilters 상태를 객체로!
-    const [expandedFilters, setExpandedFilters] = useState({
-        bible: false,
-        worship: false,
-        date: false,
-    });
-
-    // 검색 관련 상태 추가
-    const [mainSearchTerm, setMainSearchTerm] = useState('');
-    const [filterSearchTerm, setFilterSearchTerm] = useState('');
-    const [activeSearchTerm, setActiveSearchTerm] = useState('');
-    const [isScrolled, setIsScrolled] = useState(false);
-
-    // refs 추가
-    const searchInputRef = useRef(null);
-    const scrolledSearchInputRef = useRef(null);
-    const filterSectionRef = useRef(null);
-
-    const currentSermons = sermons;
-
-    const getModeFromCategory = (category) => {
-        switch (category) {
-            case 'my-all':
-                return 1;
-            case 'my-public':
-                return 2;
-            case 'my-private':
-                return 3;
-            default:
-                return 0;
-        }
-    };
 
     const getSortParam = (sortValue) => {
         switch (sortValue) {
@@ -204,28 +189,39 @@ const SermonManagementPage = () => {
         }
     };
 
-    const fetchSermons = useCallback(async () => {
-        try {
-            const params = {
-                keyword: searchTerm || null,
-                searchType: searchTerm ? 2 : null,
-                sort: getSortParam(sortBy),
-                worshipTypes: filters.worshipTypes,
-                scripture: filters.bibleBooks,
-                page: currentPage,
-                size: itemsPerPage,
-                startDate: dateFilter.type === 'range' ? dateFilter.range.startDate : dateFilter.singleDate,
-                endDate: dateFilter.type === 'range' ? dateFilter.range.endDate : dateFilter.singleDate,
-            };
+    const fetchSermons = useCallback(
+        async (searchKeyword = null) => {
+            try {
+                const params = {
+                    keyword: searchKeyword || searchTerm || null,
+                    searchType: searchKeyword || searchTerm ? 2 : null,
+                    sort: getSortParam(sortBy),
+                    worshipTypes: filters.worshipTypes,
+                    scripture: filters.bibleBooks,
+                    page: currentPage,
+                    size: itemsPerPage,
+                    startDate: filters.dateFilter
+                        ? filters.dateFilter.type === 'range'
+                            ? filters.dateFilter.startDate
+                            : filters.dateFilter.date
+                        : null,
+                    endDate: filters.dateFilter
+                        ? filters.dateFilter.type === 'range'
+                            ? filters.dateFilter.endDate
+                            : filters.dateFilter.date
+                        : null,
+                };
 
-            const response = await getFilteredSermonListAdmin(params);
-            setSermons(response.content);
-            setTotalPages(response.totalPage);
-        } catch (error) {
-            console.error('Error fetching sermons:', error);
-            setSermons([]);
-        }
-    }, [searchTerm, sortBy, filters, currentPage, itemsPerPage, dateFilter]);
+                const response = await getFilteredSermonListAdmin(params);
+                setSermons(response.content);
+                setTotalPages(response.totalPage);
+            } catch (error) {
+                console.error('Error fetching sermons:', error);
+                setSermons([]);
+            }
+        },
+        [sortBy, filters, currentPage, itemsPerPage, searchTerm]
+    );
 
     useEffect(() => {
         fetchSermons();
@@ -244,6 +240,7 @@ const SermonManagementPage = () => {
             setCurrentPage(1);
             setActiveSearchTerm(e.target.value);
             setSearchTerm(e.target.value);
+            fetchSermons(e.target.value);
         }
     };
 
@@ -253,10 +250,11 @@ const SermonManagementPage = () => {
         setSearchTerm('');
         setMainSearchTerm('');
         setFilterSearchTerm('');
+        setCurrentPage(1);
         fetchSermons();
     };
 
-    // 스크롤 이벤트 핸들러 추가
+    // 스크롤 이벤트 핸들러
     useEffect(() => {
         let lastScrollY = window.scrollY;
         let ticking = false;
@@ -333,16 +331,13 @@ const SermonManagementPage = () => {
         };
     }, [isScrolled]);
 
-    const handleSearch = async () => {
-        setCurrentPage(1);
-        await fetchSermons();
-    };
-
-    const handlePageChange = async (pageNumber) => {
+    const handlePageChange = (pageNumber) => {
         setCurrentPage(pageNumber);
         window.scrollTo(0, 0);
+        fetchSermons();
     };
 
+    // 필터 토글 함수
     const toggleFilter = (type, value) => {
         setFilters((prev) => {
             const newFilters = { ...prev };
@@ -358,14 +353,53 @@ const SermonManagementPage = () => {
         setCurrentPage(1);
     };
 
-    useEffect(() => {
-        const debounceTimer = setTimeout(() => {
-            handleSearch();
-        }, 300);
+    // 날짜 필터 적용 함수
+    const applyDateFilter = () => {
+        if (tempDateFilter.type === 'single' && tempDateFilter.singleDate) {
+            setFilters((prev) => ({
+                ...prev,
+                dateFilter: {
+                    type: 'single',
+                    date: tempDateFilter.singleDate,
+                },
+            }));
+        } else if (tempDateFilter.type === 'range' && tempDateFilter.range.startDate && tempDateFilter.range.endDate) {
+            setFilters((prev) => ({
+                ...prev,
+                dateFilter: {
+                    type: 'range',
+                    ...tempDateFilter.range,
+                },
+            }));
+        }
+        setCurrentPage(1);
+    };
 
-        return () => clearTimeout(debounceTimer);
-    }, [searchTerm]);
+    // 필터 제거 함수
+    const removeFilter = (type, value) => {
+        if (type === 'dateFilter') {
+            setFilters((prev) => ({
+                ...prev,
+                dateFilter: null,
+            }));
+            setTempDateFilter({
+                type: 'single',
+                singleDate: '',
+                range: {
+                    startDate: '',
+                    endDate: '',
+                },
+            });
+        } else {
+            setFilters((prev) => ({
+                ...prev,
+                [type]: prev[type].filter((item) => item !== value),
+            }));
+        }
+        setCurrentPage(1);
+    };
 
+    // 필터 초기화 함수
     const resetFilters = () => {
         setFilters({
             worshipTypes: [],
@@ -373,8 +407,7 @@ const SermonManagementPage = () => {
             authors: [],
             dateFilter: null,
         });
-        setSortBy('newest');
-        setDateFilter({
+        setTempDateFilter({
             type: 'single',
             singleDate: '',
             range: {
@@ -382,6 +415,13 @@ const SermonManagementPage = () => {
                 endDate: '',
             },
         });
+        setSortBy('newest');
+        setSearchTerm('');
+        setMainSearchTerm('');
+        setFilterSearchTerm('');
+        setActiveSearchTerm('');
+        setCurrentPage(1);
+        fetchSermons('');
     };
 
     // 아코디언 토글 함수
@@ -392,62 +432,30 @@ const SermonManagementPage = () => {
         }));
     };
 
-    // 필터 태그 제거 함수
-    const removeFilter = (type, value) => {
-        if (type === 'dateFilter') {
-            removeDateFilter();
-        } else {
-            setFilters((prev) => ({
-                ...prev,
-                [type]: prev[type].filter((item) => item !== value),
-            }));
-        }
-    };
-
-    // 날짜 필터 제거 함수
-    const removeDateFilter = () => {
-        setFilters((prev) => ({
+    // 날짜 입력 핸들러 수정
+    const handleSingleDateChange = (e) => {
+        setTempDateFilter((prev) => ({
             ...prev,
-            dateFilter: null,
+            singleDate: e.target.value,
         }));
-        setDateFilter({
-            type: 'single',
-            singleDate: '',
-            range: {
-                startDate: '',
-                endDate: '',
-            },
-        });
     };
 
-    // 날짜 필터 토글 함수
+    const handleRangeDateChange = (type, value) => {
+        setTempDateFilter((prev) => ({
+            ...prev,
+            range: {
+                ...prev.range,
+                [type]: value,
+            },
+        }));
+    };
+
+    // 날짜 필터 토글 함수 추가
     const toggleDateFilterType = () => {
-        setDateFilter((prev) => ({
+        setTempDateFilter((prev) => ({
             ...prev,
             type: prev.type === 'single' ? 'range' : 'single',
         }));
-    };
-
-    // 날짜 필터 적용 함수
-    const applyDateFilter = () => {
-        if (dateFilter.type === 'single' && dateFilter.singleDate) {
-            setFilters((prev) => ({
-                ...prev,
-                dateFilter: {
-                    type: 'single',
-                    date: dateFilter.singleDate,
-                },
-            }));
-        } else if (dateFilter.type === 'range' && dateFilter.range.startDate && dateFilter.range.endDate) {
-            setFilters((prev) => ({
-                ...prev,
-                dateFilter: {
-                    type: 'range',
-                    ...dateFilter.range,
-                },
-            }));
-        }
-        setCurrentPage(1);
     };
 
     const handleDelete = async (sermon) => {
@@ -474,6 +482,22 @@ const SermonManagementPage = () => {
             alert('설교 삭제 중 오류가 발생했습니다.');
         }
     };
+
+    const handleSortChange = (e) => {
+        setSortBy(e.target.value);
+        setCurrentPage(1);
+        fetchSermons();
+    };
+
+    const handleItemsPerPageChange = (e) => {
+        setItemsPerPage(Number(e.target.value));
+        setCurrentPage(1);
+        fetchSermons();
+    };
+
+    useEffect(() => {
+        fetchSermons();
+    }, [fetchSermons, filters]);
 
     return (
         <Container isNavExpanded={isNavExpanded}>
@@ -573,52 +597,37 @@ const SermonManagementPage = () => {
                                 <DateFilterContainer>
                                     <DateTypeToggle>
                                         <DateTypeButton
-                                            active={dateFilter.type === 'single'}
-                                            onClick={() => toggleDateFilterType()}
+                                            active={tempDateFilter.type === 'single'}
+                                            onClick={toggleDateFilterType}
                                         >
                                             단일 날짜
                                         </DateTypeButton>
                                         <DateTypeButton
-                                            active={dateFilter.type === 'range'}
-                                            onClick={() => toggleDateFilterType()}
+                                            active={tempDateFilter.type === 'range'}
+                                            onClick={toggleDateFilterType}
                                         >
                                             기간 설정
                                         </DateTypeButton>
                                     </DateTypeToggle>
 
-                                    {dateFilter.type === 'single' ? (
+                                    {tempDateFilter.type === 'single' ? (
                                         <DateInput
                                             type="date"
-                                            value={dateFilter.singleDate}
-                                            onChange={(e) =>
-                                                setDateFilter((prev) => ({
-                                                    ...prev,
-                                                    singleDate: e.target.value,
-                                                }))
-                                            }
+                                            value={tempDateFilter.singleDate}
+                                            onChange={handleSingleDateChange}
                                         />
                                     ) : (
                                         <DateRangeInput>
                                             <input
                                                 type="date"
-                                                value={dateFilter.range.startDate}
-                                                onChange={(e) =>
-                                                    setDateFilter((prev) => ({
-                                                        ...prev,
-                                                        range: { ...prev.range, startDate: e.target.value },
-                                                    }))
-                                                }
+                                                value={tempDateFilter.range.startDate}
+                                                onChange={(e) => handleRangeDateChange('startDate', e.target.value)}
                                             />
                                             <span>~</span>
                                             <input
                                                 type="date"
-                                                value={dateFilter.range.endDate}
-                                                onChange={(e) =>
-                                                    setDateFilter((prev) => ({
-                                                        ...prev,
-                                                        range: { ...prev.range, endDate: e.target.value },
-                                                    }))
-                                                }
+                                                value={tempDateFilter.range.endDate}
+                                                onChange={(e) => handleRangeDateChange('endDate', e.target.value)}
                                             />
                                         </DateRangeInput>
                                     )}
@@ -645,19 +654,13 @@ const SermonManagementPage = () => {
 
                         <Controls compact>
                             <SelectWrapper>
-                                <Select
-                                    value={itemsPerPage}
-                                    onChange={(e) => {
-                                        setItemsPerPage(Number(e.target.value));
-                                        setCurrentPage(1);
-                                    }}
-                                >
+                                <Select value={itemsPerPage} onChange={handleItemsPerPageChange}>
                                     <option value={10}>10개씩 보기</option>
                                     <option value={30}>30개씩 보기</option>
                                     <option value={50}>50개씩 보기</option>
                                     <option value={100}>100개씩 보기</option>
                                 </Select>
-                                <Select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+                                <Select value={sortBy} onChange={handleSortChange}>
                                     <option value="newest">최신순</option>
                                     <option value="oldest">오래된순</option>
                                     <option value="recently-modified">최근 수정순</option>
@@ -684,6 +687,22 @@ const SermonManagementPage = () => {
                                     <RemoveButton onClick={removeSearchTag}>×</RemoveButton>
                                 </FilterTag>
                             )}
+                            {filters.dateFilter?.type === 'single' && filters.dateFilter.date && (
+                                <FilterTag>
+                                    <TagText>날짜: {filters.dateFilter.date}</TagText>
+                                    <RemoveButton onClick={() => removeFilter('dateFilter')}>×</RemoveButton>
+                                </FilterTag>
+                            )}
+                            {filters.dateFilter?.type === 'range' &&
+                                filters.dateFilter.startDate &&
+                                filters.dateFilter.endDate && (
+                                    <FilterTag>
+                                        <TagText>
+                                            기간: {filters.dateFilter.startDate} ~ {filters.dateFilter.endDate}
+                                        </TagText>
+                                        <RemoveButton onClick={() => removeFilter('dateFilter')}>×</RemoveButton>
+                                    </FilterTag>
+                                )}
                             {filters.bibleBooks.map((book) => (
                                 <FilterTag key={book}>
                                     <TagText>{book}</TagText>
@@ -696,36 +715,16 @@ const SermonManagementPage = () => {
                                     <RemoveButton onClick={() => removeFilter('worshipTypes', type)}>×</RemoveButton>
                                 </FilterTag>
                             ))}
-                            {filters.dateFilter && (
-                                <FilterTag>
-                                    <TagText>
-                                        {filters.dateFilter.type === 'single'
-                                            ? new Date(filters.dateFilter.date).toLocaleDateString()
-                                            : `${new Date(
-                                                  filters.dateFilter.startDate
-                                              ).toLocaleDateString()} ~ ${new Date(
-                                                  filters.dateFilter.endDate
-                                              ).toLocaleDateString()}`}
-                                    </TagText>
-                                    <RemoveButton onClick={() => removeFilter('dateFilter')}>×</RemoveButton>
-                                </FilterTag>
-                            )}
                         </ActiveFilters>
                         <Controls>
                             <SelectWrapper>
-                                <Select
-                                    value={itemsPerPage}
-                                    onChange={(e) => {
-                                        setItemsPerPage(Number(e.target.value));
-                                        setCurrentPage(1);
-                                    }}
-                                >
+                                <Select value={itemsPerPage} onChange={handleItemsPerPageChange}>
                                     <option value={10}>10개씩 보기</option>
                                     <option value={30}>30개씩 보기</option>
                                     <option value={50}>50개씩 보기</option>
                                     <option value={100}>100개씩 보기</option>
                                 </Select>
-                                <Select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+                                <Select value={sortBy} onChange={handleSortChange}>
                                     <option value="newest">최신순</option>
                                     <option value="oldest">오래된순</option>
                                     <option value="recently-modified">최근 수정순</option>
