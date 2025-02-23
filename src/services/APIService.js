@@ -3,7 +3,7 @@ import axios from 'axios';
 //const BASE_URL = 'http://172.18.130.17:8080';
 
 //const BASE_URL = 'http://192.168.0.7:8080';
-const BASE_URL='http://localhost:8080';
+const BASE_URL = 'http://localhost:8080';
 
 const API_PREFIX = '/api/v1';
 
@@ -17,15 +17,18 @@ const axiosInstance = axios.create({
     },
 });
 
-axiosInstance.interceptors.request.use((config) => {
-    const token = getJwtFromCookie(); // ✅ 쿠키에서 JWT 가져오기
-    if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+axiosInstance.interceptors.request.use(
+    (config) => {
+        const token = getJwtFromCookie(); // ✅ 쿠키에서 JWT 가져오기
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+    },
+    (error) => {
+        return Promise.reject(error);
     }
-    return config;
-}, (error) => {
-    return Promise.reject(error);
-});
+);
 
 export default axiosInstance;
 
@@ -38,7 +41,7 @@ const authRequest = async (endpoint, options) => {
 };
 const getJwtFromCookie = () => {
     const cookies = document.cookie.split('; ');
-    const jwtCookie = cookies.find(cookie => cookie.startsWith('jwt='));
+    const jwtCookie = cookies.find((cookie) => cookie.startsWith('jwt='));
     return jwtCookie ? jwtCookie.split('=')[1] : null;
 };
 
@@ -497,15 +500,14 @@ export const logout = async () => {
         });
 
         // ✅ 쿠키 만료 처리 개선
-        document.cookie = "jwt=; path=/; expires=" + new Date(0).toUTCString();
-
+        document.cookie = 'jwt=; path=/; expires=' + new Date(0).toUTCString();
     } catch (error) {
         console.error('❌ 로그아웃 실패:', error);
         throw error;
     }
 };
 
-
+// 세션 체크 API 추가
 export const checkAuth = async () => {
     try {
         const response = await fetch(`${BASE_URL}/auth/check`, {
@@ -513,7 +515,6 @@ export const checkAuth = async () => {
             credentials: 'include',
             headers: {
                 accept: '*/*',
-
             },
         });
 
@@ -527,4 +528,3 @@ export const checkAuth = async () => {
         return false;
     }
 };
-
