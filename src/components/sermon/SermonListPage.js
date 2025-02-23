@@ -123,19 +123,16 @@ const SermonListPage = () => {
         },
     });
 
-    // expandedFilters 상태를 객체로!
     const [expandedFilters, setExpandedFilters] = useState({
         bible: false,
         worship: false,
         date: false,
     });
 
-    // 상태 추가
     const [mainSearchTerm, setMainSearchTerm] = useState('');
     const [filterSearchTerm, setFilterSearchTerm] = useState('');
 
-    // 검색어 상태 추가
-    const [activeSearchTerm, setActiveSearchTerm] = useState(''); // 실제 검색에 사용되는 검색어
+    const [activeSearchTerm, setActiveSearchTerm] = useState('');
 
     const currentSermons = sermons;
 
@@ -210,8 +207,8 @@ const SermonListPage = () => {
     const handleKeyPress = (e) => {
         if (e.key === 'Enter') {
             setCurrentPage(1);
-            setActiveSearchTerm(e.target.value); // 엔터 칠 때만 activeSearchTerm 업데이트
-            setSearchTerm(e.target.value); // API 호출용 searchTerm 업데이트
+            setActiveSearchTerm(e.target.value);
+            setSearchTerm(e.target.value);
             fetchSermons(e.target.value);
         }
     };
@@ -325,7 +322,7 @@ const SermonListPage = () => {
         }));
     };
 
-    // 날짜 필터 토글 함수 추가
+    // 날짜 필터 토글 함수
     const toggleDateFilterType = () => {
         setTempDateFilter((prev) => ({
             ...prev,
@@ -333,13 +330,11 @@ const SermonListPage = () => {
         }));
     };
 
-    // 스크롤 이벤트 핸들러 수정
     useEffect(() => {
         let lastScrollY = window.scrollY;
         let ticking = false;
         let isTyping = false;
 
-        // 타이핑 시작/종료 감지
         const handleInputFocus = () => {
             isTyping = true;
         };
@@ -413,7 +408,7 @@ const SermonListPage = () => {
         };
     }, [isScrolled]);
 
-    // 검색어 태그 제거 핸들러 추가
+    // 검색어 태그 제거 핸들러
     const removeSearchTag = () => {
         setActiveSearchTerm('');
         setSearchTerm('');
