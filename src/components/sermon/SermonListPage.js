@@ -1,7 +1,17 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
-import { Search, LayoutGrid, List, RefreshCcw, ChevronDown, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import {
+    Search,
+    LayoutGrid,
+    List,
+    RefreshCcw,
+    ChevronDown,
+    ChevronLeft,
+    ChevronRight,
+    Plus,
+    Bookmark,
+} from 'lucide-react';
 import { useUserState } from '../../recoil/utils';
 import { useRecoilValue } from 'recoil';
 import { isNavExpandedState } from '../../recoil/atoms';
@@ -757,6 +767,11 @@ const SermonListPage = () => {
                                     viewType={viewType}
                                     onClick={() => navigate(`/main/sermon-list/detail/${sermon.sermonId}`)}
                                 >
+                                    {sermon.bookmarked && (
+                                        <BookmarkIcon>
+                                            <Bookmark size={18} fill="#6b4ee6" strokeWidth={2.5} />
+                                        </BookmarkIcon>
+                                    )}
                                     <SermonDate>
                                         {new Date(sermon.sermonDate).toLocaleDateString('ko-KR', {
                                             year: 'numeric',
@@ -1245,6 +1260,7 @@ const SermonCard = styled.div`
         display: flex;
         flex-direction: column;
         gap: 8px;
+        position: relative;
 
         ${SermonDate} {
             font-size: 14px;
@@ -1659,6 +1675,36 @@ const PageNumber = styled.button`
 const Ellipsis = styled.span`
     color: #666;
     padding: 0 4px;
+`;
+
+const BookmarkIcon = styled.div`
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    color: #6b4ee6;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 50%;
+    padding: 6px;
+    box-shadow: 0 2px 8px rgba(107, 78, 230, 0.15);
+    transition: all 0.2s ease;
+    border: 1px solid rgba(107, 78, 230, 0.1);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1;
+
+    svg {
+        width: 18px;
+        height: 18px;
+        stroke-width: 2.5px;
+    }
+
+    &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(107, 78, 230, 0.2);
+        background: white;
+    }
 `;
 
 export default SermonListPage;
