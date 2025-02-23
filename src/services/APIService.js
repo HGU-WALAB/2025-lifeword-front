@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const BASE_URL = 'http://172.18.130.17:8080';
+const BASE_URL = 'https://walab.info:8443/lifeword/api/v1';
 
 //const BASE_URL = 'http://192.168.0.7:8080';
 // const BASE_URL = 'http://localhost:8080';
@@ -241,7 +241,7 @@ export const searchBibles = async (keyword) => {
 };
 const setJwtCookie = (token) => {
     const isSecure = window.location.protocol === 'https:'; // ✅ HTTPS 여부 확인
-  //  document.cookie = `jwt=${token}; path=/; ${isSecure ? 'Secure; SameSite=None' : ''}`;
+    //  document.cookie = `jwt=${token}; path=/; ${isSecure ? 'Secure; SameSite=None' : ''}`;
 };
 
 // 카카오 로그인
