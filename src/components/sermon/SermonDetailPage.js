@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import styled, { createGlobalStyle } from 'styled-components';
 import { getSermonDetail, deleteSermon, getBookmarks, createBookmark, deleteBookmark } from '../../services/APIService';
-import { ArrowLeft, Pencil, Trash2, Printer, ChevronDown, Bookmark } from 'lucide-react';
+import { ArrowLeft, Pencil, Trash2, Printer, Bookmark } from 'lucide-react';
 import { useUserState } from '../../recoil/utils';
 
 const GlobalStyle = createGlobalStyle`
@@ -46,14 +46,19 @@ const SermonDetailPage = ({ isBookmarkView, onBookmarkToggle }) => {
     const [showGuide, setShowGuide] = useState(true);
     const [isBookmarked, setIsBookmarked] = useState(false);
     const [bookmarkId, setBookmarkId] = useState(null);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
         const fetchSermonDetail = async () => {
             try {
+                setLoading(true);
+                console.log('Fetching sermon detail for ID:', id); // 디버깅용
                 const data = await getSermonDetail(id);
+                console.log('Received sermon data:', data); // 디버깅용
                 setSermon(data);
             } catch (error) {
                 console.error('Error fetching sermon detail:', error);
+                setError(error);
             } finally {
                 setLoading(false);
             }
@@ -206,13 +211,12 @@ const SermonDetailPage = ({ isBookmarkView, onBookmarkToggle }) => {
         }
     };
 
-    if (loading) {
-        return <LoadingText>로딩 중...</LoadingText>;
-    }
+    if (loading) return <LoadingText>로딩 중...</LoadingText>;
+    if (error) return <EmptyText>설교를 불러오는 중 오류가 발생했습니다.</EmptyText>;
+    if (!sermon) return <EmptyText>설교를 찾을 수 없습니다.</EmptyText>;
 
-    if (!sermon) {
-        return <EmptyText>설교를 찾을 수 없습니다.</EmptyText>;
-    }
+    // 디버깅용 콘솔 로그
+    console.log('Rendering sermon:', sermon);
 
     return (
         <Container>

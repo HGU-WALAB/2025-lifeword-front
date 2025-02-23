@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -193,7 +193,7 @@ const SermonManagementPage = () => {
         }
     };
 
-    const fetchSermons = async () => {
+    const fetchSermons = useCallback(async () => {
         try {
             const params = {
                 keyword: searchTerm || null,
@@ -214,7 +214,11 @@ const SermonManagementPage = () => {
             console.error('Error fetching sermons:', error);
             setSermons([]);
         }
-    };
+    }, [searchTerm, sortBy, filters, currentPage, itemsPerPage, dateFilter]);
+
+    useEffect(() => {
+        fetchSermons();
+    }, [fetchSermons]);
 
     const handleSearch = async () => {
         if (!searchTerm.trim()) {
@@ -252,10 +256,6 @@ const SermonManagementPage = () => {
 
         return () => clearTimeout(debounceTimer);
     }, [searchTerm]);
-
-    useEffect(() => {
-        fetchSermons();
-    }, [currentPage, sortBy, filters, dateFilter, itemsPerPage]);
 
     const resetFilters = () => {
         setFilters({
@@ -587,6 +587,22 @@ const SermonManagementPage = () => {
                                     viewType={viewType}
                                     onClick={() => navigate(`/main/admin/sermons/detail/${sermon.sermonId}`)}
                                 >
+                                    <SermonDate>
+                                        {new Date(sermon.sermonDate).toLocaleDateString('ko-KR', {
+                                            year: 'numeric',
+                                            month: 'long',
+                                            day: 'numeric',
+                                        })}
+                                    </SermonDate>
+                                    <SermonTitle>{sermon.sermonTitle}</SermonTitle>
+                                    <SermonInfo>
+                                        <Scripture>{sermon.mainScripture}</Scripture>
+                                        {sermon.additionalScripture && (
+                                            <Scripture>{sermon.additionalScripture}</Scripture>
+                                        )}
+                                        <WorshipType>{sermon.worshipType}</WorshipType>
+                                    </SermonInfo>
+                                    <SermonSummary>{sermon.summary}</SermonSummary>
                                     <ActionButtons>
                                         <ActionButton
                                             onClick={(e) => {
@@ -607,35 +623,6 @@ const SermonManagementPage = () => {
                                             <Trash2 size={16} />
                                         </ActionButton>
                                     </ActionButtons>
-                                    {viewType === 'list' ? (
-                                        <>
-                                            <div className="sermon-meta">
-                                                <SermonAuthor>{sermon.ownerName}</SermonAuthor>
-                                                <SermonTitle>{sermon.sermonTitle}</SermonTitle>
-                                                <SermonInfo>
-                                                    <Scripture>{sermon.mainScripture}</Scripture>
-                                                    {sermon.additionalScripture && (
-                                                        <Scripture>{sermon.additionalScripture}</Scripture>
-                                                    )}
-                                                    <WorshipType>{sermon.worshipType}</WorshipType>
-                                                </SermonInfo>
-                                            </div>
-                                            <SermonSummary>{sermon.summary}</SermonSummary>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <SermonAuthor>{sermon.ownerName}</SermonAuthor>
-                                            <SermonTitle>{sermon.sermonTitle}</SermonTitle>
-                                            <SermonInfo>
-                                                <Scripture>{sermon.mainScripture}</Scripture>
-                                                {sermon.additionalScripture && (
-                                                    <Scripture>{sermon.additionalScripture}</Scripture>
-                                                )}
-                                                <WorshipType>{sermon.worshipType}</WorshipType>
-                                            </SermonInfo>
-                                            <SermonSummary>{sermon.summary}</SermonSummary>
-                                        </>
-                                    )}
                                 </SermonCard>
                             ))
                         ) : (
@@ -784,7 +771,8 @@ const FilterSection = styled.div`
     background: white;
     padding: 24px;
     border-radius: 16px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e5e7eb;
     height: fit-content;
     transition: all 0.3s ease;
     margin-left: 20px;
@@ -1077,7 +1065,8 @@ const SermonCard = styled.div`
         padding: 20px;
         background: white;
         border-radius: 12px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        border: 1px solid #e5e7eb;
         cursor: pointer;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         display: flex;
@@ -1089,15 +1078,16 @@ const SermonCard = styled.div`
         padding: 20px;
         background: white;
         border-radius: 8px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        border: 1px solid #e5e7eb;
         cursor: pointer;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         position: relative;
 
-        ${SermonAuthor} {
-            font-size: 12px;
-            color: #595C62;
-            font-weight: 500;
+        ${SermonDate} {
+            font-size: 14px;
+            color: #595c62;
+            margin-bottom: 8px;
         }
 
         ${SermonTitle} {
@@ -1149,7 +1139,8 @@ const SermonCard = styled.div`
 
     &:hover {
         transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        border-color: #d1d5db;
 
         ${ActionButtons} {
             opacity: 1;
@@ -1157,7 +1148,7 @@ const SermonCard = styled.div`
     }
 `;
 
-const SermonAuthor = styled.div`
+const SermonDate = styled.div`
     font-size: 14px;
     color: #595c62;
     margin-bottom: 8px;
