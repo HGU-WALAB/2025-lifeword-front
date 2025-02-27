@@ -155,10 +155,18 @@ const QuickReadingPage = () => {
 const VerseItem = ({ verse }) => {
     const verseRef = useRef(null);
 
+    // 문장을 \n을 기준으로 나누기
+    const sentences = verse.sentence.split('\\n');
+
     return (
         <VerseItemContainer ref={verseRef}>
             <VerseNumber>{verse.paragraph}</VerseNumber>
-            <VerseSentence>{verse.sentence}</VerseSentence>
+            <VerseSentence>
+                {sentences[0]}
+                {sentences.slice(1).map((sentence, index) => (
+                    <ContinuedVerse key={index}>{sentence}</ContinuedVerse>
+                ))}
+            </VerseSentence>
             <VerseContextMenu targetRef={verseRef} verse={verse} />
         </VerseItemContainer>
     );
@@ -324,6 +332,10 @@ const VerseNumber = styled.span`
 const VerseSentence = styled.p`
     margin: 0;
     line-height: 1.6;
+`;
+
+const ContinuedVerse = styled.div`
+    margin-top: 8px;
 `;
 
 const LoadingText = styled.div`
