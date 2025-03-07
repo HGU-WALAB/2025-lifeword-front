@@ -561,22 +561,19 @@ const SermonManagementPage = () => {
 
     return (
         <Container isNavExpanded={isNavExpanded}>
-            <Header>
-                <Title>설교 관리</Title>
-                <SearchSection isScrolled={isScrolled}>
-                    <SearchBar>
-                        <Search size={20} />
-                        <input
-                            ref={searchInputRef}
-                            type="text"
-                            placeholder="설교 제목, 본문, 작성자 검색..."
-                            value={mainSearchTerm}
-                            onChange={handleSearchChange}
-                            onKeyPress={handleKeyPress}
-                        />
-                    </SearchBar>
-                </SearchSection>
-            </Header>
+            <SearchSection isScrolled={isScrolled}>
+                <SearchBar isNavExpanded={isNavExpanded}>
+                    <Search size={20} />
+                    <input
+                        ref={searchInputRef}
+                        type="text"
+                        placeholder="설교 제목, 본문, 작성자 검색..."
+                        value={mainSearchTerm}
+                        onChange={handleSearchChange}
+                        onKeyPress={handleKeyPress}
+                    />
+                </SearchBar>
+            </SearchSection>
 
             <ContentWrapper isNavExpanded={isNavExpanded}>
                 <FilterSection ref={filterSectionRef}>
@@ -952,19 +949,6 @@ const Container = styled.div`
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     width: 100%;
     flex: 1;
-`;
-
-const Header = styled.div`
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 40px;
-`;
-
-const Title = styled.h1`
-    font-size: 24px;
-    font-weight: 800;
-    color: #333;
 `;
 
 const SearchSection = styled.div`
