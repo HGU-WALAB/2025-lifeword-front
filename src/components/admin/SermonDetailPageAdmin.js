@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import styled, { createGlobalStyle } from 'styled-components';
 import {
     getSermonDetail,
@@ -120,30 +120,38 @@ const ContentStyles = `
     }
 `;
 
+const VersionDivider = styled.div`
+    height: 1px;
+    background-color: #e1e1e1;
+    margin: 4px 0;
+`;
+
 const SermonDetailPageAdmin = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
     const [sermon, setSermon] = useState(null);
     const [loading, setLoading] = useState(true);
     const { userId: currentUserId, isAdmin } = useUserState();
     const currentPath = window.location.pathname;
     const [isHeaderExpanded, setIsHeaderExpanded] = useState(false);
     const [showGuide, setShowGuide] = useState(true);
-    const [showReferenceModal, setShowReferenceModal] = useState(false);
-    const [references, setReferences] = useState([]);
-    const [selectedReference, setSelectedReference] = useState(null);
-    const [selectedReferenceDetail, setSelectedReferenceDetail] = useState(null);
-    const [editingText, setEditingText] = useState(null);
-    const [textTitle, setTextTitle] = useState('');
-    const [isDraft, setIsDraft] = useState(false);
-    const [isEditMode, setIsEditMode] = useState(false);
     const editorRef = useRef(null);
+    const [isVersionDropdownOpen, setIsVersionDropdownOpen] = useState(false);
+    const [versions, setVersions] = useState([]);
+    const [originalContent, setOriginalContent] = useState(null);
+    const [selectedVersionId, setSelectedVersionId] = useState(null);
+    const [selectedVersion, setSelectedVersion] = useState(null);
 
     useEffect(() => {
         const fetchSermonDetail = async () => {
             try {
                 const data = await getSermonDetail(id);
                 setSermon(data);
+                if (data?.contents?.[0]?.contentText) {
+                    console.log('Setting original content:', data.contents[0].contentText);
+                    setOriginalContent(data.contents[0].contentText);
+                }
             } catch (error) {
                 console.error('Error fetching sermon detail:', error);
             } finally {
@@ -164,6 +172,29 @@ const SermonDetailPageAdmin = () => {
         return () => clearTimeout(timer);
     }, []);
 
+    useEffect(() => {
+        const fetchVersions = async () => {
+            try {
+                console.log('Fetching versions with:', { id, currentUserId });
+                const response = await getTextList(id, currentUserId);
+                console.log('Version list response:', response);
+
+                const mappedVersions = response.map((text) => ({
+                    textId: text.id,
+                    textTitle: text.textTitle,
+                }));
+                console.log('Mapped versions:', mappedVersions);
+                setVersions(mappedVersions);
+            } catch (error) {
+                console.error('Error fetching versions:', error);
+            }
+        };
+
+        if (id && currentUserId) {
+            fetchVersions();
+        }
+    }, [id, currentUserId, location.key]);
+
     const handleDelete = async () => {
         if (window.confirm('정말로 이 설교를 삭제하시겠습니까?')) {
             try {
@@ -182,8 +213,20 @@ const SermonDetailPageAdmin = () => {
         }
     };
 
-    const handleEdit = () => {
-        navigate(`/main/admin/sermons/edit/${id}`);
+    const handleSermonEdit = () => {
+        if (!selectedVersionId) {
+            if (currentPath.includes('/admin/sermons')) {
+                navigate(`/main/admin/sermons/edit/${id}`);
+            } else {
+                navigate(`/main/sermon-list/edit/${id}`);
+            }
+        } else {
+            if (currentPath.includes('/admin/sermons')) {
+                navigate(`/main/admin/sermons/${id}/versions/${selectedVersionId}/edit`);
+            } else {
+                navigate(`/main/sermons/${id}/versions/${selectedVersionId}/edit`);
+            }
+        }
     };
 
     const toggleHeader = () => {
@@ -194,16 +237,12 @@ const SermonDetailPageAdmin = () => {
         const printContent = document.createElement('div');
         printContent.className = 'print-container';
 
-        // 메타 정보 섹션 추가
+        // 메타 정보 섹션
         const metaSection = document.createElement('div');
         metaSection.className = 'print-meta-section';
         metaSection.innerHTML = `
             <h1>${sermon.sermonTitle}</h1>
             <div class="print-meta-info">
-                <div class="print-scripture">
-                    <strong>본문:</strong> ${sermon.mainScripture}
-                    ${sermon.additionalScripture ? `<br/>${sermon.additionalScripture}` : ''}
-                </div>
                 <div class="print-details">
                     <p><strong>설교자:</strong> ${sermon.ownerName}</p>
                     <p><strong>설교일:</strong> ${new Date(sermon.sermonDate).toLocaleDateString('ko-KR', {
@@ -226,7 +265,6 @@ const SermonDetailPageAdmin = () => {
             </div>
         `;
 
-        // 기존 내용 추가
         const content = document.querySelector('#printable-content').cloneNode(true);
 
         printContent.appendChild(metaSection);
@@ -236,10 +274,29 @@ const SermonDetailPageAdmin = () => {
         printWindow.document.write(`
             <html>
                 <head>
+                    <title>${sermon.sermonTitle}</title>
                     <style>
                         @page {
                             margin: 20mm;
                             size: auto;
+                            
+                            @bottom-left {
+                                content: "${new Date(sermon.sermonDate).toLocaleDateString('ko-KR', {
+                                    year: 'numeric',
+                                    month: 'long',
+                                    day: 'numeric',
+                                })}";
+                                font-family: 'Noto Sans KR', sans-serif;
+                                font-size: 10px;
+                                color: #666;
+                            }
+                            
+                            @bottom-right {
+                                content: counter(page);
+                                font-family: 'Noto Sans KR', sans-serif;
+                                font-size: 10px;
+                                color: #666;
+                            }
                         }
                         body {
                             font-family: 'Noto Sans KR', sans-serif;
@@ -330,242 +387,48 @@ const SermonDetailPageAdmin = () => {
         }, 250);
     };
 
-    const fetchReferences = async () => {
+    const handleVersionSelect = async (textId) => {
         try {
-            const data = await getTextList(id, currentUserId);
-            setReferences(data);
-        } catch (error) {
-            console.error('Error fetching references:', error);
-        }
-    };
-
-    const fetchReferenceDetail = async (sermonId, textId) => {
-        try {
-            const data = await getTextDetail(sermonId, textId, currentUserId);
-            setSelectedReferenceDetail(data);
-        } catch (error) {
-            console.error('Error fetching reference detail:', error);
-            alert('참조 내용을 불러오는 중 오류가 발생했습니다.');
-        }
-    };
-
-    const handleReferenceSelect = async (reference) => {
-        setSelectedReference(reference);
-        await fetchReferenceDetail(id, reference.id);
-    };
-
-    const handleReferenceDelete = async (textId) => {
-        if (window.confirm('정말 삭제하시겠습니까?')) {
-            try {
-                await deleteText(textId, currentUserId);
-                await fetchReferences();
-                setSelectedReference(null);
-                alert('삭제되었습니다.');
-            } catch (error) {
-                console.error('Error deleting reference:', error);
-                alert('삭제 중 오류가 발생했습니다.');
-            }
-        }
-    };
-
-    const handleReferenceEdit = async (text) => {
-        try {
-            // 상세 내용을 가져옴
-            const detailData = await getTextDetail(id, text.id, currentUserId);
-            setEditingText({
-                ...text,
-                textContent: detailData.textContent,
-            });
-            setTextTitle(text.textTitle);
-            setIsDraft(text.draft);
-            setIsEditMode(true);
-        } catch (error) {
-            console.error('Error fetching text detail for edit:', error);
-            alert('내용을 불러오는 중 오류가 발생했습니다.');
-        }
-    };
-
-    const handleTextSubmit = async () => {
-        try {
-            const textContent = editorRef.current?.getContent();
-            if (!textTitle.trim()) {
-                alert('제목을 입력해주세요.');
-                return;
-            }
-            if (!textContent) {
-                alert('내용을 입력해주세요.');
+            if (textId === 'original') {
+                setSermon((prev) => ({
+                    ...prev,
+                    contents: [
+                        {
+                            contentText: originalContent,
+                        },
+                    ],
+                }));
+                setSelectedVersionId(null);
+                setSelectedVersion(null);
                 return;
             }
 
-            if (editingText) {
-                // 수정
-                await updateText(editingText.id, currentUserId, textTitle, isDraft, textContent);
-                alert('수정되었습니다.');
-            }
+            const response = await getTextDetail(id, textId, currentUserId);
 
-            // 초기화 및 목록 새로고침
-            setIsEditMode(false);
-            setEditingText(null);
-            setIsDraft(false);
-            setTextTitle('');
-            editorRef.current?.clearEditor();
-            await fetchReferences();
-
-            // 상세 내용도 다시 가져오기
-            if (selectedReference) {
-                await fetchReferenceDetail(id, selectedReference.id);
+            if (response.textContent) {
+                setSermon((prev) => ({
+                    ...prev,
+                    contents: [
+                        {
+                            contentText: response.textContent,
+                        },
+                    ],
+                }));
+                setSelectedVersionId(textId);
+                setSelectedVersion({
+                    textId: textId,
+                    userId: response.userId,
+                });
             }
         } catch (error) {
-            console.error('Error submitting text:', error);
-            alert('저장 중 오류가 발생했습니다.');
+            console.error('Error fetching version detail:', error);
         }
     };
 
-    const renderModalContent = () => {
-        if (isEditMode) {
-            return (
-                <ModalContent onClick={(e) => e.stopPropagation()}>
-                    <ModalHeader>
-                        <HeaderLeft>
-                            <BackButton
-                                onClick={() => {
-                                    setIsEditMode(false);
-                                    setEditingText(null);
-                                    setTextTitle('');
-                                    setIsDraft(false);
-                                }}
-                            >
-                                <ChevronLeft size={20} />
-                            </BackButton>
-                            <h2>{editingText ? '참조 수정' : '새 참조 작성'}</h2>
-                        </HeaderLeft>
-                        <HeaderRight>
-                            <SaveButton onClick={handleTextSubmit}>저장</SaveButton>
-                        </HeaderRight>
-                    </ModalHeader>
-                    <EditorContainer>
-                        <EditorHeader>
-                            <TitleInput
-                                value={textTitle}
-                                onChange={(e) => setTextTitle(e.target.value)}
-                                placeholder="제목을 입력하세요"
-                            />
-                            <DraftToggle>
-                                <input
-                                    type="checkbox"
-                                    checked={isDraft}
-                                    onChange={(e) => setIsDraft(e.target.checked)}
-                                    id="draftToggle"
-                                />
-                                <label htmlFor="draftToggle">임시저장</label>
-                            </DraftToggle>
-                        </EditorHeader>
-                        <EditorWrapper>
-                            <SermonEditor ref={editorRef} initialContent={editingText?.textContent || ''} />
-                        </EditorWrapper>
-                    </EditorContainer>
-                </ModalContent>
-            );
-        }
-
-        if (selectedReference) {
-            return (
-                <ModalContent onClick={(e) => e.stopPropagation()}>
-                    <ModalHeader>
-                        <HeaderLeft>
-                            <BackButton onClick={() => setSelectedReference(null)}>
-                                <ChevronLeft size={20} />
-                            </BackButton>
-                            <h2>{selectedReference.textTitle}</h2>
-                        </HeaderLeft>
-                        <HeaderRight>
-                            <IconButton onClick={() => handleReferenceEdit(selectedReference)}>
-                                <Pencil size={18} />
-                            </IconButton>
-                            <IconButton isDelete onClick={() => handleReferenceDelete(selectedReference.id)}>
-                                <Trash2 size={18} />
-                            </IconButton>
-                            <IconButton
-                                onClick={() => {
-                                    setShowReferenceModal(false);
-                                    setSelectedReference(null);
-                                    setSelectedReferenceDetail(null);
-                                }}
-                            >
-                                <X size={18} />
-                            </IconButton>
-                        </HeaderRight>
-                    </ModalHeader>
-                    <ReferenceDetail>
-                        <ReferenceInfo>
-                            <InfoItem>
-                                <ReferenceLabel>작성자</ReferenceLabel>
-                                <Value>{selectedReferenceDetail?.userName || '알 수 없음'}</Value>
-                            </InfoItem>
-                            <InfoItem>
-                                <ReferenceLabel>작성일</ReferenceLabel>
-                                <Value>
-                                    {new Date(
-                                        selectedReferenceDetail?.textCreatedAt || selectedReference.textCreatedAt
-                                    ).toLocaleDateString('ko-KR', {
-                                        year: 'numeric',
-                                        month: 'long',
-                                        day: 'numeric',
-                                    })}
-                                </Value>
-                            </InfoItem>
-                        </ReferenceInfo>
-                        <ReferenceContent
-                            dangerouslySetInnerHTML={{
-                                __html: selectedReferenceDetail?.textContent || '로딩 중...',
-                            }}
-                        />
-                    </ReferenceDetail>
-                </ModalContent>
-            );
-        }
-
-        return (
-            <ModalContent onClick={(e) => e.stopPropagation()}>
-                <ModalHeader>
-                    <h2>참조 목록</h2>
-                    <HeaderRight>
-                        <IconButton onClick={() => setShowReferenceModal(false)}>
-                            <X size={18} />
-                        </IconButton>
-                    </HeaderRight>
-                </ModalHeader>
-                <ReferenceList>
-                    {references.length === 0 ? (
-                        <EmptyState>
-                            <p>등록된 참조가 없습니다.</p>
-                        </EmptyState>
-                    ) : (
-                        references.map((reference) => (
-                            <ReferenceItem key={reference.id} onClick={() => handleReferenceSelect(reference)}>
-                                <ReferenceItemContent>
-                                    <h3>{reference.textTitle}</h3>
-                                    <ReferenceMetaInfo>
-                                        <span>작성자: {reference.userName || '알 수 없음'}</span>
-                                        <span>•</span>
-                                        <span>{new Date(reference.textCreatedAt).toLocaleDateString()}</span>
-                                    </ReferenceMetaInfo>
-                                </ReferenceItemContent>
-                                <ActionButtons onClick={(e) => e.stopPropagation()}>
-                                    <IconButton small onClick={() => handleReferenceEdit(reference)}>
-                                        <Pencil size={14} />
-                                    </IconButton>
-                                    <IconButton small isDelete onClick={() => handleReferenceDelete(reference.id)}>
-                                        <Trash2 size={14} />
-                                    </IconButton>
-                                </ActionButtons>
-                            </ReferenceItem>
-                        ))
-                    )}
-                </ReferenceList>
-            </ModalContent>
-        );
-    };
+    const showEditButton =
+        isAdmin ||
+        (!selectedVersion && sermon?.userId === currentUserId) ||
+        (selectedVersion && selectedVersion.userId === currentUserId);
 
     if (loading) {
         return <LoadingText>로딩 중...</LoadingText>;
@@ -577,7 +440,7 @@ const SermonDetailPageAdmin = () => {
 
     return (
         <>
-            <GlobalStyle hideScroll={showReferenceModal} />
+            <GlobalStyle hideScroll={false} />
             <Container>
                 <HeaderContainer expanded={isHeaderExpanded} onClick={toggleHeader}>
                     <TopBar>
@@ -602,14 +465,6 @@ const SermonDetailPageAdmin = () => {
                                                 day: 'numeric',
                                             })}
                                         </CompactDate>
-                                        <CompactDate>
-                                            작성일:{' '}
-                                            {new Date(sermon.createdAt).toLocaleDateString('ko-KR', {
-                                                year: 'numeric',
-                                                month: 'long',
-                                                day: 'numeric',
-                                            })}
-                                        </CompactDate>
                                     </CompactMeta>
                                     <CompactTitle>{sermon.sermonTitle}</CompactTitle>
                                     <CompactScripture>
@@ -620,24 +475,60 @@ const SermonDetailPageAdmin = () => {
                             </CompactHeader>
                         )}
                         <HeaderButtonGroup>
-                            <ReferenceButton
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    setShowReferenceModal(true);
-                                    fetchReferences();
-                                }}
-                            >
-                                <BookOpen />
-                                참조
-                            </ReferenceButton>
-                            <ActionButton
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleEdit();
-                                }}
-                            >
-                                <Pencil size={16} />
-                            </ActionButton>
+                            <VersionDropdown>
+                                <VersionButton
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setIsVersionDropdownOpen(!isVersionDropdownOpen);
+                                    }}
+                                >
+                                    <BookOpen size={16} />
+                                    버전
+                                    <ChevronDown size={14} />
+                                </VersionButton>
+                                <DropdownContent isOpen={isVersionDropdownOpen}>
+                                    <VersionItem
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleVersionSelect('original');
+                                            setIsVersionDropdownOpen(false);
+                                        }}
+                                    >
+                                        원본
+                                    </VersionItem>
+                                    <VersionDivider />
+                                    {versions.map((version) => (
+                                        <VersionItem
+                                            key={version.textId}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleVersionSelect(version.textId);
+                                                setIsVersionDropdownOpen(false);
+                                            }}
+                                        >
+                                            {version.textTitle}
+                                        </VersionItem>
+                                    ))}
+                                    <CreateVersionButton
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            navigate(`/main/sermons/${id}/create-version`);
+                                        }}
+                                    >
+                                        <span>+ 버전 생성하기</span>
+                                    </CreateVersionButton>
+                                </DropdownContent>
+                            </VersionDropdown>
+                            {showEditButton && (
+                                <ActionButton
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleSermonEdit();
+                                    }}
+                                >
+                                    <Pencil size={16} />
+                                </ActionButton>
+                            )}
                             <ActionButton
                                 onClick={(e) => {
                                     e.stopPropagation();
@@ -659,7 +550,7 @@ const SermonDetailPageAdmin = () => {
                         <>
                             <MetaInfo>
                                 <FormSectionLong>
-                                    <Author>작성자: {sermon.ownerName}</Author>
+                                    <Author>{sermon.ownerName}</Author>
                                     <DateInfo>
                                         <SermonDate>
                                             {new Date(sermon.sermonDate).toLocaleDateString('ko-KR', {
@@ -668,14 +559,6 @@ const SermonDetailPageAdmin = () => {
                                                 day: 'numeric',
                                             })}
                                         </SermonDate>
-                                        <CreatedDate>
-                                            작성일:{' '}
-                                            {new Date(sermon.createdAt).toLocaleDateString('ko-KR', {
-                                                year: 'numeric',
-                                                month: 'long',
-                                                day: 'numeric',
-                                            })}
-                                        </CreatedDate>
                                     </DateInfo>
                                 </FormSectionLong>
                                 <FormSection>
@@ -725,7 +608,6 @@ const SermonDetailPageAdmin = () => {
                     인쇄하기
                 </PrintButton>
             </Container>
-            {showReferenceModal && <Modal>{renderModalContent()}</Modal>}
         </>
     );
 };
@@ -847,28 +729,75 @@ const HeaderButtonGroup = styled.div`
     align-items: center;
 `;
 
-const ReferenceButton = styled.button`
+const VersionDropdown = styled.div`
+    position: relative;
+    display: inline-block;
+`;
+
+const VersionButton = styled.button`
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
     padding: 8px 16px;
-    background: #f8f9fa;
-    border: 1px solid #e9ecef;
+    background: white;
+    border: 1px solid #e1e1e1;
     border-radius: 8px;
-    color: #495057;
+    color: #333;
     font-size: 14px;
-    font-weight: 500;
     cursor: pointer;
     transition: all 0.2s ease;
 
     &:hover {
-        background: #f1f3f5;
-        border-color: #dee2e6;
+        background: #f8f9fa;
+        border-color: #4f3296;
     }
 
     svg {
-        width: 16px;
-        height: 16px;
+        color: #4f3296;
+    }
+`;
+
+const DropdownContent = styled.div`
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 4px;
+    background: white;
+    border: 1px solid #e1e1e1;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    min-width: 200px;
+    z-index: 1000;
+    display: ${(props) => (props.isOpen ? 'block' : 'none')};
+`;
+
+const VersionItem = styled.div`
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    &:hover {
+        background: #f8f9fa;
+    }
+
+    &:not(:last-child) {
+        border-bottom: 1px solid #e1e1e1;
+    }
+`;
+
+const CreateVersionButton = styled(VersionItem)`
+    color: #4f3296;
+    font-weight: 500;
+
+    &:hover {
+        background: #f8f4ff;
+    }
+
+    svg {
+        color: #4f3296;
     }
 `;
 
@@ -921,11 +850,6 @@ const SermonDate = styled.span`
     font-size: 14px;
     color: #595c62;
     font-weight: 500;
-`;
-
-const CreatedDate = styled.span`
-    font-size: 12px;
-    color: #888;
 `;
 
 const FormSection = styled.div`
@@ -1009,11 +933,28 @@ const ContentSection = styled.div`
 `;
 
 const Content = styled.div`
-    font-size: 16px;
+    padding: 24px;
+    background: white;
+    border-radius: 12px;
+    min-height: 200px;
     line-height: 1.6;
-    color: #495057;
-    padding: 20px;
+
     ${ContentStyles}
+
+    img {
+        max-width: 100%;
+        height: auto;
+    }
+
+    /* 에디터 내용의 border 제거 */
+    .ql-container.ql-snow {
+        border: none;
+    }
+
+    .ql-editor {
+        border: none;
+        padding: 0;
+    }
 `;
 
 const LoadingText = styled.div`
@@ -1109,256 +1050,6 @@ const GuideMessage = styled.div`
         60% {
             transform: translateY(4px);
         }
-    }
-`;
-
-const Modal = styled.div`
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-    padding: 20px;
-`;
-
-const ModalContent = styled.div`
-    background: white;
-    width: 95%;
-    max-width: 1200px;
-    height: 90vh;
-    border-radius: 16px;
-    display: flex;
-    flex-direction: column;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-`;
-
-const ModalHeader = styled.div`
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 20px 24px;
-    border-bottom: 1px solid #e9ecef;
-
-    h2 {
-        font-size: 20px;
-        color: #343a40;
-        margin: 0;
-    }
-`;
-
-const HeaderLeft = styled.div`
-    display: flex;
-    align-items: center;
-    gap: 12px;
-`;
-
-const HeaderRight = styled.div`
-    display: flex;
-    align-items: center;
-    gap: 8px;
-`;
-
-const IconButton = styled.button`
-    width: ${(props) => (props.small ? '28px' : '36px')};
-    height: ${(props) => (props.small ? '28px' : '36px')};
-    border-radius: 8px;
-    border: none;
-    background: ${(props) => (props.isDelete ? '#fee2e2' : '#f8f9fa')};
-    color: ${(props) => (props.isDelete ? '#dc2626' : '#495057')};
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.2s ease;
-
-    &:hover {
-        background: ${(props) => (props.isDelete ? '#fecaca' : '#f1f3f5')};
-    }
-`;
-
-const ReferenceDetail = styled.div`
-    flex: 1;
-    overflow-y: auto;
-    padding: 24px;
-`;
-
-const ReferenceInfo = styled.div`
-    display: flex;
-    gap: 24px;
-    margin-bottom: 24px;
-    padding-bottom: 24px;
-    border-bottom: 1px solid #e9ecef;
-`;
-
-const InfoItem = styled.div`
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-`;
-
-const ReferenceLabel = styled.span`
-    font-size: 12px;
-    color: #868e96;
-`;
-
-const Value = styled.span`
-    font-size: 14px;
-    color: #495057;
-`;
-
-const ReferenceContent = styled.div`
-    font-size: 16px;
-    line-height: 1.6;
-    color: #495057;
-    padding: 20px;
-    ${ContentStyles}
-`;
-
-const ReferenceList = styled.div`
-    padding: 20px 24px;
-    overflow-y: auto;
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-`;
-
-const ReferenceItem = styled.div`
-    padding: 16px;
-    background: #f8f9fa;
-    border-radius: 12px;
-    border: 1px solid #e9ecef;
-    transition: all 0.2s ease;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    cursor: pointer;
-
-    &:hover {
-        background: #f1f3f5;
-        border-color: #dee2e6;
-    }
-`;
-
-const ReferenceItemContent = styled.div`
-    h3 {
-        font-size: 16px;
-        color: #343a40;
-        margin: 0 0 8px 0;
-    }
-`;
-
-const ReferenceMetaInfo = styled.div`
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 14px;
-    color: #868e96;
-
-    span {
-        &:nth-child(2) {
-            color: #ced4da;
-        }
-    }
-`;
-
-const EmptyState = styled.div`
-    text-align: center;
-    padding: 48px 0;
-    color: #868e96;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 16px;
-`;
-
-const ActionButtons = styled.div`
-    display: flex;
-    gap: 8px;
-`;
-
-const EditorContainer = styled.div`
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    padding: 20px;
-`;
-
-const EditorHeader = styled.div`
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-`;
-
-const TitleInput = styled.input`
-    flex: 1;
-    padding: 12px;
-    font-size: 16px;
-    border: 1px solid #e9ecef;
-    border-radius: 8px;
-    margin-right: 16px;
-
-    &:focus {
-        outline: none;
-        border-color: #4f3296;
-    }
-`;
-
-const DraftToggle = styled.div`
-    display: flex;
-    align-items: center;
-    gap: 8px;
-
-    input {
-        width: 16px;
-        height: 16px;
-    }
-
-    label {
-        font-size: 14px;
-        color: #495057;
-        user-select: none;
-    }
-`;
-
-const EditorWrapper = styled.div`
-    flex: 1;
-    overflow: hidden;
-    border: 1px solid #e9ecef;
-    border-radius: 8px;
-
-    .quill {
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .ql-container {
-        flex: 1;
-        overflow: auto;
-    }
-`;
-
-const SaveButton = styled.button`
-    padding: 8px 24px;
-    background: #4f3296;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease;
-
-    &:hover {
-        background: #3a2570;
     }
 `;
 

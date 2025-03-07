@@ -160,6 +160,8 @@ const SermonListPage = () => {
     const [showDeleteBookmarkModal, setShowDeleteBookmarkModal] = useState(false);
     const [bookmarkToDelete, setBookmarkToDelete] = useState(null);
 
+    const [totalElements, setTotalElements] = useState(0);
+
     const getModeFromCategory = (category) => {
         switch (category) {
             case 'my-all':
@@ -187,6 +189,7 @@ const SermonListPage = () => {
     const fetchSermons = useCallback(
         async (searchKeyword = null) => {
             try {
+                setLoading(true);
                 const params = {
                     userId: userUserId,
                     keyword: searchKeyword || searchTerm || null,
@@ -211,10 +214,13 @@ const SermonListPage = () => {
 
                 const response = await getFilteredSermonList(params);
                 setSermons(response.content);
-                setTotalPages(response.totalPage);
+                setTotalElements(response.totalElements);
+                setTotalPages(response.totalPages);
             } catch (error) {
                 console.error('Error fetching sermons:', error);
                 setSermons([]);
+            } finally {
+                setLoading(false);
             }
         },
         [userUserId, sortBy, filters, currentPage, itemsPerPage, selectedCategory, searchTerm]
@@ -655,6 +661,16 @@ const SermonListPage = () => {
                             </FilterContent>
                         </FilterItem>
                     </FilterAccordion>
+
+                    <FilterDivider />
+                    <TotalCountWrapper>
+                        <TotalCountIcon>
+                            <BookOpen size={14} />
+                        </TotalCountIcon>
+                        <TotalCount>
+                            총 <strong>{totalElements}</strong>개의 설교
+                        </TotalCount>
+                    </TotalCountWrapper>
 
                     <ScrolledControls isVisible={isScrolled}>
                         <SearchBar compact isNavExpanded={isNavExpanded}>
@@ -1882,6 +1898,40 @@ const ReferenceCount = styled.span`
     svg {
         color: #6b4ee6;
     }
+`;
+
+const TotalCountWrapper = styled.div`
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    margin: 0 4px;
+`;
+
+const TotalCountIcon = styled.div`
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6b4ee6;
+`;
+
+const TotalCount = styled.div`
+    font-size: 14px;
+    color: #666;
+
+    strong {
+        color: #6b4ee6;
+        font-weight: 600;
+        margin: 0 2px;
+    }
+`;
+
+const FilterDivider = styled.div`
+    height: 1px;
+    background-color: #e5e7eb;
+    margin: 16px 0;
 `;
 
 export default SermonListPage;

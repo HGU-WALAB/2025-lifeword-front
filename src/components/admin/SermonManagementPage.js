@@ -146,6 +146,8 @@ const SermonManagementPage = () => {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [sermonToDelete, setSermonToDelete] = useState(null);
     const [selectedSermonUserId, setSelectedSermonUserId] = useState(null);
+    const [totalElements, setTotalElements] = useState(0);
+    const [loading, setLoading] = useState(false);
 
     const [filters, setFilters] = useState(() => {
         return {
@@ -199,6 +201,7 @@ const SermonManagementPage = () => {
     const fetchSermons = useCallback(
         async (searchKeyword = null) => {
             try {
+                setLoading(true);
                 const params = {
                     keyword: searchKeyword || searchTerm || null,
                     searchType: searchKeyword || searchTerm ? 2 : null,
@@ -221,10 +224,13 @@ const SermonManagementPage = () => {
 
                 const response = await getFilteredSermonListAdmin(params);
                 setSermons(response.content);
+                setTotalElements(response.totalElements);
                 setTotalPages(response.totalPage);
             } catch (error) {
                 console.error('Error fetching sermons:', error);
                 setSermons([]);
+            } finally {
+                setLoading(false);
             }
         },
         [sortBy, filters, currentPage, itemsPerPage, searchTerm]
@@ -555,19 +561,22 @@ const SermonManagementPage = () => {
 
     return (
         <Container isNavExpanded={isNavExpanded}>
-            <SearchSection isScrolled={isScrolled}>
-                <SearchBar>
-                    <Search size={20} />
-                    <input
-                        ref={searchInputRef}
-                        type="text"
-                        placeholder="설교 제목, 본문, 작성자 검색..."
-                        value={mainSearchTerm}
-                        onChange={handleSearchChange}
-                        onKeyPress={handleKeyPress}
-                    />
-                </SearchBar>
-            </SearchSection>
+            <Header>
+                <Title>설교 관리</Title>
+                <SearchSection isScrolled={isScrolled}>
+                    <SearchBar>
+                        <Search size={20} />
+                        <input
+                            ref={searchInputRef}
+                            type="text"
+                            placeholder="설교 제목, 본문, 작성자 검색..."
+                            value={mainSearchTerm}
+                            onChange={handleSearchChange}
+                            onKeyPress={handleKeyPress}
+                        />
+                    </SearchBar>
+                </SearchSection>
+            </Header>
 
             <ContentWrapper isNavExpanded={isNavExpanded}>
                 <FilterSection ref={filterSectionRef}>
@@ -690,6 +699,16 @@ const SermonManagementPage = () => {
                             </FilterContent>
                         </FilterItem>
                     </FilterAccordion>
+
+                    <FilterDivider />
+                    <TotalCountWrapper>
+                        <TotalCountIcon>
+                            <BookOpen size={14} />
+                        </TotalCountIcon>
+                        <TotalCount>
+                            총 <strong>{totalElements}</strong>개의 설교
+                        </TotalCount>
+                    </TotalCountWrapper>
 
                     <ScrolledControls isVisible={isScrolled}>
                         <SearchBar compact isNavExpanded={isNavExpanded}>
@@ -933,6 +952,19 @@ const Container = styled.div`
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     width: 100%;
     flex: 1;
+`;
+
+const Header = styled.div`
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 40px;
+`;
+
+const Title = styled.h1`
+    font-size: 24px;
+    font-weight: 800;
+    color: #333;
 `;
 
 const SearchSection = styled.div`
@@ -1721,6 +1753,40 @@ const ReferenceCount = styled.span`
 
     svg {
         color: #6b4ee6;
+    }
+`;
+
+const FilterDivider = styled.div`
+    height: 1px;
+    background-color: #e5e7eb;
+    margin: 16px 0;
+`;
+
+const TotalCountWrapper = styled.div`
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    margin: 0 4px;
+`;
+
+const TotalCountIcon = styled.div`
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6b4ee6;
+`;
+
+const TotalCount = styled.div`
+    font-size: 14px;
+    color: #666;
+
+    strong {
+        color: #6b4ee6;
+        font-weight: 600;
+        margin: 0 2px;
     }
 `;
 
