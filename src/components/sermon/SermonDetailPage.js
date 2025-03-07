@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import styled, { createGlobalStyle } from 'styled-components';
 import {
     getSermonDetail,
@@ -139,9 +139,107 @@ const ContentStyles = `
     }
 `;
 
+const VersionDropdown = styled.div`
+    position: relative;
+    display: inline-block;
+`;
+
+const VersionButton = styled.button`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: white;
+    border: 1px solid #e1e1e1;
+    border-radius: 8px;
+    color: #333;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+        background: #f8f9fa;
+        border-color: #4f3296;
+    }
+
+    svg {
+        color: #4f3296;
+    }
+`;
+
+const DropdownContent = styled.div`
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 4px;
+    background: white;
+    border: 1px solid #e1e1e1;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    min-width: 200px;
+    z-index: 1000;
+    display: ${(props) => (props.isOpen ? 'block' : 'none')};
+`;
+
+const VersionItem = styled.div`
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    &:hover {
+        background: #f8f9fa;
+    }
+
+    &:first-child {
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+    }
+
+    &:not(:last-child) {
+        border-bottom: 1px solid #e1e1e1;
+    }
+`;
+
+const CreateVersionButton = styled(VersionItem)`
+    color: #4f3296;
+    font-weight: 500;
+
+    &:hover {
+        background: #f8f4ff;
+    }
+
+    svg {
+        color: #4f3296;
+    }
+`;
+
+const VersionDivider = styled.div`
+    height: 1px;
+    background-color: #e1e1e1;
+    margin: 4px 0;
+`;
+
+const fetchVersions = async (id, currentUserId, setVersions) => {
+    try {
+        const response = await getTextList(id, currentUserId);
+        const mappedVersions = response.map((text) => ({
+            textId: text.id,
+            textTitle: text.textTitle,
+            userId: text.userId,
+        }));
+        setVersions(mappedVersions);
+    } catch (error) {
+        console.error('Error fetching versions:', error);
+    }
+};
+
 const SermonDetailPage = ({ isBookmarkView, onBookmarkToggle }) => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
     const [sermon, setSermon] = useState(null);
     const [loading, setLoading] = useState(true);
     const { userId: currentUserId, isAdmin } = useUserState();
@@ -153,6 +251,11 @@ const SermonDetailPage = ({ isBookmarkView, onBookmarkToggle }) => {
     const [bookmarkId, setBookmarkId] = useState(null);
     const [error, setError] = useState(null);
     const userState = useUserState();
+    const [isVersionDropdownOpen, setIsVersionDropdownOpen] = useState(false);
+    const [versions, setVersions] = useState([]);
+    const [originalContent, setOriginalContent] = useState(null);
+    const [selectedVersionId, setSelectedVersionId] = useState(null);
+    const [selectedVersion, setSelectedVersion] = useState(null);
 
     useEffect(() => {
         const fetchSermonDetail = async () => {
@@ -162,6 +265,10 @@ const SermonDetailPage = ({ isBookmarkView, onBookmarkToggle }) => {
                 const data = await getSermonDetail(id);
                 console.log('Received sermon data:', data);
                 setSermon(data);
+                if (data?.contents?.[0]?.contentText) {
+                    console.log('Setting original content:', data.contents[0].contentText);
+                    setOriginalContent(data.contents[0].contentText);
+                }
             } catch (error) {
                 console.error('Error fetching sermon detail:', error);
                 setError(error);
@@ -202,6 +309,12 @@ const SermonDetailPage = ({ isBookmarkView, onBookmarkToggle }) => {
         }
     }, [currentUserId, id]);
 
+    useEffect(() => {
+        if (id && currentUserId) {
+            fetchVersions(id, currentUserId, setVersions);
+        }
+    }, [id, currentUserId, location.key]);
+
     const handleDelete = async () => {
         if (window.confirm('정말로 이 설교를 삭제하시겠습니까?')) {
             try {
@@ -224,10 +337,18 @@ const SermonDetailPage = ({ isBookmarkView, onBookmarkToggle }) => {
     };
 
     const handleSermonEdit = () => {
-        if (currentPath.includes('/admin/sermons')) {
-            navigate(`/main/admin/sermons/edit/${id}`);
+        if (!selectedVersionId) {
+            if (currentPath.includes('/admin/sermons')) {
+                navigate(`/main/admin/sermons/edit/${id}`);
+            } else {
+                navigate(`/main/sermon-list/edit/${id}`);
+            }
         } else {
-            navigate(`/sermons/edit/${id}`);
+            if (currentPath.includes('/admin/sermons')) {
+                navigate(`/main/admin/sermons/${id}/versions/${selectedVersionId}/edit`);
+            } else {
+                navigate(`/main/sermons/${id}/versions/${selectedVersionId}/edit`);
+            }
         }
     };
 
@@ -412,6 +533,52 @@ const SermonDetailPage = ({ isBookmarkView, onBookmarkToggle }) => {
         }
     };
 
+    const handleVersionSelect = async (textId) => {
+        try {
+            if (textId === 'original') {
+                setSermon((prev) => ({
+                    ...prev,
+                    contents: [
+                        {
+                            contentText: originalContent,
+                        },
+                    ],
+                }));
+                setSelectedVersionId(null);
+                setSelectedVersion(null);
+                return;
+            }
+
+            const response = await getTextDetail(id, textId, currentUserId);
+
+            if (response.textContent) {
+                setSermon((prev) => ({
+                    ...prev,
+                    contents: [
+                        {
+                            contentText: response.textContent,
+                        },
+                    ],
+                }));
+                setSelectedVersionId(textId);
+                setSelectedVersion({
+                    textId: textId,
+                    userId: response.userId,
+                });
+            }
+        } catch (error) {
+            console.error('Error fetching version detail:', error);
+        }
+    };
+
+    const handleVersionDropdownClick = async (e) => {
+        e.stopPropagation();
+        setIsVersionDropdownOpen(!isVersionDropdownOpen);
+        if (!isVersionDropdownOpen) {
+            await fetchVersions(id, currentUserId, setVersions);
+        }
+    };
+
     if (loading) return <LoadingText>로딩 중...</LoadingText>;
     if (error) return <EmptyText>설교를 불러오는 중 오류가 발생했습니다.</EmptyText>;
     if (!sermon) return <EmptyText>설교를 찾을 수 없습니다.</EmptyText>;
@@ -463,15 +630,45 @@ const SermonDetailPage = ({ isBookmarkView, onBookmarkToggle }) => {
                             </CompactHeader>
                         )}
                         <HeaderButtonGroup>
-                            <ReferenceButton
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    // 여기에 새로운 참조 기능 추가 예정
-                                }}
-                            >
-                                <BookOpen />
-                                참조
-                            </ReferenceButton>
+                            <VersionDropdown>
+                                <VersionButton onClick={handleVersionDropdownClick}>
+                                    <BookOpen size={16} />
+                                    버전
+                                    <ChevronDown size={14} />
+                                </VersionButton>
+                                <DropdownContent isOpen={isVersionDropdownOpen}>
+                                    <VersionItem
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleVersionSelect('original');
+                                            setIsVersionDropdownOpen(false);
+                                        }}
+                                    >
+                                        원본
+                                    </VersionItem>
+                                    <VersionDivider />
+                                    {versions.map((version) => (
+                                        <VersionItem
+                                            key={version.textId}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleVersionSelect(version.textId);
+                                                setIsVersionDropdownOpen(false);
+                                            }}
+                                        >
+                                            {version.textTitle}
+                                        </VersionItem>
+                                    ))}
+                                    <CreateVersionButton
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            navigate(`/main/sermons/${id}/create-version`);
+                                        }}
+                                    >
+                                        <span>+ 버전 생성하기</span>
+                                    </CreateVersionButton>
+                                </DropdownContent>
+                            </VersionDropdown>
                             <ActionButton
                                 onClick={(e) => {
                                     e.stopPropagation();
@@ -482,26 +679,28 @@ const SermonDetailPage = ({ isBookmarkView, onBookmarkToggle }) => {
                             >
                                 <Bookmark size={16} />
                             </ActionButton>
+                            {((selectedVersionId && selectedVersion?.userId === currentUserId) ||
+                                (!selectedVersionId && sermon?.userId === currentUserId) ||
+                                (isAdmin && isAdminPage)) && (
+                                <ActionButton
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleSermonEdit();
+                                    }}
+                                >
+                                    <Pencil size={16} />
+                                </ActionButton>
+                            )}
                             {(sermon?.userId === currentUserId || (isAdmin && isAdminPage)) && (
-                                <>
-                                    <ActionButton
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleSermonEdit();
-                                        }}
-                                    >
-                                        <Pencil size={16} />
-                                    </ActionButton>
-                                    <ActionButton
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleDelete();
-                                        }}
-                                        isDelete
-                                    >
-                                        <Trash2 size={16} />
-                                    </ActionButton>
-                                </>
+                                <ActionButton
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDelete();
+                                    }}
+                                    isDelete
+                                >
+                                    <Trash2 size={16} />
+                                </ActionButton>
                             )}
                         </HeaderButtonGroup>
                     </TopBar>
@@ -884,11 +1083,29 @@ const ContentSection = styled.div`
 `;
 
 const Content = styled.div`
-    font-size: 16px;
+    padding: 24px;
+    background: white;
+    border-radius: 12px;
+    min-height: 200px;
     line-height: 1.6;
-    color: #495057;
-    padding: 20px;
+
     ${ContentStyles}
+
+    /* 기존 스타일 유지 */
+    img {
+        max-width: 100%;
+        height: auto;
+    }
+
+    /* 에디터 내용의 border 제거 */
+    .ql-container.ql-snow {
+        border: none;
+    }
+
+    .ql-editor {
+        border: none;
+        padding: 0;
+    }
 `;
 
 const LoadingText = styled.div`
