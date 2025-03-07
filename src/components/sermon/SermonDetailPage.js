@@ -360,16 +360,12 @@ const SermonDetailPage = ({ isBookmarkView, onBookmarkToggle }) => {
         const printContent = document.createElement('div');
         printContent.className = 'print-container';
 
-        // 메타 정보 섹션 추가
+        // 메타 정보 섹션
         const metaSection = document.createElement('div');
         metaSection.className = 'print-meta-section';
         metaSection.innerHTML = `
             <h1>${sermon.sermonTitle}</h1>
             <div class="print-meta-info">
-                <div class="print-scripture">
-                    <strong>본문:</strong> ${sermon.mainScripture}
-                    ${sermon.additionalScripture ? `<br/>${sermon.additionalScripture}` : ''}
-                </div>
                 <div class="print-details">
                     <p><strong>설교자:</strong> ${sermon.ownerName}</p>
                     <p><strong>설교일:</strong> ${new Date(sermon.sermonDate).toLocaleDateString('ko-KR', {
@@ -392,7 +388,6 @@ const SermonDetailPage = ({ isBookmarkView, onBookmarkToggle }) => {
             </div>
         `;
 
-        // 기존 내용 추가
         const content = document.querySelector('#printable-content').cloneNode(true);
 
         printContent.appendChild(metaSection);
@@ -402,10 +397,29 @@ const SermonDetailPage = ({ isBookmarkView, onBookmarkToggle }) => {
         printWindow.document.write(`
             <html>
                 <head>
+                    <title>${sermon.sermonTitle}</title>
                     <style>
                         @page {
                             margin: 20mm;
                             size: auto;
+                            
+                            @bottom-left {
+                                content: "${new Date(sermon.sermonDate).toLocaleDateString('ko-KR', {
+                                    year: 'numeric',
+                                    month: 'long',
+                                    day: 'numeric',
+                                })}";
+                                font-family: 'Noto Sans KR', sans-serif;
+                                font-size: 10px;
+                                color: #666;
+                            }
+                            
+                            @bottom-right {
+                                content: counter(page);
+                                font-family: 'Noto Sans KR', sans-serif;
+                                font-size: 10px;
+                                color: #666;
+                            }
                         }
                         body {
                             font-family: 'Noto Sans KR', sans-serif;
@@ -431,18 +445,6 @@ const SermonDetailPage = ({ isBookmarkView, onBookmarkToggle }) => {
                         .print-meta-info {
                             font-size: 14px;
                             color: #495057;
-                        }
-                        .print-scripture {
-                            margin-bottom: 20px;
-                            padding: 16px;
-                            background: #f8f9fa;
-                            border-radius: 8px;
-                            border: 1px solid #e9ecef;
-                        }
-                        .print-scripture strong {
-                            color: #4f3296;
-                            display: block;
-                            margin-bottom: 8px;
                         }
                         .print-details {
                             margin-bottom: 20px;
@@ -612,14 +614,6 @@ const SermonDetailPage = ({ isBookmarkView, onBookmarkToggle }) => {
                                                 day: 'numeric',
                                             })}
                                         </CompactDate>
-                                        <CompactDate>
-                                            작성일:{' '}
-                                            {new Date(sermon.createdAt).toLocaleDateString('ko-KR', {
-                                                year: 'numeric',
-                                                month: 'long',
-                                                day: 'numeric',
-                                            })}
-                                        </CompactDate>
                                     </CompactMeta>
                                     <CompactTitle>{sermon.sermonTitle}</CompactTitle>
                                     <CompactScripture>
@@ -714,7 +708,7 @@ const SermonDetailPage = ({ isBookmarkView, onBookmarkToggle }) => {
                         <>
                             <MetaInfo>
                                 <FormSectionLong>
-                                    <Author>작성자: {sermon.ownerName}</Author>
+                                    <Author>{sermon.ownerName}</Author>
                                     <DateInfo>
                                         <SermonDate>
                                             {new Date(sermon.sermonDate).toLocaleDateString('ko-KR', {
@@ -723,14 +717,6 @@ const SermonDetailPage = ({ isBookmarkView, onBookmarkToggle }) => {
                                                 day: 'numeric',
                                             })}
                                         </SermonDate>
-                                        <CreatedDate>
-                                            작성일:{' '}
-                                            {new Date(sermon.createdAt).toLocaleDateString('ko-KR', {
-                                                year: 'numeric',
-                                                month: 'long',
-                                                day: 'numeric',
-                                            })}
-                                        </CreatedDate>
                                     </DateInfo>
                                 </FormSectionLong>
                                 <FormSection>

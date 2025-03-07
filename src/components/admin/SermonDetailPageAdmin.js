@@ -180,7 +180,7 @@ const SermonDetailPageAdmin = () => {
                 console.log('Version list response:', response);
 
                 const mappedVersions = response.map((text) => ({
-                    textId: text.id, // id를 textId로 매핑
+                    textId: text.id,
                     textTitle: text.textTitle,
                 }));
                 console.log('Mapped versions:', mappedVersions);
@@ -237,16 +237,12 @@ const SermonDetailPageAdmin = () => {
         const printContent = document.createElement('div');
         printContent.className = 'print-container';
 
-        // 메타 정보 섹션 추가
+        // 메타 정보 섹션
         const metaSection = document.createElement('div');
         metaSection.className = 'print-meta-section';
         metaSection.innerHTML = `
             <h1>${sermon.sermonTitle}</h1>
             <div class="print-meta-info">
-                <div class="print-scripture">
-                    <strong>본문:</strong> ${sermon.mainScripture}
-                    ${sermon.additionalScripture ? `<br/>${sermon.additionalScripture}` : ''}
-                </div>
                 <div class="print-details">
                     <p><strong>설교자:</strong> ${sermon.ownerName}</p>
                     <p><strong>설교일:</strong> ${new Date(sermon.sermonDate).toLocaleDateString('ko-KR', {
@@ -269,7 +265,6 @@ const SermonDetailPageAdmin = () => {
             </div>
         `;
 
-        // 기존 내용 추가
         const content = document.querySelector('#printable-content').cloneNode(true);
 
         printContent.appendChild(metaSection);
@@ -279,10 +274,29 @@ const SermonDetailPageAdmin = () => {
         printWindow.document.write(`
             <html>
                 <head>
+                    <title>${sermon.sermonTitle}</title>
                     <style>
                         @page {
                             margin: 20mm;
                             size: auto;
+                            
+                            @bottom-left {
+                                content: "${new Date(sermon.sermonDate).toLocaleDateString('ko-KR', {
+                                    year: 'numeric',
+                                    month: 'long',
+                                    day: 'numeric',
+                                })}";
+                                font-family: 'Noto Sans KR', sans-serif;
+                                font-size: 10px;
+                                color: #666;
+                            }
+                            
+                            @bottom-right {
+                                content: counter(page);
+                                font-family: 'Noto Sans KR', sans-serif;
+                                font-size: 10px;
+                                color: #666;
+                            }
                         }
                         body {
                             font-family: 'Noto Sans KR', sans-serif;
@@ -411,11 +425,10 @@ const SermonDetailPageAdmin = () => {
         }
     };
 
-    // 수정 버튼 표시 조건 수정
     const showEditButton =
-        isAdmin || // 관리자이거나
-        (!selectedVersion && sermon?.userId === currentUserId) || // 원본이면서 작성자이거나
-        (selectedVersion && selectedVersion.userId === currentUserId); // 버전이면서 버전 작성자인 경우
+        isAdmin ||
+        (!selectedVersion && sermon?.userId === currentUserId) ||
+        (selectedVersion && selectedVersion.userId === currentUserId);
 
     if (loading) {
         return <LoadingText>로딩 중...</LoadingText>;
@@ -447,14 +460,6 @@ const SermonDetailPageAdmin = () => {
                                         <CompactDate>
                                             설교일:{' '}
                                             {new Date(sermon.sermonDate).toLocaleDateString('ko-KR', {
-                                                year: 'numeric',
-                                                month: 'long',
-                                                day: 'numeric',
-                                            })}
-                                        </CompactDate>
-                                        <CompactDate>
-                                            작성일:{' '}
-                                            {new Date(sermon.createdAt).toLocaleDateString('ko-KR', {
                                                 year: 'numeric',
                                                 month: 'long',
                                                 day: 'numeric',
@@ -545,7 +550,7 @@ const SermonDetailPageAdmin = () => {
                         <>
                             <MetaInfo>
                                 <FormSectionLong>
-                                    <Author>작성자: {sermon.ownerName}</Author>
+                                    <Author>{sermon.ownerName}</Author>
                                     <DateInfo>
                                         <SermonDate>
                                             {new Date(sermon.sermonDate).toLocaleDateString('ko-KR', {
@@ -554,14 +559,6 @@ const SermonDetailPageAdmin = () => {
                                                 day: 'numeric',
                                             })}
                                         </SermonDate>
-                                        <CreatedDate>
-                                            작성일:{' '}
-                                            {new Date(sermon.createdAt).toLocaleDateString('ko-KR', {
-                                                year: 'numeric',
-                                                month: 'long',
-                                                day: 'numeric',
-                                            })}
-                                        </CreatedDate>
                                     </DateInfo>
                                 </FormSectionLong>
                                 <FormSection>
@@ -853,11 +850,6 @@ const SermonDate = styled.span`
     font-size: 14px;
     color: #595c62;
     font-weight: 500;
-`;
-
-const CreatedDate = styled.span`
-    font-size: 12px;
-    color: #888;
 `;
 
 const FormSection = styled.div`

@@ -65,9 +65,9 @@ const EditVersionPage = () => {
 
         try {
             const cleanContent = editorContent.replace(/<span class="ql-cursor">.*?<\/span>/g, '');
-            const response = await updateText(id, textId, userId, false, versionData.textTitle, cleanContent);
+            const response = await updateText(textId, userId, versionData.textTitle, false, cleanContent);
 
-            if (response === 'Updated successfully' || response.success) {
+            if (response.success || response === 'Updated successfully') {
                 alert('버전이 수정되었습니다.');
                 navigate(-1);
             } else {
@@ -104,7 +104,6 @@ const EditVersionPage = () => {
     );
 };
 
-// 스타일 컴포넌트 추가
 const Container = styled.div`
     max-width: 1200px;
     margin: 0 auto;
