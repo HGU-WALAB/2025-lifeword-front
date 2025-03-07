@@ -876,7 +876,7 @@ const SermonListPage = () => {
                                         <WorshipType>{sermon.worshipType}</WorshipType>
                                         <ReferenceCount>
                                             <BookOpen size={14} />
-                                            {sermon.textCount || 0}개의 참조
+                                            {sermon.textCount || 0}개의 버전
                                         </ReferenceCount>
                                     </SermonInfo>
                                     <SermonSummary>{sermon.summary}</SermonSummary>

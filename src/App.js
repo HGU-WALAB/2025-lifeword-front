@@ -14,15 +14,15 @@ import SermonDetailPage from './components/sermon/SermonDetailPage';
 
 const GlobalStyle = createGlobalStyle`
   body {
-    cursor: url('http://www.rw-designer.com/cursor-extern.php?id=50627'), auto;
+    cursor: url('https://www.rw-designer.com/cursor-extern.php?id=50627'), auto;
   }
   
   a {
-    cursor: url('http://www.rw-designer.com/cursor-extern.php?id=50627'), pointer;
+    cursor: url('https://www.rw-designer.com/cursor-extern.php?id=50627'), pointer;
   }
   
   button {
-    cursor: url('http://www.rw-designer.com/cursor-extern.php?id=50627'), pointer;
+    cursor: url('https://www.rw-designer.com/cursor-extern.php?id=50627'), pointer;
   }
 `;
 
@@ -41,7 +41,7 @@ function App() {
         <RecoilRoot>
             <GlobalStyle />
             <ParallaxProvider>
-                <Router basename="/eax9952">
+                <Router basename="/lifeword">
                     <Routes>
                         <Route path="/" element={<Onboarding />} />
                         <Route path="/auth" element={<AuthCallback />} />
