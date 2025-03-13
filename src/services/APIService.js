@@ -480,6 +480,57 @@ export const updateSermonAdmin = async (sermonId, sermonData) => {
     }
 };
 
+// Text 관련 API
+export const createText = async (sermonId, userId, isDraft, textTitle, textContent) => {
+    try {
+        const { data } = await axios.post(
+            `${BASE_URL}/text/create`,
+            { textContent },
+            {
+                params: {
+                    sermonId,
+                    userId,
+                    isDraft,
+                    textTitle,
+                },
+            }
+        );
+        return data;
+    } catch (error) {
+        console.error('Error creating text:', error);
+        throw error;
+    }
+};
+
+export const updateText = async (textId, userId, textTitle, isDraft, textContent) => {
+    try {
+        const { data } = await axios.patch(
+            `${BASE_URL}/text/update/${textId}`,
+            { textContent },
+            {
+                params: {
+                    userId,
+                    textTitle,
+                    isDraft,
+                },
+            }
+        );
+        return data;
+    } catch (error) {
+        console.error('Error updating text:', error);
+        throw error;
+    }
+};
+
+export const getTextList = async (sermonId, userId) => {
+    try {
+        const { data } = await axios.get(`${BASE_URL}/text/list/${sermonId}`, {
+            params: { userId },
+        });
+        return data;
+    } catch (error) {
+        console.error('Error getting text list:', error);
+
 // 일반 로그인
 export const loginUser = async (email, password) => {
     try {
@@ -492,6 +543,28 @@ export const loginUser = async (email, password) => {
         throw error;
     }
 };
+
+
+export const getTextDetail = async (sermonId, textId, userId) => {
+    try {
+        const { data } = await axios.get(`${BASE_URL}/text/${sermonId}/${textId}`, {
+            params: { userId },
+        });
+        return data;
+    } catch (error) {
+        console.error('Error getting text detail:', error);
+        throw error;
+    }
+};
+
+export const deleteText = async (textId, userId) => {
+    try {
+        const { data } = await axios.delete(`${BASE_URL}/text/delete/${textId}`, {
+            params: { userId },
+        });
+        return data;
+    } catch (error) {
+        console.error('Error deleting text:', error);
 
 // 로그아웃
 export const logout = async () => {

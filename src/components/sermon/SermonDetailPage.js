@@ -1,14 +1,37 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import styled, { createGlobalStyle } from 'styled-components';
-import { getSermonDetail, deleteSermon, getBookmarks, createBookmark, deleteBookmark } from '../../services/APIService';
-import { ArrowLeft, Pencil, Trash2, Printer, ChevronDown, Bookmark } from 'lucide-react';
+import {
+    getSermonDetail,
+    deleteSermon,
+    getBookmarks,
+    createBookmark,
+    deleteBookmark,
+    getTextList,
+    deleteText,
+    getTextDetail,
+    createText,
+    updateText,
+} from '../../services/APIService';
+import {
+    ArrowLeft,
+    Pencil,
+    Trash2,
+    Printer,
+    Bookmark,
+    BookOpen,
+    Plus,
+    X,
+    ChevronLeft,
+    ChevronDown,
+} from 'lucide-react';
 import { useUserState } from '../../recoil/utils';
+import SermonEditor from '../Editor/SermonEditor';
 
 const GlobalStyle = createGlobalStyle`
     @media print {
         @page {
-            margin: 0;
+            margin: 20mm;
             size: auto;
         }
         
@@ -20,7 +43,6 @@ const GlobalStyle = createGlobalStyle`
         .print-container {
             visibility: visible;
             position: relative;
-            padding: 20mm;
             margin: 0;
             width: 100%;
         }
@@ -31,12 +53,231 @@ const GlobalStyle = createGlobalStyle`
             color-adjust: exact !important;
             print-color-adjust: exact !important;
         }
+
+        /* 페이지 나눔 시 내용이 잘리지 않도록 설정 */
+        p, h1, h2, h3, h4, h5, h6 {
+            break-inside: avoid;
+        }
+    }
+
+    body {
+        overflow: ${(props) => (props.hideScroll ? 'hidden' : 'auto')};
     }
 `;
+
+const ContentStyles = `
+    /* 폰트 크기 */
+    .ql-size-8px { font-size: 8px; }
+    .ql-size-9px { font-size: 9px; }
+    .ql-size-10px { font-size: 10px; }
+    .ql-size-11px { font-size: 11px; }
+    .ql-size-12px { font-size: 12px; }
+    .ql-size-14px { font-size: 14px; }
+    .ql-size-16px { font-size: 16px; }
+    .ql-size-18px { font-size: 18px; }
+    .ql-size-24px { font-size: 24px; }
+    .ql-size-36px { font-size: 36px; }
+    .ql-size-48px { font-size: 48px; }
+    .ql-size-72px { font-size: 72px; }
+    .ql-size-96px { font-size: 96px; }
+
+    /* 폰트 스타일 */
+    .ql-font-noto-sans-kr { font-family: 'Noto Sans KR', sans-serif; }
+    .ql-font-nanum-gothic { font-family: 'Nanum Gothic', sans-serif; }
+    .ql-font-nanum-myeongjo { font-family: 'Nanum Myeongjo', serif; }
+    .ql-font-nanum-pen-script { font-family: 'Nanum Pen Script', cursive; }
+    .ql-font-poor-story { font-family: 'Poor Story', cursive; }
+    .ql-font-jua { font-family: 'Jua', sans-serif; }
+
+    /* 정렬 */
+    .ql-align-center { text-align: center; }
+    .ql-align-right { text-align: right; }
+    .ql-align-justify { text-align: justify; }
+
+    /* 들여쓰기 */
+    .ql-indent-1 { padding-left: 3em; }
+    .ql-indent-2 { padding-left: 6em; }
+    .ql-indent-3 { padding-left: 9em; }
+    .ql-indent-4 { padding-left: 12em; }
+    .ql-indent-5 { padding-left: 15em; }
+    .ql-indent-6 { padding-left: 18em; }
+    .ql-indent-7 { padding-left: 21em; }
+    .ql-indent-8 { padding-left: 24em; }
+
+    /* 기본 스타일 */
+    p { margin: 0 0 1em 0; }
+    strong { font-weight: bold; }
+    em { font-style: italic; }
+    u { text-decoration: underline; }
+    s { text-decoration: line-through; }
+
+    /* 제목 스타일 */
+    h1, h2, h3, h4, h5, h6 {
+        margin: 1.5em 0 0.5em;
+        line-height: 1.2;
+        font-weight: 600;
+    }
+    h1 { font-size: 2em; }
+    h2 { font-size: 1.75em; }
+    h3 { font-size: 1.5em; }
+    h4 { font-size: 1.25em; }
+    h5 { font-size: 1em; }
+    h6 { font-size: 0.875em; }
+
+    /* 리스트 */
+    ul, ol {
+        padding-left: 1.5em;
+        margin: 0 0 1em 0;
+    }
+
+    /* 인용구 */
+    blockquote {
+        border-left: 4px solid #ccc;
+        margin: 1em 0;
+        padding-left: 16px;
+        font-style: italic;
+    }
+`;
+
+const VersionDropdown = styled.div`
+    position: relative;
+    display: inline-block;
+`;
+
+const VersionButton = styled.button`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: white;
+    border: 1px solid #e1e1e1;
+    border-radius: 8px;
+    color: #333;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+        background: #f8f9fa;
+        border-color: #4f3296;
+    }
+
+    svg {
+        color: #4f3296;
+    }
+`;
+
+const DropdownContent = styled.div`
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 4px;
+    background: white;
+    border: 1px solid #e1e1e1;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    min-width: 300px;
+    z-index: 1000;
+    display: ${(props) => (props.isOpen ? 'block' : 'none')};
+`;
+
+const VersionItem = styled.div`
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    &:hover {
+        background: #f8f9fa;
+    }
+
+    &:first-child {
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+    }
+
+    &:not(:last-child) {
+        border-bottom: 1px solid #e1e1e1;
+    }
+`;
+
+const CreateVersionButton = styled(VersionItem)`
+    color: #4f3296;
+    font-weight: 500;
+
+    &:hover {
+        background: #f8f4ff;
+    }
+
+    svg {
+        color: #4f3296;
+    }
+`;
+
+const VersionDivider = styled.div`
+    height: 1px;
+    background-color: #e1e1e1;
+    margin: 4px 0;
+`;
+
+const VersionInfo = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+`;
+
+const VersionTitle = styled.span`
+    font-weight: 500;
+    color: #333;
+`;
+
+const VersionMeta = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: #666;
+`;
+
+const VersionAuthor = styled.span`
+    color: #4f3296;
+    font-weight: 500;
+`;
+
+const VersionDate = styled.span`
+    &::before {
+        content: '•';
+        margin-right: 8px;
+        color: #ccc;
+    }
+`;
+
+const OriginalTag = styled.span`
+    font-size: 11px;
+    padding: 2px 8px;
+    background: #eee6ff;
+    border: 1px solid #d4c4ff;
+    border-radius: 4px;
+    color: #482895;
+`;
+
+const fetchVersions = async (id, currentUserId, setVersions) => {
+    try {
+        const response = await getTextList(id, currentUserId);
+        if (response && Array.isArray(response)) {
+            setVersions(response);
+        }
+    } catch (error) {
+        console.error('Error fetching versions:', error);
+    }
+};
 
 const SermonDetailPage = ({ isBookmarkView, onBookmarkToggle }) => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
     const [sermon, setSermon] = useState(null);
     const [loading, setLoading] = useState(true);
     const { userId: currentUserId, isAdmin } = useUserState();
@@ -46,14 +287,29 @@ const SermonDetailPage = ({ isBookmarkView, onBookmarkToggle }) => {
     const [showGuide, setShowGuide] = useState(true);
     const [isBookmarked, setIsBookmarked] = useState(false);
     const [bookmarkId, setBookmarkId] = useState(null);
+    const [error, setError] = useState(null);
+    const userState = useUserState();
+    const [isVersionDropdownOpen, setIsVersionDropdownOpen] = useState(false);
+    const [versions, setVersions] = useState([]);
+    const [originalContent, setOriginalContent] = useState(null);
+    const [selectedVersionId, setSelectedVersionId] = useState(null);
+    const [selectedVersion, setSelectedVersion] = useState(null);
 
     useEffect(() => {
         const fetchSermonDetail = async () => {
             try {
+                setLoading(true);
+                console.log('Fetching sermon detail for ID:', id);
                 const data = await getSermonDetail(id);
+                console.log('Received sermon data:', data);
                 setSermon(data);
+                if (data?.contents?.[0]?.contentText) {
+                    console.log('Setting original content:', data.contents[0].contentText);
+                    setOriginalContent(data.contents[0].contentText);
+                }
             } catch (error) {
                 console.error('Error fetching sermon detail:', error);
+                setError(error);
             } finally {
                 setLoading(false);
             }
@@ -91,6 +347,12 @@ const SermonDetailPage = ({ isBookmarkView, onBookmarkToggle }) => {
         }
     }, [currentUserId, id]);
 
+    useEffect(() => {
+        if (id && currentUserId) {
+            fetchVersions(id, currentUserId, setVersions);
+        }
+    }, [id, currentUserId, location.key]);
+
     const handleDelete = async () => {
         if (window.confirm('정말로 이 설교를 삭제하시겠습니까?')) {
             try {
@@ -112,11 +374,19 @@ const SermonDetailPage = ({ isBookmarkView, onBookmarkToggle }) => {
         }
     };
 
-    const handleEdit = () => {
-        if (currentPath.includes('/admin/sermons')) {
-            navigate(`/main/admin/sermons/edit/${id}`);
+    const handleSermonEdit = () => {
+        if (!selectedVersionId) {
+            if (currentPath.includes('/admin/sermons')) {
+                navigate(`/main/admin/sermons/edit/${id}`);
+            } else {
+                navigate(`/main/sermon-list/edit/${id}`);
+            }
         } else {
-            navigate(`/main/sermon-list/edit/${id}`);
+            if (currentPath.includes('/admin/sermons')) {
+                navigate(`/main/admin/sermons/${id}/versions/${selectedVersionId}/edit`);
+            } else {
+                navigate(`/main/sermons/${id}/versions/${selectedVersionId}/edit`);
+            }
         }
     };
 
@@ -125,48 +395,152 @@ const SermonDetailPage = ({ isBookmarkView, onBookmarkToggle }) => {
     };
 
     const handlePrint = () => {
-        const printContainer = document.createElement('div');
-        printContainer.className = 'print-container';
+        const printContent = document.createElement('div');
+        printContent.className = 'print-container';
+
+        // 메타 정보 섹션
+        const metaSection = document.createElement('div');
+        metaSection.className = 'print-meta-section';
+        metaSection.innerHTML = `
+            <h1>${sermon.sermonTitle}</h1>
+            <div class="print-meta-info">
+                <div class="print-details">
+                    <p><strong>설교자:</strong> ${sermon.ownerName}</p>
+                    <p><strong>설교일:</strong> ${new Date(sermon.sermonDate).toLocaleDateString('ko-KR', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                    })}</p>
+                    <p><strong>예배:</strong> ${sermon.worshipType}</p>
+                </div>
+                ${
+                    sermon.summary
+                        ? `
+                    <div class="print-summary">
+                        <strong>요약:</strong>
+                        <p>${sermon.summary}</p>
+                    </div>
+                `
+                        : ''
+                }
+            </div>
+        `;
 
         const content = document.querySelector('#printable-content').cloneNode(true);
-        printContainer.appendChild(content);
 
-        const style = document.createElement('style');
-        style.textContent = `
-        @media print {
-            body > *:not(.print-container) {
-                display: none;
-            }
-            .print-container {
-                width: 100%;
-                padding: 20mm;
-                margin: 0;
-                left: 0;
-                position: absolute;
-                box-sizing: border-box;
-            }
-            .print-container #printable-content {
-                width: 100% !important;
-                position: relative !important;
-                margin: 0 !important;
-                padding: 0 !important;
-                left: 0 !important;
-            }
-            .print-container .sermon-content {
-                margin: 0 !important;
-                padding: 0 !important;
-                max-width: 100% !important;
-            }
-        }
-    `;
+        printContent.appendChild(metaSection);
+        printContent.appendChild(content);
 
-        document.body.appendChild(style);
-        document.body.appendChild(printContainer);
+        const printWindow = window.open('', '', 'width=800,height=600');
+        printWindow.document.write(`
+            <html>
+                <head>
+                    <title>${sermon.sermonTitle}</title>
+                    <style>
+                        @page {
+                            margin: 20mm;
+                            size: auto;
+                            
+                            @bottom-left {
+                                content: "${new Date(sermon.sermonDate).toLocaleDateString('ko-KR', {
+                                    year: 'numeric',
+                                    month: 'long',
+                                    day: 'numeric',
+                                })}";
+                                font-family: 'Noto Sans KR', sans-serif;
+                                font-size: 10px;
+                                color: #666;
+                            }
+                            
+                            @bottom-center {
+                                content: "${sermon.worshipType}";
+                                font-family: 'Noto Sans KR', sans-serif;
+                                font-size: 10px;
+                                color: #666;
+                            }
+                            
+                            @bottom-right {
+                                content: counter(page);
+                                font-family: 'Noto Sans KR', sans-serif;
+                                font-size: 10px;
+                                color: #666;
+                            }
+                        }
+                        body {
+                            font-family: 'Noto Sans KR', sans-serif;
+                            line-height: 1.6;
+                            color: #333;
+                            -webkit-print-color-adjust: exact !important;
+                            print-color-adjust: exact !important;
+                        }
+                        .print-container {
+                            max-width: 100%;
+                        }
+                        .print-meta-section {
+                            margin-bottom: 40px;
+                            padding-bottom: 20px;
+                            border-bottom: 2px solid #e9ecef;
+                        }
+                        .print-meta-section h1 {
+                            font-size: 28px;
+                            margin-bottom: 24px;
+                            color: #333;
+                            font-weight: 600;
+                        }
+                        .print-meta-info {
+                            font-size: 14px;
+                            color: #495057;
+                        }
+                        .print-details {
+                            margin-bottom: 20px;
+                            display: grid;
+                            grid-template-columns: repeat(3, 1fr);
+                            gap: 16px;
+                        }
+                        .print-details p {
+                            margin: 4px 0;
+                        }
+                        .print-details strong {
+                            color: #4f3296;
+                            display: block;
+                            margin-bottom: 4px;
+                        }
+                        .print-summary {
+                            background: #f8f9fa;
+                            padding: 16px;
+                            border-radius: 8px;
+                            border: 1px solid #e9ecef;
+                        }
+                        .print-summary strong {
+                            color: #4f3296;
+                            display: block;
+                            margin-bottom: 8px;
+                        }
+                        .print-summary p {
+                            margin: 0;
+                            color: #495057;
+                        }
+                        /* 기존 컨텐츠 스타일 유지 */
+                        ${ContentStyles}
 
-        window.print();
+                        /* 페이지 나눔 시 내용이 잘리지 않도록 설정 */
+                        p, h1, h2, h3, h4, h5, h6 {
+                            break-inside: avoid;
+                        }
+                    </style>
+                </head>
+                <body>
+                    ${printContent.outerHTML}
+                </body>
+            </html>
+        `);
 
-        document.body.removeChild(style);
-        document.body.removeChild(printContainer);
+        printWindow.document.close();
+        printWindow.focus();
+        setTimeout(() => {
+            printWindow.print();
+            printWindow.close();
+        }, 250);
     };
 
     const toggleBookmark = async () => {
@@ -206,55 +580,182 @@ const SermonDetailPage = ({ isBookmarkView, onBookmarkToggle }) => {
         }
     };
 
-    if (loading) {
-        return <LoadingText>로딩 중...</LoadingText>;
-    }
+    const handleVersionSelect = async (textId) => {
+        try {
+            if (textId === 'original') {
+                setSermon((prev) => ({
+                    ...prev,
+                    contents: [
+                        {
+                            contentText: originalContent,
+                        },
+                    ],
+                }));
+                setSelectedVersionId(null);
+                setSelectedVersion(null);
+                return;
+            }
 
-    if (!sermon) {
-        return <EmptyText>설교를 찾을 수 없습니다.</EmptyText>;
-    }
+            const response = await getTextDetail(id, textId, currentUserId);
+
+            if (response.textContent) {
+                setSermon((prev) => ({
+                    ...prev,
+                    contents: [
+                        {
+                            contentText: response.textContent,
+                        },
+                    ],
+                }));
+                setSelectedVersionId(textId);
+                setSelectedVersion({
+                    textId: textId,
+                    userId: response.userId,
+                });
+            }
+        } catch (error) {
+            console.error('Error fetching version detail:', error);
+        }
+    };
+
+    const handleVersionDropdownClick = async (e) => {
+        e.stopPropagation();
+        setIsVersionDropdownOpen(!isVersionDropdownOpen);
+        if (!isVersionDropdownOpen) {
+            await fetchVersions(id, currentUserId, setVersions);
+        }
+    };
+
+    if (loading) return <LoadingText>로딩 중...</LoadingText>;
+    if (error) return <EmptyText>설교를 불러오는 중 오류가 발생했습니다.</EmptyText>;
+    if (!sermon) return <EmptyText>설교를 찾을 수 없습니다.</EmptyText>;
+
+    console.log('Rendering sermon:', sermon);
 
     return (
-        <Container>
-            <GlobalStyle />
-            <HeaderContainer expanded={isHeaderExpanded} onClick={toggleHeader}>
-                <TopBar>
-                    <BackButton
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(-1);
-                        }}
-                    >
-                        <ArrowLeft size={20} />
-                        <span>뒤로 가기</span>
-                    </BackButton>
-                    {!isHeaderExpanded && (
-                        <CompactHeader>
-                            <Label>설교 제목</Label>
-                            <CompactTitle>{sermon.sermonTitle}</CompactTitle>
-                        </CompactHeader>
-                    )}
-                    <ActionButtons>
-                        <ActionButton
+        <>
+            <GlobalStyle hideScroll={false} />
+            <Container>
+                <HeaderContainer expanded={isHeaderExpanded} onClick={toggleHeader}>
+                    <TopBar>
+                        <BackButton
                             onClick={(e) => {
                                 e.stopPropagation();
-                                toggleBookmark();
+                                navigate(-1);
                             }}
-                            isBookmark={true}
-                            active={isBookmarked}
                         >
-                            <Bookmark size={16} />
-                        </ActionButton>
-                        {(sermon?.userId === currentUserId || (isAdmin && isAdminPage)) && (
-                            <>
+                            <ArrowLeft size={20} />
+                            <span>뒤로 가기</span>
+                        </BackButton>
+                        {!isHeaderExpanded && (
+                            <CompactHeader>
+                                <div>
+                                    <CompactMeta>
+                                        <CompactDate>
+                                            {new Date(sermon.sermonDate).toLocaleDateString('ko-KR', {
+                                                year: 'numeric',
+                                                month: 'long',
+                                                day: 'numeric',
+                                            })}
+                                        </CompactDate>
+                                        <CompactDate>{sermon.worshipType}</CompactDate>
+                                    </CompactMeta>
+                                    <CompactTitle>{sermon.sermonTitle}</CompactTitle>
+                                    <CompactScripture>
+                                        <span>{sermon.mainScripture}</span>
+                                        {sermon.additionalScripture && <span>{sermon.additionalScripture}</span>}
+                                    </CompactScripture>
+                                </div>
+                            </CompactHeader>
+                        )}
+                        <HeaderButtonGroup>
+                            <VersionDropdown>
+                                <VersionButton onClick={handleVersionDropdownClick}>
+                                    <BookOpen size={16} />
+                                    버전
+                                    <ChevronDown size={14} />
+                                </VersionButton>
+                                <DropdownContent isOpen={isVersionDropdownOpen}>
+                                    <VersionItem
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleVersionSelect('original');
+                                            setIsVersionDropdownOpen(false);
+                                        }}
+                                    >
+                                        <VersionInfo>
+                                            <VersionTitle>{sermon.sermonTitle}</VersionTitle>
+                                            <VersionMeta>
+                                                <VersionAuthor>{sermon.ownerName}</VersionAuthor>
+                                                <VersionDate>
+                                                    {new Date(sermon.createdAt).toLocaleDateString('ko-KR', {
+                                                        year: 'numeric',
+                                                        month: 'long',
+                                                        day: 'numeric',
+                                                    })}
+                                                </VersionDate>
+                                            </VersionMeta>
+                                        </VersionInfo>
+                                        <OriginalTag>원본</OriginalTag>
+                                    </VersionItem>
+                                    <VersionDivider />
+                                    {versions.map((version) => (
+                                        <VersionItem
+                                            key={version.id}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleVersionSelect(version.id);
+                                                setIsVersionDropdownOpen(false);
+                                            }}
+                                        >
+                                            <VersionInfo>
+                                                <VersionTitle>{version.textTitle || '제목 없음'}</VersionTitle>
+                                                <VersionMeta>
+                                                    <VersionAuthor>{version.userName}</VersionAuthor>
+                                                    <VersionDate>
+                                                        {new Date(version.textCreatedAt).toLocaleDateString('ko-KR', {
+                                                            year: 'numeric',
+                                                            month: 'long',
+                                                            day: 'numeric',
+                                                        })}
+                                                    </VersionDate>
+                                                </VersionMeta>
+                                            </VersionInfo>
+                                        </VersionItem>
+                                    ))}
+                                    <CreateVersionButton
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            navigate(`/main/sermons/${id}/create-version`);
+                                        }}
+                                    >
+                                        <span>+ 버전 생성하기</span>
+                                    </CreateVersionButton>
+                                </DropdownContent>
+                            </VersionDropdown>
+                            <ActionButton
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleBookmark();
+                                }}
+                                isBookmark={true}
+                                active={isBookmarked}
+                            >
+                                <Bookmark size={16} />
+                            </ActionButton>
+                            {((selectedVersionId && selectedVersion?.userId === currentUserId) ||
+                                (!selectedVersionId && sermon?.userId === currentUserId) ||
+                                (isAdmin && isAdminPage)) && (
                                 <ActionButton
                                     onClick={(e) => {
                                         e.stopPropagation();
-                                        handleEdit();
+                                        handleSermonEdit();
                                     }}
                                 >
                                     <Pencil size={16} />
                                 </ActionButton>
+                            )}
+                            {(sermon?.userId === currentUserId || (isAdmin && isAdminPage)) && (
                                 <ActionButton
                                     onClick={(e) => {
                                         e.stopPropagation();
@@ -264,78 +765,79 @@ const SermonDetailPage = ({ isBookmarkView, onBookmarkToggle }) => {
                                 >
                                     <Trash2 size={16} />
                                 </ActionButton>
-                            </>
-                        )}
-                    </ActionButtons>
-                </TopBar>
-                {isHeaderExpanded && (
-                    <>
-                        <MetaInfo>
-                            <FormSectionLong>
-                                <Author>작성자: {sermon.ownerName}</Author>
-                                <DateInfo>
-                                    <SermonDate>
-                                        {new Date(sermon.sermonDate).toLocaleDateString('ko-KR', {
-                                            year: 'numeric',
-                                            month: 'long',
-                                            day: 'numeric',
-                                        })}
-                                    </SermonDate>
-                                    <CreatedDate>
-                                        작성일:{' '}
-                                        {new Date(sermon.createdAt).toLocaleDateString('ko-KR', {
-                                            year: 'numeric',
-                                            month: 'long',
-                                            day: 'numeric',
-                                        })}
-                                    </CreatedDate>
-                                </DateInfo>
-                            </FormSectionLong>
-                            <FormSection>
-                                <Label>설교 제목</Label>
-                                <Title>{sermon.sermonTitle}</Title>
-                            </FormSection>
-                        </MetaInfo>
-                        <ScriptureInfo>
-                            <FormSection>
-                                <Label>성경 본문</Label>
-                                <ScriptureContainer>
-                                    <Scripture>{sermon.mainScripture}</Scripture>
-                                    {sermon.additionalScripture && <Scripture>{sermon.additionalScripture}</Scripture>}
-                                </ScriptureContainer>
-                            </FormSection>
-                        </ScriptureInfo>
-                        <ExtraInfo>
-                            <SectionContainer>
-                                <SectionLabel>요약</SectionLabel>
-                                <SectionBox>{sermon.summary}</SectionBox>
-                            </SectionContainer>
-                            {sermon.notes && (
-                                <SectionContainer>
-                                    <SectionLabel>노트</SectionLabel>
-                                    <SectionBox>{sermon.notes}</SectionBox>
-                                </SectionContainer>
                             )}
-                        </ExtraInfo>
-                    </>
-                )}
-            </HeaderContainer>
-            <ContentSection>
-                <Label>설교 내용</Label>
-                <div id="printable-content">
-                    <Content
-                        className="sermon-content"
-                        dangerouslySetInnerHTML={{
-                            __html: sermon.contents[0]?.contentText || '',
-                        }}
-                    />
-                </div>
-            </ContentSection>
-            <PrintButton onClick={handlePrint}>
-                <Printer size={18} />
-                인쇄하기
-            </PrintButton>
-        </Container>
+                        </HeaderButtonGroup>
+                    </TopBar>
+                    {showGuide && (
+                        <GuideMessage>
+                            <span>클릭하여 더 많은 정보를 확인하세요</span>
+                            <ChevronDown className="bounce" size={24} />
+                        </GuideMessage>
+                    )}
+                    {isHeaderExpanded && (
+                        <>
+                            <MetaInfo>
+                                <FormSectionLong>
+                                    <Author>{sermon.ownerName}</Author>
+                                    <DateInfo>
+                                        <SermonDate>
+                                            {new Date(sermon.sermonDate).toLocaleDateString('ko-KR', {
+                                                year: 'numeric',
+                                                month: 'long',
+                                                day: 'numeric',
+                                            })}
+                                        </SermonDate>
+                                        <WorshipTag>{sermon.worshipType}</WorshipTag>
+                                    </DateInfo>
+                                </FormSectionLong>
+                                <FormSection>
+                                    <Label>설교 제목</Label>
+                                    <Title>{sermon.sermonTitle}</Title>
+                                </FormSection>
+                            </MetaInfo>
+                            <ScriptureInfo>
+                                <FormSection>
+                                    <Label>성경 본문</Label>
+                                    <ScriptureContainer>
+                                        <Scripture>{sermon.mainScripture}</Scripture>
+                                        {sermon.additionalScripture && (
+                                            <Scripture>{sermon.additionalScripture}</Scripture>
+                                        )}
+                                    </ScriptureContainer>
+                                </FormSection>
+                            </ScriptureInfo>
+                            <ExtraInfo>
+                                <SectionContainer>
+                                    <SectionLabel>요약</SectionLabel>
+                                    <SectionBox>{sermon.summary}</SectionBox>
+                                </SectionContainer>
+                                {sermon.notes && (
+                                    <SectionContainer>
+                                        <SectionLabel>노트</SectionLabel>
+                                        <SectionBox>{sermon.notes}</SectionBox>
+                                    </SectionContainer>
+                                )}
+                            </ExtraInfo>
+                        </>
+                    )}
+                </HeaderContainer>
+                <ContentSection>
+                    <Label>설교 내용</Label>
+                    <div id="printable-content">
+                        <Content
+                            className="sermon-content"
+                            dangerouslySetInnerHTML={{
+                                __html: sermon.contents[0]?.contentText || '',
+                            }}
+                        />
+                    </div>
+                </ContentSection>
+                <PrintButton onClick={handlePrint}>
+                    <Printer size={18} />
+                    인쇄하기
+                </PrintButton>
+            </Container>
+        </>
     );
 };
 
@@ -360,8 +862,55 @@ const HeaderContainer = styled.div`
 `;
 
 const CompactHeader = styled.div`
-    display: block;
-    padding: 8px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    flex: 1;
+    margin: 0 40px;
+    text-align: center;
+`;
+
+const CompactMeta = styled.div`
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: 4px;
+`;
+
+const CompactDate = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #666;
+    font-size: 13px;
+
+    &:not(:last-child)::after {
+        content: '';
+        width: 3px;
+        height: 3px;
+        background: #ccc;
+        border-radius: 50%;
+        margin-left: 8px;
+    }
+`;
+
+const CompactScripture = styled.div`
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    justify-content: center;
+    margin-top: 4px;
+    flex-wrap: wrap;
+
+    span {
+        font-size: 13px;
+        color: #482895;
+        padding: 4px 12px;
+        background: #eee6ff;
+        border-radius: 6px;
+        border: 1px solid #d4c4ff;
+    }
 `;
 
 const CompactTitle = styled.h1`
@@ -399,6 +948,37 @@ const BackButton = styled.button`
 
     &:hover svg {
         transform: translateX(-4px);
+    }
+`;
+
+const HeaderButtonGroup = styled.div`
+    display: flex;
+    gap: 8px;
+    align-items: center;
+`;
+
+const ReferenceButton = styled.button`
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    color: #495057;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+        background: #f1f3f5;
+        border-color: #dee2e6;
+    }
+
+    svg {
+        width: 16px;
+        height: 16px;
     }
 `;
 
@@ -472,6 +1052,16 @@ const SermonDate = styled.span`
     font-size: 14px;
     color: #595c62;
     font-weight: 500;
+`;
+
+const WorshipTag = styled.span`
+    font-size: 12px;
+    padding: 4px 12px;
+    background: #eee6ff;
+    border: 1px solid #d4c4ff;
+    border-radius: 4px;
+    color: #482895;
+    margin-left: 12px;
 `;
 
 const CreatedDate = styled.span`
@@ -560,93 +1150,28 @@ const ContentSection = styled.div`
 `;
 
 const Content = styled.div`
-    font-size: 16px;
-    line-height: 1.8;
-    color: #333;
+    padding: 24px;
+    background: white;
+    border-radius: 12px;
+    min-height: 200px;
+    line-height: 1.6;
 
-    h1,
-    h2,
-    h3,
-    h4,
-    h5,
-    h6 {
-        margin: 1.5em 0 0.5em;
-        color: #212a3e;
-        font-weight: 600;
-        line-height: 1.3;
-    }
+    ${ContentStyles}
 
-    h1 {
-        font-size: 2em;
-    }
-    h2 {
-        font-size: 1.75em;
-    }
-    h3 {
-        font-size: 1.5em;
-    }
-    h4 {
-        font-size: 1.25em;
-    }
-    h5 {
-        font-size: 1.1em;
-    }
-    h6 {
-        font-size: 1em;
-    }
-
-    p {
-        margin: 1em 0;
-        line-height: 1.8;
-    }
-
-    ul,
-    ol {
-        padding-left: 1.5em;
-        margin: 1em 0;
-    }
-
-    li {
-        margin: 0.5em 0;
-    }
-
-    blockquote {
-        border-left: 4px solid #4f3296;
-        margin: 1.5em 0;
-        padding: 1em 1.5em;
-        background: #f8f9fa;
-        color: #666;
-        font-style: italic;
-    }
-
+    /* 기존 스타일 유지 */
     img {
         max-width: 100%;
         height: auto;
-        border-radius: 8px;
-        margin: 1em 0;
     }
 
-    a {
-        color: #4f3296;
-        text-decoration: none;
-        &:hover {
-            text-decoration: underline;
-        }
+    /* 에디터 내용의 border 제거 */
+    .ql-container.ql-snow {
+        border: none;
     }
 
-    pre {
-        background: #f8f9fa;
-        padding: 1em;
-        border-radius: 8px;
-        overflow-x: auto;
-        margin: 1em 0;
-    }
-
-    code {
-        background: #f3f4f6;
-        padding: 0.2em 0.4em;
-        border-radius: 4px;
-        font-size: 0.9em;
+    .ql-editor {
+        border: none;
+        padding: 0;
     }
 `;
 
@@ -744,6 +1269,15 @@ const GuideMessage = styled.div`
             transform: translateY(4px);
         }
     }
+`;
+
+const CompactWorshipTag = styled.span`
+    font-size: 12px;
+    padding: 4px 12px;
+    background: #eee6ff;
+    border: 1px solid #d4c4ff;
+    border-radius: 4px;
+    color: #482895;
 `;
 
 export default SermonDetailPage;

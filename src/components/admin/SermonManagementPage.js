@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import styled from 'styled-components';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import {
     Search,
     LayoutGrid,
@@ -11,6 +11,7 @@ import {
     ChevronRight,
     Edit2,
     Trash2,
+    BookOpen,
 } from 'lucide-react';
 import { useUserState } from '../../recoil/utils';
 import { useRecoilValue } from 'recoil';
@@ -130,28 +131,54 @@ const ActionButton = styled.button`
 
 const SermonManagementPage = () => {
     const navigate = useNavigate();
-    const [sermons, setSermons] = useState([]);
-    const [viewType, setViewType] = useState('grid');
-    const [selectedCategory, setSelectedCategory] = useState('public');
-    const [searchTerm, setSearchTerm] = useState('');
-    const [itemsPerPage, setItemsPerPage] = useState(10);
-    const [sortBy, setSortBy] = useState('newest');
-    const isNavExpanded = useRecoilValue(isNavExpandedState);
+    const location = useLocation();
+    const [searchParams, setSearchParams] = useSearchParams();
     const { userId } = useUserState();
-    const [currentPage, setCurrentPage] = useState(1);
+    const [sermons, setSermons] = useState([]);
+    const [viewType, setViewType] = useState(searchParams.get('viewType') || 'grid');
+    const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || 'all');
+    const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
+    const [itemsPerPage, setItemsPerPage] = useState(Number(searchParams.get('perPage')) || 10);
+    const [sortBy, setSortBy] = useState(searchParams.get('sort') || 'newest');
+    const [currentPage, setCurrentPage] = useState(Number(searchParams.get('page')) || 1);
+    const isNavExpanded = useRecoilValue(isNavExpandedState);
     const [totalPages, setTotalPages] = useState(1);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [sermonToDelete, setSermonToDelete] = useState(null);
     const [selectedSermonUserId, setSelectedSermonUserId] = useState(null);
+    const [totalElements, setTotalElements] = useState(0);
+    const [loading, setLoading] = useState(false);
 
-    const [filters, setFilters] = useState({
-        worshipTypes: [],
-        bibleBooks: [],
-        authors: [],
+    const [filters, setFilters] = useState(() => {
+        return {
+            worshipTypes: searchParams.get('worship')?.split(',').filter(Boolean) || [],
+            bibleBooks: searchParams.get('bible')?.split(',').filter(Boolean) || [],
+            authors: [],
+            dateFilter: searchParams.get('dateFilter')
+                ? JSON.parse(decodeURIComponent(searchParams.get('dateFilter')))
+                : null,
+        };
     });
 
-    // 날짜 필터 상태
-    const [dateFilter, setDateFilter] = useState({
+    const [expandedFilters, setExpandedFilters] = useState({
+        bible: false,
+        worship: false,
+        date: false,
+    });
+
+    // 검색 관련 상태
+    const [activeSearchTerm, setActiveSearchTerm] = useState(searchParams.get('activeSearch') || '');
+    const [mainSearchTerm, setMainSearchTerm] = useState(searchParams.get('activeSearch') || '');
+    const [filterSearchTerm, setFilterSearchTerm] = useState(searchParams.get('activeSearch') || '');
+    const [isScrolled, setIsScrolled] = useState(false);
+
+    const searchInputRef = useRef(null);
+    const scrolledSearchInputRef = useRef(null);
+    const filterSectionRef = useRef(null);
+
+    const currentSermons = sermons;
+
+    const [tempDateFilter, setTempDateFilter] = useState({
         type: 'single',
         singleDate: '',
         range: {
@@ -159,28 +186,6 @@ const SermonManagementPage = () => {
             endDate: '',
         },
     });
-
-    // expandedFilters 상태를 객체로!
-    const [expandedFilters, setExpandedFilters] = useState({
-        bible: false,
-        worship: false,
-        date: false,
-    });
-
-    const currentSermons = sermons;
-
-    const getModeFromCategory = (category) => {
-        switch (category) {
-            case 'my-all':
-                return 1;
-            case 'my-public':
-                return 2;
-            case 'my-private':
-                return 3;
-            default:
-                return 0;
-        }
-    };
 
     const getSortParam = (sortValue) => {
         switch (sortValue) {
@@ -193,43 +198,159 @@ const SermonManagementPage = () => {
         }
     };
 
-    const fetchSermons = async () => {
-        try {
-            const params = {
-                keyword: searchTerm || null,
-                searchType: searchTerm ? 2 : null,
-                sort: getSortParam(sortBy),
-                worshipTypes: filters.worshipTypes,
-                scripture: filters.bibleBooks,
-                page: currentPage,
-                size: itemsPerPage,
-                startDate: dateFilter.type === 'range' ? dateFilter.range.startDate : dateFilter.singleDate,
-                endDate: dateFilter.type === 'range' ? dateFilter.range.endDate : dateFilter.singleDate,
-            };
+    const fetchSermons = useCallback(
+        async (searchKeyword = null) => {
+            try {
+                setLoading(true);
+                const params = {
+                    keyword: searchKeyword || searchTerm || null,
+                    searchType: searchKeyword || searchTerm ? 2 : null,
+                    sort: getSortParam(sortBy),
+                    worshipTypes: filters.worshipTypes,
+                    scripture: filters.bibleBooks,
+                    page: currentPage,
+                    size: itemsPerPage,
+                    startDate: filters.dateFilter
+                        ? filters.dateFilter.type === 'range'
+                            ? filters.dateFilter.startDate
+                            : filters.dateFilter.date
+                        : null,
+                    endDate: filters.dateFilter
+                        ? filters.dateFilter.type === 'range'
+                            ? filters.dateFilter.endDate
+                            : filters.dateFilter.date
+                        : null,
+                };
 
-            const response = await getFilteredSermonListAdmin(params);
-            setSermons(response.content);
-            setTotalPages(response.totalPage);
-        } catch (error) {
-            console.error('Error fetching sermons:', error);
-            setSermons([]);
+                const response = await getFilteredSermonListAdmin(params);
+                setSermons(response.content);
+                setTotalElements(response.totalElements);
+                setTotalPages(response.totalPage);
+            } catch (error) {
+                console.error('Error fetching sermons:', error);
+                setSermons([]);
+            } finally {
+                setLoading(false);
+            }
+        },
+        [sortBy, filters, currentPage, itemsPerPage, searchTerm]
+    );
+
+    useEffect(() => {
+        fetchSermons();
+    }, [fetchSermons]);
+
+    // 검색어 입력 핸들러
+    const handleSearchChange = (e) => {
+        const newTerm = e.target.value;
+        setMainSearchTerm(newTerm);
+        setFilterSearchTerm(newTerm);
+    };
+
+    // 엔터키 검색 핸들러
+    const handleKeyPress = (e) => {
+        if (e.key === 'Enter') {
+            setCurrentPage(1);
+            setActiveSearchTerm(e.target.value);
+            setSearchTerm(e.target.value);
+            fetchSermons(e.target.value);
         }
     };
 
-    const handleSearch = async () => {
-        if (!searchTerm.trim()) {
-            fetchSermons();
-            return;
-        }
+    // 검색어 태그 제거 핸들러
+    const removeSearchTag = () => {
+        setActiveSearchTerm('');
+        setSearchTerm('');
+        setMainSearchTerm('');
+        setFilterSearchTerm('');
         setCurrentPage(1);
-        await fetchSermons();
+        fetchSermons();
     };
 
-    const handlePageChange = async (pageNumber) => {
+    // 스크롤 이벤트 핸들러
+    useEffect(() => {
+        let lastScrollY = window.scrollY;
+        let ticking = false;
+        let isTyping = false;
+
+        const handleInputFocus = () => {
+            isTyping = true;
+        };
+
+        const handleInputBlur = () => {
+            isTyping = false;
+        };
+
+        if (searchInputRef.current) {
+            searchInputRef.current.addEventListener('focus', handleInputFocus);
+            searchInputRef.current.addEventListener('blur', handleInputBlur);
+        }
+        if (scrolledSearchInputRef.current) {
+            scrolledSearchInputRef.current.addEventListener('focus', handleInputFocus);
+            scrolledSearchInputRef.current.addEventListener('blur', handleInputBlur);
+        }
+
+        const handleScroll = () => {
+            if (!ticking) {
+                window.requestAnimationFrame(() => {
+                    const scrollThreshold = 200;
+                    const buffer = 50;
+                    const currentScrollY = window.scrollY;
+
+                    if (currentScrollY > scrollThreshold + buffer && !isScrolled) {
+                        setIsScrolled(true);
+                    } else if (currentScrollY < scrollThreshold - buffer && isScrolled) {
+                        setIsScrolled(false);
+                    }
+
+                    if (!isTyping) {
+                        const activeElement = document.activeElement;
+                        const isSearchFocused =
+                            activeElement === searchInputRef.current ||
+                            activeElement === scrolledSearchInputRef.current;
+
+                        if (isSearchFocused) {
+                            if (isScrolled && scrolledSearchInputRef.current) {
+                                scrolledSearchInputRef.current.focus();
+                                const len = scrolledSearchInputRef.current.value.length;
+                                scrolledSearchInputRef.current.setSelectionRange(len, len);
+                            } else if (!isScrolled && searchInputRef.current) {
+                                searchInputRef.current.focus();
+                                const len = searchInputRef.current.value.length;
+                                searchInputRef.current.setSelectionRange(len, len);
+                            }
+                        }
+                    }
+
+                    lastScrollY = currentScrollY;
+                    ticking = false;
+                });
+                ticking = true;
+            }
+        };
+
+        window.addEventListener('scroll', handleScroll, { passive: true });
+
+        return () => {
+            window.removeEventListener('scroll', handleScroll);
+            if (searchInputRef.current) {
+                searchInputRef.current.removeEventListener('focus', handleInputFocus);
+                searchInputRef.current.removeEventListener('blur', handleInputBlur);
+            }
+            if (scrolledSearchInputRef.current) {
+                scrolledSearchInputRef.current.removeEventListener('focus', handleInputFocus);
+                scrolledSearchInputRef.current.removeEventListener('blur', handleInputBlur);
+            }
+        };
+    }, [isScrolled]);
+
+    const handlePageChange = (pageNumber) => {
         setCurrentPage(pageNumber);
         window.scrollTo(0, 0);
+        fetchSermons();
     };
 
+    // 필터 토글 함수
     const toggleFilter = (type, value) => {
         setFilters((prev) => {
             const newFilters = { ...prev };
@@ -245,18 +366,56 @@ const SermonManagementPage = () => {
         setCurrentPage(1);
     };
 
-    useEffect(() => {
-        const debounceTimer = setTimeout(() => {
-            handleSearch();
-        }, 300);
+    // 날짜 필터 적용 함수
+    const applyDateFilter = async () => {
+        let newFilters;
+        if (tempDateFilter.type === 'single' && tempDateFilter.singleDate) {
+            newFilters = {
+                type: 'single',
+                date: tempDateFilter.singleDate,
+            };
+        } else if (tempDateFilter.type === 'range' && tempDateFilter.range.startDate && tempDateFilter.range.endDate) {
+            newFilters = {
+                type: 'range',
+                ...tempDateFilter.range,
+            };
+        }
 
-        return () => clearTimeout(debounceTimer);
-    }, [searchTerm]);
+        if (newFilters) {
+            await setFilters((prev) => ({
+                ...prev,
+                dateFilter: newFilters,
+            }));
+            setCurrentPage(1);
+            // fetchSermons는 useEffect를 통해 자동으로 호출됩니다
+        }
+    };
 
-    useEffect(() => {
-        fetchSermons();
-    }, [currentPage, sortBy, filters, dateFilter, itemsPerPage]);
+    // 필터 제거 함수
+    const removeFilter = (type, value) => {
+        if (type === 'dateFilter') {
+            setFilters((prev) => ({
+                ...prev,
+                dateFilter: null,
+            }));
+            setTempDateFilter({
+                type: 'single',
+                singleDate: '',
+                range: {
+                    startDate: '',
+                    endDate: '',
+                },
+            });
+        } else {
+            setFilters((prev) => ({
+                ...prev,
+                [type]: prev[type].filter((item) => item !== value),
+            }));
+        }
+        setCurrentPage(1);
+    };
 
+    // 필터 초기화 함수
     const resetFilters = () => {
         setFilters({
             worshipTypes: [],
@@ -264,8 +423,7 @@ const SermonManagementPage = () => {
             authors: [],
             dateFilter: null,
         });
-        setSortBy('newest');
-        setDateFilter({
+        setTempDateFilter({
             type: 'single',
             singleDate: '',
             range: {
@@ -273,6 +431,13 @@ const SermonManagementPage = () => {
                 endDate: '',
             },
         });
+        setSortBy('newest');
+        setSearchTerm('');
+        setMainSearchTerm('');
+        setFilterSearchTerm('');
+        setActiveSearchTerm('');
+        setCurrentPage(1);
+        fetchSermons('');
     };
 
     // 아코디언 토글 함수
@@ -283,62 +448,30 @@ const SermonManagementPage = () => {
         }));
     };
 
-    // 필터 태그 제거 함수
-    const removeFilter = (type, value) => {
-        if (type === 'dateFilter') {
-            removeDateFilter();
-        } else {
-            setFilters((prev) => ({
-                ...prev,
-                [type]: prev[type].filter((item) => item !== value),
-            }));
-        }
+    // 날짜 입력 핸들러
+    const handleSingleDateChange = (e) => {
+        setTempDateFilter((prev) => ({
+            ...prev,
+            singleDate: e.target.value,
+        }));
     };
 
-    // 날짜 필터 제거 함수
-    const removeDateFilter = () => {
-        setFilters((prev) => ({
+    const handleRangeDateChange = (type, value) => {
+        setTempDateFilter((prev) => ({
             ...prev,
-            dateFilter: null,
-        }));
-        setDateFilter({
-            type: 'single',
-            singleDate: '',
             range: {
-                startDate: '',
-                endDate: '',
+                ...prev.range,
+                [type]: value,
             },
-        });
+        }));
     };
 
     // 날짜 필터 토글 함수
     const toggleDateFilterType = () => {
-        setDateFilter((prev) => ({
+        setTempDateFilter((prev) => ({
             ...prev,
             type: prev.type === 'single' ? 'range' : 'single',
         }));
-    };
-
-    // 날짜 필터 적용 함수
-    const applyDateFilter = () => {
-        if (dateFilter.type === 'single' && dateFilter.singleDate) {
-            setFilters((prev) => ({
-                ...prev,
-                dateFilter: {
-                    type: 'single',
-                    date: dateFilter.singleDate,
-                },
-            }));
-        } else if (dateFilter.type === 'range' && dateFilter.range.startDate && dateFilter.range.endDate) {
-            setFilters((prev) => ({
-                ...prev,
-                dateFilter: {
-                    type: 'range',
-                    ...dateFilter.range,
-                },
-            }));
-        }
-        setCurrentPage(1);
     };
 
     const handleDelete = async (sermon) => {
@@ -366,22 +499,84 @@ const SermonManagementPage = () => {
         }
     };
 
+    const handleSortChange = (e) => {
+        setSortBy(e.target.value);
+        setCurrentPage(1);
+        fetchSermons();
+    };
+
+    const handleItemsPerPageChange = (e) => {
+        setItemsPerPage(Number(e.target.value));
+        setCurrentPage(1);
+        fetchSermons();
+    };
+
+    useEffect(() => {
+        fetchSermons();
+    }, [fetchSermons, filters]);
+
+    // URL 파라미터 업데이트 함수
+    const updateUrlParams = useCallback(() => {
+        const params = new URLSearchParams();
+
+        if (viewType !== 'grid') params.set('viewType', viewType);
+        if (selectedCategory !== 'all') params.set('category', selectedCategory);
+        if (searchTerm) params.set('search', searchTerm);
+        if (activeSearchTerm) params.set('activeSearch', activeSearchTerm);
+        if (itemsPerPage !== 10) params.set('perPage', itemsPerPage.toString());
+        if (sortBy !== 'newest') params.set('sort', sortBy);
+        if (currentPage !== 1) params.set('page', currentPage.toString());
+
+        if (filters.worshipTypes.length) params.set('worship', filters.worshipTypes.join(','));
+        if (filters.bibleBooks.length) params.set('bible', filters.bibleBooks.join(','));
+        if (filters.dateFilter) params.set('dateFilter', encodeURIComponent(JSON.stringify(filters.dateFilter)));
+
+        setSearchParams(params);
+    }, [
+        viewType,
+        selectedCategory,
+        searchTerm,
+        activeSearchTerm,
+        itemsPerPage,
+        sortBy,
+        currentPage,
+        filters,
+        setSearchParams,
+    ]);
+
+    // URL 파라미터 변경 시 상태 업데이트
+    useEffect(() => {
+        updateUrlParams();
+    }, [
+        viewType,
+        selectedCategory,
+        searchTerm,
+        activeSearchTerm,
+        itemsPerPage,
+        sortBy,
+        currentPage,
+        filters,
+        updateUrlParams,
+    ]);
+
     return (
         <Container isNavExpanded={isNavExpanded}>
-            <SearchSection>
-                <SearchBar>
+            <SearchSection isScrolled={isScrolled}>
+                <SearchBar isNavExpanded={isNavExpanded}>
                     <Search size={20} />
                     <input
+                        ref={searchInputRef}
                         type="text"
                         placeholder="설교 제목, 본문, 작성자 검색..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
+                        value={mainSearchTerm}
+                        onChange={handleSearchChange}
+                        onKeyPress={handleKeyPress}
                     />
                 </SearchBar>
             </SearchSection>
 
             <ContentWrapper isNavExpanded={isNavExpanded}>
-                <FilterSection>
+                <FilterSection ref={filterSectionRef}>
                     <FilterHeader>
                         <h3>필터</h3>
                         <ResetButton onClick={resetFilters}>
@@ -407,7 +602,7 @@ const SermonManagementPage = () => {
                             </FilterItemHeader>
                             <FilterContent isExpanded={expandedFilters.bible}>
                                 {BIBLE_BOOKS.map((book) => (
-                                    <FilterCheckbox key={book}>
+                                    <FilterCheckbox key={book} isDateFilter={false}>
                                         <input
                                             type="checkbox"
                                             checked={filters.bibleBooks.includes(book)}
@@ -435,7 +630,7 @@ const SermonManagementPage = () => {
                             </FilterItemHeader>
                             <FilterContent isExpanded={expandedFilters.worship}>
                                 {WORSHIP_TYPES.map((type) => (
-                                    <FilterCheckbox key={type}>
+                                    <FilterCheckbox key={type} isDateFilter={false}>
                                         <input
                                             type="checkbox"
                                             checked={filters.worshipTypes.includes(type)}
@@ -462,52 +657,37 @@ const SermonManagementPage = () => {
                                 <DateFilterContainer>
                                     <DateTypeToggle>
                                         <DateTypeButton
-                                            active={dateFilter.type === 'single'}
-                                            onClick={() => toggleDateFilterType()}
+                                            active={tempDateFilter.type === 'single'}
+                                            onClick={toggleDateFilterType}
                                         >
                                             단일 날짜
                                         </DateTypeButton>
                                         <DateTypeButton
-                                            active={dateFilter.type === 'range'}
-                                            onClick={() => toggleDateFilterType()}
+                                            active={tempDateFilter.type === 'range'}
+                                            onClick={toggleDateFilterType}
                                         >
                                             기간 설정
                                         </DateTypeButton>
                                     </DateTypeToggle>
 
-                                    {dateFilter.type === 'single' ? (
+                                    {tempDateFilter.type === 'single' ? (
                                         <DateInput
                                             type="date"
-                                            value={dateFilter.singleDate}
-                                            onChange={(e) =>
-                                                setDateFilter((prev) => ({
-                                                    ...prev,
-                                                    singleDate: e.target.value,
-                                                }))
-                                            }
+                                            value={tempDateFilter.singleDate}
+                                            onChange={handleSingleDateChange}
                                         />
                                     ) : (
                                         <DateRangeInput>
                                             <input
                                                 type="date"
-                                                value={dateFilter.range.startDate}
-                                                onChange={(e) =>
-                                                    setDateFilter((prev) => ({
-                                                        ...prev,
-                                                        range: { ...prev.range, startDate: e.target.value },
-                                                    }))
-                                                }
+                                                value={tempDateFilter.range.startDate}
+                                                onChange={(e) => handleRangeDateChange('startDate', e.target.value)}
                                             />
                                             <span>~</span>
                                             <input
                                                 type="date"
-                                                value={dateFilter.range.endDate}
-                                                onChange={(e) =>
-                                                    setDateFilter((prev) => ({
-                                                        ...prev,
-                                                        range: { ...prev.range, endDate: e.target.value },
-                                                    }))
-                                                }
+                                                value={tempDateFilter.range.endDate}
+                                                onChange={(e) => handleRangeDateChange('endDate', e.target.value)}
                                             />
                                         </DateRangeInput>
                                     )}
@@ -516,11 +696,83 @@ const SermonManagementPage = () => {
                             </FilterContent>
                         </FilterItem>
                     </FilterAccordion>
+
+                    <FilterDivider />
+                    <TotalCountWrapper>
+                        <TotalCountIcon>
+                            <BookOpen size={14} />
+                        </TotalCountIcon>
+                        <TotalCount>
+                            총 <strong>{totalElements}</strong>개의 설교
+                        </TotalCount>
+                    </TotalCountWrapper>
+
+                    <ScrolledControls isVisible={isScrolled}>
+                        <SearchBar compact isNavExpanded={isNavExpanded}>
+                            <Search size={18} />
+                            <input
+                                ref={scrolledSearchInputRef}
+                                type="text"
+                                placeholder="설교 제목, 본문, 작성자 검색..."
+                                value={filterSearchTerm}
+                                onChange={handleSearchChange}
+                                onKeyPress={handleKeyPress}
+                            />
+                        </SearchBar>
+
+                        <Divider />
+
+                        <Controls compact>
+                            <SelectWrapper>
+                                <Select value={itemsPerPage} onChange={handleItemsPerPageChange}>
+                                    <option value={10}>10개씩 보기</option>
+                                    <option value={30}>30개씩 보기</option>
+                                    <option value={50}>50개씩 보기</option>
+                                    <option value={100}>100개씩 보기</option>
+                                </Select>
+                                <Select value={sortBy} onChange={handleSortChange}>
+                                    <option value="newest">최신순</option>
+                                    <option value="oldest">오래된순</option>
+                                    <option value="recently-modified">최근 수정순</option>
+                                </Select>
+                            </SelectWrapper>
+                            <ViewToggle>
+                                <ToggleButton active={viewType === 'grid'} onClick={() => setViewType('grid')}>
+                                    <LayoutGrid size={20} />
+                                </ToggleButton>
+                                <ToggleButton active={viewType === 'list'} onClick={() => setViewType('list')}>
+                                    <List size={20} />
+                                </ToggleButton>
+                            </ViewToggle>
+                        </Controls>
+                    </ScrolledControls>
                 </FilterSection>
 
                 <MainContent>
                     <ControlBar>
                         <ActiveFilters>
+                            {activeSearchTerm && (
+                                <FilterTag>
+                                    <TagText>검색어: {activeSearchTerm}</TagText>
+                                    <RemoveButton onClick={removeSearchTag}>×</RemoveButton>
+                                </FilterTag>
+                            )}
+                            {filters.dateFilter?.type === 'single' && filters.dateFilter.date && (
+                                <FilterTag>
+                                    <TagText>날짜: {filters.dateFilter.date}</TagText>
+                                    <RemoveButton onClick={() => removeFilter('dateFilter')}>×</RemoveButton>
+                                </FilterTag>
+                            )}
+                            {filters.dateFilter?.type === 'range' &&
+                                filters.dateFilter.startDate &&
+                                filters.dateFilter.endDate && (
+                                    <FilterTag>
+                                        <TagText>
+                                            기간: {filters.dateFilter.startDate} ~ {filters.dateFilter.endDate}
+                                        </TagText>
+                                        <RemoveButton onClick={() => removeFilter('dateFilter')}>×</RemoveButton>
+                                    </FilterTag>
+                                )}
                             {filters.bibleBooks.map((book) => (
                                 <FilterTag key={book}>
                                     <TagText>{book}</TagText>
@@ -533,36 +785,16 @@ const SermonManagementPage = () => {
                                     <RemoveButton onClick={() => removeFilter('worshipTypes', type)}>×</RemoveButton>
                                 </FilterTag>
                             ))}
-                            {filters.dateFilter && (
-                                <FilterTag>
-                                    <TagText>
-                                        {filters.dateFilter.type === 'single'
-                                            ? new Date(filters.dateFilter.date).toLocaleDateString()
-                                            : `${new Date(
-                                                  filters.dateFilter.startDate
-                                              ).toLocaleDateString()} ~ ${new Date(
-                                                  filters.dateFilter.endDate
-                                              ).toLocaleDateString()}`}
-                                    </TagText>
-                                    <RemoveButton onClick={() => removeFilter('dateFilter')}>×</RemoveButton>
-                                </FilterTag>
-                            )}
                         </ActiveFilters>
                         <Controls>
                             <SelectWrapper>
-                                <Select
-                                    value={itemsPerPage}
-                                    onChange={(e) => {
-                                        setItemsPerPage(Number(e.target.value));
-                                        setCurrentPage(1); // 페이지 사이즈 변경 시 첫 페이지로 리셋
-                                    }}
-                                >
+                                <Select value={itemsPerPage} onChange={handleItemsPerPageChange}>
                                     <option value={10}>10개씩 보기</option>
                                     <option value={30}>30개씩 보기</option>
                                     <option value={50}>50개씩 보기</option>
                                     <option value={100}>100개씩 보기</option>
                                 </Select>
-                                <Select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+                                <Select value={sortBy} onChange={handleSortChange}>
                                     <option value="newest">최신순</option>
                                     <option value="oldest">오래된순</option>
                                     <option value="recently-modified">최근 수정순</option>
@@ -587,6 +819,27 @@ const SermonManagementPage = () => {
                                     viewType={viewType}
                                     onClick={() => navigate(`/main/admin/sermons/detail/${sermon.sermonId}`)}
                                 >
+                                    <SermonDate>
+                                        {new Date(sermon.sermonDate).toLocaleDateString('ko-KR', {
+                                            year: 'numeric',
+                                            month: 'long',
+                                            day: 'numeric',
+                                        })}
+                                    </SermonDate>
+                                    <AuthorName>{sermon.ownerName}</AuthorName>
+                                    <SermonTitle>{sermon.sermonTitle}</SermonTitle>
+                                    <SermonInfo>
+                                        <Scripture>{sermon.mainScripture}</Scripture>
+                                        {sermon.additionalScripture && (
+                                            <Scripture>{sermon.additionalScripture}</Scripture>
+                                        )}
+                                        <WorshipType>{sermon.worshipType}</WorshipType>
+                                        <ReferenceCount>
+                                            <BookOpen size={14} />
+                                            {sermon.textCount || 0}개의 버전
+                                        </ReferenceCount>
+                                    </SermonInfo>
+                                    <SermonSummary>{sermon.summary}</SermonSummary>
                                     <ActionButtons>
                                         <ActionButton
                                             onClick={(e) => {
@@ -607,35 +860,6 @@ const SermonManagementPage = () => {
                                             <Trash2 size={16} />
                                         </ActionButton>
                                     </ActionButtons>
-                                    {viewType === 'list' ? (
-                                        <>
-                                            <div className="sermon-meta">
-                                                <SermonAuthor>{sermon.ownerName}</SermonAuthor>
-                                                <SermonTitle>{sermon.sermonTitle}</SermonTitle>
-                                                <SermonInfo>
-                                                    <Scripture>{sermon.mainScripture}</Scripture>
-                                                    {sermon.additionalScripture && (
-                                                        <Scripture>{sermon.additionalScripture}</Scripture>
-                                                    )}
-                                                    <WorshipType>{sermon.worshipType}</WorshipType>
-                                                </SermonInfo>
-                                            </div>
-                                            <SermonSummary>{sermon.summary}</SermonSummary>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <SermonAuthor>{sermon.ownerName}</SermonAuthor>
-                                            <SermonTitle>{sermon.sermonTitle}</SermonTitle>
-                                            <SermonInfo>
-                                                <Scripture>{sermon.mainScripture}</Scripture>
-                                                {sermon.additionalScripture && (
-                                                    <Scripture>{sermon.additionalScripture}</Scripture>
-                                                )}
-                                                <WorshipType>{sermon.worshipType}</WorshipType>
-                                            </SermonInfo>
-                                            <SermonSummary>{sermon.summary}</SermonSummary>
-                                        </>
-                                    )}
                                 </SermonCard>
                             ))
                         ) : (
@@ -723,14 +947,13 @@ const SermonManagementPage = () => {
 const Container = styled.div`
     padding: 40px 60px;
     min-height: 91vh;
-    background-color: #f8f9fa;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     width: 100%;
     flex: 1;
 `;
 
 const SearchSection = styled.div`
-    display: flex;
+    display: ${(props) => (props.isScrolled ? 'none' : 'flex')};
     justify-content: center;
     align-items: center;
     margin-bottom: 40px;
@@ -771,6 +994,24 @@ const SearchBar = styled.div`
         border-color: #6b4ee6;
         box-shadow: 0 0 0 3px rgba(107, 78, 230, 0.1);
     }
+
+    ${(props) =>
+        props.compact &&
+        `
+        padding: 4px 8px;
+        height: 32px;
+        width: ${props.isNavExpanded ? '180px' : '150px'};
+        
+        input {
+            font-size: 12px;
+        }
+        
+        svg {
+            width: 14px;
+            height: 14px;
+            margin-right: 8px;
+        }
+    `}
 `;
 
 const ContentWrapper = styled.div`
@@ -783,9 +1024,12 @@ const ContentWrapper = styled.div`
 
 const FilterSection = styled.div`
     background: white;
-    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    padding: 8px;
     border-radius: 16px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e5e7eb;
     height: fit-content;
     transition: all 0.3s ease;
     margin-left: 20px;
@@ -797,6 +1041,7 @@ const FilterHeader = styled.div`
     display: flex;
     justify-content: space-between;
     align-items: center;
+    padding-left: 10px;
     margin-bottom: 24px;
 
     h3 {
@@ -842,6 +1087,10 @@ const FilterItem = styled.div`
     border-radius: 12px;
     overflow: hidden;
     transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
 
     &:hover {
         border-color: #6b4ee6;
@@ -873,23 +1122,23 @@ const FilterContent = styled.div`
     max-height: ${(props) => (props.isExpanded ? '400px' : '0')};
     opacity: ${(props) => (props.isExpanded ? '1' : '0')};
     overflow-y: ${(props) => (props.isExpanded ? 'auto' : 'hidden')};
+    overflow-x: hidden;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     padding: ${(props) => (props.isExpanded ? '16px' : '0')};
     background: white;
     transform-origin: top;
     transform: ${(props) => (props.isExpanded ? 'scaleY(1)' : 'scaleY(0)')};
 
-    /* 체크박스 그리드 레이아웃 */
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    width: 100%;
 
-    /* 날짜 선택기는 그리드 제외 */
     &.date-picker {
         display: block;
+        padding: ${(props) => (props.isExpanded ? '16px' : '0')};
     }
 
-    /* 스크롤바 스타일링 */
     &::-webkit-scrollbar {
         width: 6px;
     }
@@ -912,21 +1161,21 @@ const FilterContent = styled.div`
 const FilterCheckbox = styled.label`
     display: flex;
     align-items: center;
-    padding: 8px;
+    padding: 4px 6px;
     cursor: pointer;
     transition: all 0.2s ease;
     border-radius: 6px;
     font-size: 13px;
+    white-space: nowrap;
+    width: ${(props) => (props.isDateFilter ? 'auto' : '100%')};
+    justify-content: flex-start;
 
     &:hover {
         background: #f8f9fa;
     }
 
     span {
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        padding-left: 24px;
+        padding-left: 20px;
     }
 `;
 
@@ -995,13 +1244,27 @@ const RemoveButton = styled.button`
 
 const Controls = styled.div`
     display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
     align-items: center;
+    justify-content: space-between;
+
+    ${(props) =>
+        props.compact &&
+        `
+        select {
+            font-size: 11px;
+            padding: 2px 6px;
+            height: 24px;
+            max-width: 120px;
+        }
+    `}
 `;
 
 const SelectWrapper = styled.div`
     display: flex;
-    gap: 8px;
-    margin-right: 10px;
+    flex-wrap: wrap;
+    gap: 6px;
 `;
 
 const Select = styled.select`
@@ -1028,10 +1291,11 @@ const Select = styled.select`
 const ViewToggle = styled.div`
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 4px;
+    gap: 4px;
+    padding: 2px;
     background: #f8f9fa;
-    border-radius: 8px;
+    border-radius: 6px;
+    height: 28px;
 `;
 
 const ToggleButton = styled.button`
@@ -1078,7 +1342,8 @@ const SermonCard = styled.div`
         padding: 20px;
         background: white;
         border-radius: 12px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        border: 1px solid #e5e7eb;
         cursor: pointer;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         display: flex;
@@ -1090,15 +1355,16 @@ const SermonCard = styled.div`
         padding: 20px;
         background: white;
         border-radius: 8px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        border: 1px solid #e5e7eb;
         cursor: pointer;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         position: relative;
 
-        ${SermonAuthor} {
-            font-size: 12px;
-            color: #595C62;
-            font-weight: 500;
+        ${SermonDate} {
+            font-size: 14px;
+            color: #595c62;
+            margin-bottom: 8px;
         }
 
         ${SermonTitle} {
@@ -1150,7 +1416,8 @@ const SermonCard = styled.div`
 
     &:hover {
         transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        border-color: #d1d5db;
 
         ${ActionButtons} {
             opacity: 1;
@@ -1158,7 +1425,7 @@ const SermonCard = styled.div`
     }
 `;
 
-const SermonAuthor = styled.div`
+const SermonDate = styled.div`
     font-size: 14px;
     color: #595c62;
     margin-bottom: 8px;
@@ -1251,131 +1518,6 @@ const PageButton = styled.button`
     }
 `;
 
-const CategoryTabs = styled.div`
-    display: flex;
-    gap: 12px;
-    margin-bottom: 40px;
-    padding: 0;
-`;
-
-const TabButton = styled.button`
-    padding: 12px 24px;
-    background: ${(props) => (props.active ? '#482895' : 'white')};
-    color: ${(props) => (props.active ? 'white' : '#666')};
-    border: 1px solid ${(props) => (props.active ? '#6b4ee6' : '#e1e1e1')};
-    border-radius: 12px;
-    font-weight: 600;
-    font-size: 14px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    box-shadow: ${(props) => (props.active ? '0 4px 12px rgba(107, 78, 230, 0.2)' : '0 2px 4px rgba(0, 0, 0, 0.05)')};
-
-    &:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(107, 78, 230, 0.15);
-    }
-
-    &:active {
-        transform: translateY(0);
-    }
-`;
-
-const DateFilterContainer = styled.div`
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    min-height: 140px;
-    align-items: center;
-`;
-
-const DateTypeToggle = styled.div`
-    display: flex;
-    gap: 8px;
-    width: 100%;
-`;
-
-const DateTypeButton = styled.button`
-    flex: 1;
-    padding: 8px 12px;
-    border: 1px solid ${(props) => (props.active ? '#6b4ee6' : '#e1e1e1')};
-    border-radius: 8px;
-    background-color: ${(props) => (props.active ? '#6b4ee6' : 'white')};
-    color: ${(props) => (props.active ? 'white' : '#666')};
-    font-size: 13px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-
-    &:hover {
-        background-color: ${(props) => (props.active ? '#5a3eb8' : '#f8f9fa')};
-        border-color: #6b4ee6;
-    }
-`;
-
-const DateInput = styled.input`
-    padding: 12px;
-    border: 1px solid #e1e1e1;
-    border-radius: 8px;
-    font-size: 14px;
-    outline: none;
-    transition: all 0.2s ease;
-
-    &:focus {
-        border-color: #6b4ee6;
-        box-shadow: 0 0 0 3px rgba(107, 78, 230, 0.1);
-    }
-`;
-
-const DateRangeInput = styled.div`
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-
-    input {
-        padding: 8px 12px;
-        border: 1px solid #e1e1e1;
-        border-radius: 8px;
-        font-size: 13px;
-        outline: none;
-        transition: all 0.2s ease;
-
-        &:focus {
-            border-color: #6b4ee6;
-            box-shadow: 0 0 0 3px rgba(107, 78, 230, 0.1);
-        }
-    }
-
-    span {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        height: 20px;
-        color: #666;
-        font-size: 12px;
-    }
-`;
-
-const ApplyButton = styled.button`
-    padding: 8px 12px;
-    background: #6b4ee6;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-weight: 600;
-    font-size: 13px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    width: 100%;
-
-    &:hover {
-        background: #5a3eb8;
-        transform: translateY(-2px);
-    }
-
-    &:active {
-        transform: translateY(0);
-    }
-`;
-
 const PageNumbers = styled.div`
     display: flex;
     align-items: center;
@@ -1465,6 +1607,178 @@ const CancelButton = styled.button`
     &:hover {
         background-color: #444;
     }
+`;
+
+const ScrolledControls = styled.div`
+    position: static;
+    background: white;
+    padding: 16px;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    display: ${(props) => (props.isVisible ? 'flex' : 'none')};
+`;
+
+const Divider = styled.hr`
+    border: none;
+    height: 1px;
+    background-color: #e5e7eb;
+    margin: 0;
+`;
+
+const DateFilterContainer = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 140px;
+    align-items: center;
+`;
+
+const DateTypeToggle = styled.div`
+    display: flex;
+    gap: 8px;
+`;
+
+const DateTypeButton = styled.button`
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid ${(props) => (props.active ? '#6b4ee6' : '#e1e1e1')};
+    border-radius: 8px;
+    background-color: ${(props) => (props.active ? '#6b4ee6' : 'white')};
+    color: ${(props) => (props.active ? 'white' : '#666')};
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+        background-color: ${(props) => (props.active ? '#5a3eb8' : '#f8f9fa')};
+        border-color: #6b4ee6;
+    }
+`;
+
+const DateInput = styled.input`
+    padding: 12px;
+    border: 1px solid #e1e1e1;
+    border-radius: 8px;
+    font-size: 14px;
+    outline: none;
+    transition: all 0.2s ease;
+
+    &:focus {
+        border-color: #6b4ee6;
+        box-shadow: 0 0 0 3px rgba(107, 78, 230, 0.1);
+    }
+`;
+
+const DateRangeInput = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    input {
+        padding: 8px 12px;
+        border: 1px solid #e1e1e1;
+        border-radius: 8px;
+        font-size: 13px;
+        outline: none;
+        transition: all 0.2s ease;
+
+        &:focus {
+            border-color: #6b4ee6;
+            box-shadow: 0 0 0 3px rgba(107, 78, 230, 0.1);
+        }
+    }
+
+    span {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 20px;
+        color: #666;
+        font-size: 12px;
+    }
+`;
+
+const ApplyButton = styled.button`
+    padding: 8px 12px;
+    background: #6b4ee6;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 67%;
+
+    &:hover {
+        background: #5a3eb8;
+        transform: translateY(-2px);
+    }
+
+    &:active {
+        transform: translateY(0);
+    }
+`;
+
+const ReferenceCount = styled.span`
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: #6b4ee6;
+    background: #f8f9fa;
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid #e9ecef;
+
+    svg {
+        color: #6b4ee6;
+    }
+`;
+
+const FilterDivider = styled.div`
+    height: 1px;
+    background-color: #e5e7eb;
+    margin: 16px 0;
+`;
+
+const TotalCountWrapper = styled.div`
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    margin: 0 4px;
+`;
+
+const TotalCountIcon = styled.div`
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6b4ee6;
+`;
+
+const TotalCount = styled.div`
+    font-size: 14px;
+    color: #666;
+
+    strong {
+        color: #6b4ee6;
+        font-weight: 600;
+        margin: 0 2px;
+    }
+`;
+
+const AuthorName = styled.div`
+    font-size: 14px;
+    color: #595c62;
+    margin: -4px 0 0 0;
 `;
 
 export default SermonManagementPage;

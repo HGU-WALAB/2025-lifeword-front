@@ -17,6 +17,8 @@ import { useUserState } from '../recoil/utils';
 import { useRecoilValue } from 'recoil';
 import { isNavExpandedState } from '../recoil/atoms';
 import BookmarkSermonDetailPage from '../components/mypage/BookmarkSermonDetailPage';
+import CreateVersionPage from '../components/sermon/CreateVersionPage';
+import EditVersionPage from '../components/sermon/EditVersionPage';
 
 const MainPage = () => {
     const { isAdmin } = useUserState();
@@ -41,6 +43,10 @@ const MainPage = () => {
                             <Route path="/admin/sermons/*" element={<AdminSermonLayout />} />
                         </>
                     )}
+                    <Route path="/sermons/:id/create-version" element={<CreateVersionPage />} />
+                    <Route path="/admin/sermons/:id/create-version" element={<CreateVersionPage />} />
+                    <Route path="/sermons/:id/versions/:textId/edit" element={<EditVersionPage />} />
+                    <Route path="/admin/sermons/:id/versions/:textId/edit" element={<EditVersionPage />} />
                 </Routes>
             </MainContent>
         </Container>

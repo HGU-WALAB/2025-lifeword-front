@@ -18,7 +18,7 @@ const Onboarding = () => {
     return (
         <div style={{ height: '100vh' }}>
             <OnboardingGlobalStyles />
-            <FixedLogo src={LogoLong} alt="BIBLY" onClick={handleLogoClick} />
+            <FixedLogo src={LogoLong} alt="LIFE WORD" onClick={handleLogoClick} />
             <ParallaxBanner
                 layers={[
                     {
@@ -64,7 +64,7 @@ const Onboarding = () => {
                                     <LoginForm onClose={() => setShowLoginForm(false)} />
                                 ) : (
                                     <>
-                                        <MultiLineTitle>하나님의 말씀을 더 가까이, BIBLY</MultiLineTitle>
+                                        <MultiLineTitle>하나님의 말씀을 더 가까이, LIFE WORD</MultiLineTitle>
                                         <Description>지금 바로 시작해보세요!</Description>
                                         <LoginButtons>
                                             <KakaoLoginButton onClick={handleKakaoLogin}>
@@ -250,3 +250,4 @@ const handleGoogleLogin = () => {
     const googleURL = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=email profile&access_type=offline&prompt=consent&state=google`;
     window.location.href = googleURL;
 };
+

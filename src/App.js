@@ -42,15 +42,13 @@ const ProtectedRoute = ({ children }) => {
     useEffect(() => {
         const verifyAuth = async () => {
             try {
-                const jwt = getJwtFromCookie();
-                if (!jwt) {
+                const isAuthed = await checkAuth();
+                setIsAuthenticated(isAuthed);
+                if (!isAuthed) {
                     navigate('/', { replace: true });
-                    return;
                 }
-
-                setIsAuthenticated(true);
             } catch (error) {
-                console.error('인증 확인 중 오류 발생:', error);
+                console.error('Auth verification failed:', error);
                 navigate('/', { replace: true });
             } finally {
                 setIsLoading(false);
