@@ -8,12 +8,12 @@ export const useLogout = () => {
         try {
             await logout();
             clearUserState();
-            window.location.href = '/eax9952';
+            window.location.href = '/lifeword';
         } catch (error) {
             console.error('Logout failed:', error);
             // 에러가 발생해도 일단 로컬 상태는 클리어
             clearUserState();
-            window.location.href = '/eax9952';
+            window.location.href = '/lifeword';
         }
     };
 };

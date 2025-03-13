@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const BASE_URL = 'https://walab.info:8443/lifeword/api/v1';
+const BASE_URL = 'https://walab.info:8443/lifeword';
 
 //const BASE_URL = 'http://192.168.0.7:8080';
 // const BASE_URL = 'http://localhost:8080';
@@ -530,20 +530,36 @@ export const getTextList = async (sermonId, userId) => {
         return data;
     } catch (error) {
         console.error('Error getting text list:', error);
-
-// 일반 로그인
-export const loginUser = async (email, password) => {
-    try {
-        const response = await authRequest(`/login?email=${email}&password=${password}`, {
-            method: 'POST',
-        });
-        return await response.json();
-    } catch (error) {
-        console.error('❌ 로그인 실패:', error);
         throw error;
     }
 };
 
+export const loginUser = async (email, password) => {
+    try {
+        const response = await authRequest(
+            `/login?email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`,
+            {
+                method: 'POST',
+                headers: {
+                    Accept: 'application/json',
+                },
+                mode: 'cors',
+            }
+        );
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`로그인 실패: ${errorText}`);
+        }
+
+        const data = await response.json();
+        console.log('로그인 성공! 받은 데이터:', data);
+        return data;
+    } catch (error) {
+        console.error('로그인 실패:', error);
+        throw error;
+    }
+};
 
 export const getTextDetail = async (sermonId, textId, userId) => {
     try {
@@ -565,6 +581,9 @@ export const deleteText = async (textId, userId) => {
         return data;
     } catch (error) {
         console.error('Error deleting text:', error);
+        throw error;
+    }
+};
 
 // 로그아웃
 export const logout = async () => {
@@ -573,10 +592,34 @@ export const logout = async () => {
             method: 'POST',
         });
 
-        // ✅ 쿠키 만료 처리 개선
-        document.cookie = 'jwt=; path=/; expires=' + new Date(0).toUTCString();
+        // 쿠키 삭제
+        document.cookie = 'jwt=; path=/lifeword; domain=walab.info; expires=' + new Date(0).toUTCString();
+
+        // 로그아웃 후 리다이렉션
+        window.location.href = '/lifeword';
     } catch (error) {
         console.error('❌ 로그아웃 실패:', error);
         throw error;
+    }
+};
+
+export const checkAuth = async () => {
+    try {
+        const response = await fetch(`${BASE_URL}/auth/check`, {
+            method: 'GET',
+            credentials: 'include',
+            headers: {
+                accept: '*/*',
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error('Unauthorized');
+        }
+
+        return true;
+    } catch (error) {
+        console.error('Auth check failed:', error);
+        return false;
     }
 };
