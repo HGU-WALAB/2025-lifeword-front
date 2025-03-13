@@ -177,7 +177,7 @@ const SermonDetailPageAdmin = () => {
             try {
                 const response = await getTextList(id, currentUserId);
                 if (response && Array.isArray(response)) {
-                    setVersions(response); // 직접 응답을 사용 (매핑 필요 없음)
+                    setVersions(response);
                 }
             } catch (error) {
                 console.error('Error fetching versions:', error);
@@ -697,15 +697,6 @@ const CompactDate = styled.div`
         border-radius: 50%;
         margin-left: 8px;
     }
-`;
-
-const CompactWorshipTag = styled.span`
-    font-size: 12px;
-    padding: 4px 12px;
-    background: #eee6ff;
-    border: 1px solid #d4c4ff;
-    border-radius: 4px;
-    color: #482895;
 `;
 
 const CompactScripture = styled.div`

@@ -267,7 +267,7 @@ const fetchVersions = async (id, currentUserId, setVersions) => {
     try {
         const response = await getTextList(id, currentUserId);
         if (response && Array.isArray(response)) {
-            setVersions(response); // 직접 응답을 사용 (매핑 필요 없음)
+            setVersions(response);
         }
     } catch (error) {
         console.error('Error fetching versions:', error);
