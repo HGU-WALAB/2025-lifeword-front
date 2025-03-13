@@ -867,6 +867,7 @@ const SermonListPage = () => {
                                             day: 'numeric',
                                         })}
                                     </SermonDate>
+                                    <AuthorName>{sermon.ownerName}</AuthorName>
                                     <SermonTitle>{sermon.sermonTitle}</SermonTitle>
                                     <SermonInfo>
                                         <Scripture>{sermon.mainScripture}</Scripture>
@@ -1932,6 +1933,12 @@ const FilterDivider = styled.div`
     height: 1px;
     background-color: #e5e7eb;
     margin: 16px 0;
+`;
+
+const AuthorName = styled.div`
+    font-size: 14px;
+    color: #595c62;
+    margin: -4px 0 0 0;
 `;
 
 export default SermonListPage;

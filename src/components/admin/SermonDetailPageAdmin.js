@@ -173,25 +173,19 @@ const SermonDetailPageAdmin = () => {
     }, []);
 
     useEffect(() => {
-        const fetchVersions = async () => {
+        const fetchVersions = async (id, currentUserId, setVersions) => {
             try {
-                console.log('Fetching versions with:', { id, currentUserId });
                 const response = await getTextList(id, currentUserId);
-                console.log('Version list response:', response);
-
-                const mappedVersions = response.map((text) => ({
-                    textId: text.id,
-                    textTitle: text.textTitle,
-                }));
-                console.log('Mapped versions:', mappedVersions);
-                setVersions(mappedVersions);
+                if (response && Array.isArray(response)) {
+                    setVersions(response);
+                }
             } catch (error) {
                 console.error('Error fetching versions:', error);
             }
         };
 
         if (id && currentUserId) {
-            fetchVersions();
+            fetchVersions(id, currentUserId, setVersions);
         }
     }, [id, currentUserId, location.key]);
 
@@ -286,6 +280,13 @@ const SermonDetailPageAdmin = () => {
                                     month: 'long',
                                     day: 'numeric',
                                 })}";
+                                font-family: 'Noto Sans KR', sans-serif;
+                                font-size: 10px;
+                                color: #666;
+                            }
+                            
+                            @bottom-center {
+                                content: "${sermon.worshipType}";
                                 font-family: 'Noto Sans KR', sans-serif;
                                 font-size: 10px;
                                 color: #666;
@@ -458,13 +459,13 @@ const SermonDetailPageAdmin = () => {
                                 <div>
                                     <CompactMeta>
                                         <CompactDate>
-                                            설교일:{' '}
                                             {new Date(sermon.sermonDate).toLocaleDateString('ko-KR', {
                                                 year: 'numeric',
                                                 month: 'long',
                                                 day: 'numeric',
                                             })}
                                         </CompactDate>
+                                        <CompactDate>{sermon.worshipType}</CompactDate>
                                     </CompactMeta>
                                     <CompactTitle>{sermon.sermonTitle}</CompactTitle>
                                     <CompactScripture>
@@ -494,19 +495,44 @@ const SermonDetailPageAdmin = () => {
                                             setIsVersionDropdownOpen(false);
                                         }}
                                     >
-                                        원본
+                                        <VersionInfo>
+                                            <VersionTitle>{sermon.sermonTitle}</VersionTitle>
+                                            <VersionMeta>
+                                                <VersionAuthor>{sermon.ownerName}</VersionAuthor>
+                                                <VersionDate>
+                                                    {new Date(sermon.createdAt).toLocaleDateString('ko-KR', {
+                                                        year: 'numeric',
+                                                        month: 'long',
+                                                        day: 'numeric',
+                                                    })}
+                                                </VersionDate>
+                                            </VersionMeta>
+                                        </VersionInfo>
+                                        <OriginalTag>원본</OriginalTag>
                                     </VersionItem>
                                     <VersionDivider />
                                     {versions.map((version) => (
                                         <VersionItem
-                                            key={version.textId}
+                                            key={version.id}
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                handleVersionSelect(version.textId);
+                                                handleVersionSelect(version.id);
                                                 setIsVersionDropdownOpen(false);
                                             }}
                                         >
-                                            {version.textTitle}
+                                            <VersionInfo>
+                                                <VersionTitle>{version.textTitle || '제목 없음'}</VersionTitle>
+                                                <VersionMeta>
+                                                    <VersionAuthor>{version.userName}</VersionAuthor>
+                                                    <VersionDate>
+                                                        {new Date(version.textCreatedAt).toLocaleDateString('ko-KR', {
+                                                            year: 'numeric',
+                                                            month: 'long',
+                                                            day: 'numeric',
+                                                        })}
+                                                    </VersionDate>
+                                                </VersionMeta>
+                                            </VersionInfo>
                                         </VersionItem>
                                     ))}
                                     <CreateVersionButton
@@ -559,6 +585,7 @@ const SermonDetailPageAdmin = () => {
                                                 day: 'numeric',
                                             })}
                                         </SermonDate>
+                                        <WorshipTag>{sermon.worshipType}</WorshipTag>
                                     </DateInfo>
                                 </FormSectionLong>
                                 <FormSection>
@@ -766,7 +793,7 @@ const DropdownContent = styled.div`
     border: 1px solid #e1e1e1;
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    min-width: 200px;
+    min-width: 300px;
     z-index: 1000;
     display: ${(props) => (props.isOpen ? 'block' : 'none')};
 `;
@@ -850,6 +877,16 @@ const SermonDate = styled.span`
     font-size: 14px;
     color: #595c62;
     font-weight: 500;
+`;
+
+const WorshipTag = styled.span`
+    font-size: 12px;
+    padding: 4px 12px;
+    background: #eee6ff;
+    border: 1px solid #d4c4ff;
+    border-radius: 4px;
+    color: #482895;
+    margin-left: 12px;
 `;
 
 const FormSection = styled.div`
@@ -1051,6 +1088,47 @@ const GuideMessage = styled.div`
             transform: translateY(4px);
         }
     }
+`;
+
+const VersionInfo = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+`;
+
+const VersionTitle = styled.span`
+    font-weight: 500;
+    color: #333;
+`;
+
+const VersionMeta = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: #666;
+`;
+
+const VersionAuthor = styled.span`
+    color: #4f3296;
+    font-weight: 500;
+`;
+
+const VersionDate = styled.span`
+    &::before {
+        content: '•';
+        margin-right: 8px;
+        color: #ccc;
+    }
+`;
+
+const OriginalTag = styled.span`
+    font-size: 11px;
+    padding: 2px 8px;
+    background: #eee6ff;
+    border: 1px solid #d4c4ff;
+    border-radius: 4px;
+    color: #482895;
 `;
 
 export default SermonDetailPageAdmin;

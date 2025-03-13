@@ -826,6 +826,7 @@ const SermonManagementPage = () => {
                                             day: 'numeric',
                                         })}
                                     </SermonDate>
+                                    <AuthorName>{sermon.ownerName}</AuthorName>
                                     <SermonTitle>{sermon.sermonTitle}</SermonTitle>
                                     <SermonInfo>
                                         <Scripture>{sermon.mainScripture}</Scripture>
@@ -1772,6 +1773,12 @@ const TotalCount = styled.div`
         font-weight: 600;
         margin: 0 2px;
     }
+`;
+
+const AuthorName = styled.div`
+    font-size: 14px;
+    color: #595c62;
+    margin: -4px 0 0 0;
 `;
 
 export default SermonManagementPage;
