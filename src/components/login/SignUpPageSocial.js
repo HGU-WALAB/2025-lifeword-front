@@ -331,11 +331,11 @@ const Select = styled.select`
 const VerificationButton = styled.button`
     padding: 12px 20px;
     background: ${(props) => {
-        if (props.disabled) {
-            return props.children === '인증완료' ? '#4CAF50' : '#cccccc';
-        }
-        return '#4f3296';
-    }};
+    if (props.disabled) {
+        return props.children === '인증완료' ? '#4CAF50' : '#cccccc';
+    }
+    return '#4f3296';
+}};
     color: white;
     border: none;
     border-radius: 8px;
