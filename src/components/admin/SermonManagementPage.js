@@ -834,6 +834,10 @@ const SermonManagementPage = () => {
                                             <Scripture>{sermon.additionalScripture}</Scripture>
                                         )}
                                         <WorshipType>{sermon.worshipType}</WorshipType>
+                                        <ReferenceCount>
+                                            <BookOpen size={14} />
+                                            {sermon.textCount || 0}개의 버전
+                                        </ReferenceCount>
                                     </SermonInfo>
                                     <SermonSummary>{sermon.summary}</SermonSummary>
                                     <ActionButtons>
