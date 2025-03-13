@@ -10,6 +10,7 @@ import SignUpPageSocial from './components/login/SignUpPageSocial';
 import SignUpPageBibly from './components/login/SignUpPageBibly';
 import BookmarkSermonDetailPage from './components/mypage/BookmarkSermonDetailPage';
 import { checkAuth } from './services/APIService';
+
 const GlobalStyle = createGlobalStyle`
   body {
     cursor: url('http://www.rw-designer.com/cursor-extern.php?id=50627'), auto;
