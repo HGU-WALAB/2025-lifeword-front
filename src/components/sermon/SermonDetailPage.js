@@ -414,6 +414,13 @@ const SermonDetailPage = ({ isBookmarkView, onBookmarkToggle }) => {
                                 color: #666;
                             }
                             
+                            @bottom-center {
+                                content: "${sermon.worshipType}";
+                                font-family: 'Noto Sans KR', sans-serif;
+                                font-size: 10px;
+                                color: #666;
+                            }
+                            
                             @bottom-right {
                                 content: counter(page);
                                 font-family: 'Noto Sans KR', sans-serif;
@@ -607,13 +614,13 @@ const SermonDetailPage = ({ isBookmarkView, onBookmarkToggle }) => {
                                 <div>
                                     <CompactMeta>
                                         <CompactDate>
-                                            설교일:{' '}
                                             {new Date(sermon.sermonDate).toLocaleDateString('ko-KR', {
                                                 year: 'numeric',
                                                 month: 'long',
                                                 day: 'numeric',
                                             })}
                                         </CompactDate>
+                                        <CompactDate>{sermon.worshipType}</CompactDate>
                                     </CompactMeta>
                                     <CompactTitle>{sermon.sermonTitle}</CompactTitle>
                                     <CompactScripture>
@@ -717,6 +724,7 @@ const SermonDetailPage = ({ isBookmarkView, onBookmarkToggle }) => {
                                                 day: 'numeric',
                                             })}
                                         </SermonDate>
+                                        <WorshipTag>{sermon.worshipType}</WorshipTag>
                                     </DateInfo>
                                 </FormSectionLong>
                                 <FormSection>
@@ -983,6 +991,16 @@ const SermonDate = styled.span`
     font-weight: 500;
 `;
 
+const WorshipTag = styled.span`
+    font-size: 12px;
+    padding: 4px 12px;
+    background: #eee6ff;
+    border: 1px solid #d4c4ff;
+    border-radius: 4px;
+    color: #482895;
+    margin-left: 12px;
+`;
+
 const CreatedDate = styled.span`
     font-size: 12px;
     color: #888;
@@ -1188,6 +1206,15 @@ const GuideMessage = styled.div`
             transform: translateY(4px);
         }
     }
+`;
+
+const CompactWorshipTag = styled.span`
+    font-size: 12px;
+    padding: 4px 12px;
+    background: #eee6ff;
+    border: 1px solid #d4c4ff;
+    border-radius: 4px;
+    color: #482895;
 `;
 
 export default SermonDetailPage;
