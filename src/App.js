@@ -9,7 +9,6 @@ import AuthCallback from './components/login/AuthCallback';
 import SignUpPageSocial from './components/login/SignUpPageSocial';
 import SignUpPageBibly from './components/login/SignUpPageBibly';
 import BookmarkSermonDetailPage from './components/mypage/BookmarkSermonDetailPage';
-import { getJwtFromCookie } from './services/APIService';
 
 const GlobalStyle = createGlobalStyle`
   body {
