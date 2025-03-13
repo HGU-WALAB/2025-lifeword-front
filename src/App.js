@@ -9,7 +9,7 @@ import AuthCallback from './components/login/AuthCallback';
 import SignUpPageSocial from './components/login/SignUpPageSocial';
 import SignUpPageBibly from './components/login/SignUpPageBibly';
 import BookmarkSermonDetailPage from './components/mypage/BookmarkSermonDetailPage';
-
+import { checkAuth } from './services/APIService';
 const GlobalStyle = createGlobalStyle`
   body {
     cursor: url('http://www.rw-designer.com/cursor-extern.php?id=50627'), auto;
@@ -69,7 +69,7 @@ function App() {
         <RecoilRoot>
             <GlobalStyle />
             <ParallaxProvider>
-                <Router basename="/eax9952">
+                <Router basename="/lifeword">
                     <Routes>
                         <Route path="/" element={<Onboarding />} />
                         <Route path="/auth" element={<AuthCallback />} />

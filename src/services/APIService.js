@@ -530,6 +530,9 @@ export const getTextList = async (sermonId, userId) => {
         return data;
     } catch (error) {
         console.error('Error getting text list:', error);
+        throw error;
+    }
+};
 
 // 일반 로그인
 export const loginUser = async (email, password) => {
@@ -543,7 +546,6 @@ export const loginUser = async (email, password) => {
         throw error;
     }
 };
-
 
 export const getTextDetail = async (sermonId, textId, userId) => {
     try {
@@ -565,6 +567,9 @@ export const deleteText = async (textId, userId) => {
         return data;
     } catch (error) {
         console.error('Error deleting text:', error);
+        throw error;
+    }
+};
 
 // 로그아웃
 export const logout = async () => {
@@ -573,10 +578,34 @@ export const logout = async () => {
             method: 'POST',
         });
 
-        // ✅ 쿠키 만료 처리 개선
-        document.cookie = 'jwt=; path=/; expires=' + new Date(0).toUTCString();
+        // 쿠키 삭제
+        document.cookie = 'jwt=; path=/lifeword; domain=walab.info; expires=' + new Date(0).toUTCString();
+
+        // 로그아웃 후 리다이렉션
+        window.location.href = '/lifeword';
     } catch (error) {
         console.error('❌ 로그아웃 실패:', error);
         throw error;
+    }
+};
+
+export const checkAuth = async () => {
+    try {
+        const response = await fetch(`${BASE_URL}/auth/check`, {
+            method: 'GET',
+            credentials: 'include',
+            headers: {
+                accept: '*/*',
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error('Unauthorized');
+        }
+
+        return true;
+    } catch (error) {
+        console.error('Auth check failed:', error);
+        return false;
     }
 };
