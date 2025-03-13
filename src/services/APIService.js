@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const BASE_URL = 'https://walab.info:8443/lifeword/api/v1';
+const BASE_URL = 'https://walab.info:8443/lifeword';
 
 //const BASE_URL = 'http://192.168.0.7:8080';
 // const BASE_URL = 'http://localhost:8080';
@@ -534,15 +534,29 @@ export const getTextList = async (sermonId, userId) => {
     }
 };
 
-// 일반 로그인
 export const loginUser = async (email, password) => {
     try {
-        const response = await authRequest(`/login?email=${email}&password=${password}`, {
-            method: 'POST',
-        });
-        return await response.json();
+        const response = await authRequest(
+            `/login?email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`,
+            {
+                method: 'POST',
+                headers: {
+                    Accept: 'application/json',
+                },
+                mode: 'cors',
+            }
+        );
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`로그인 실패: ${errorText}`);
+        }
+
+        const data = await response.json();
+        console.log('로그인 성공! 받은 데이터:', data);
+        return data;
     } catch (error) {
-        console.error('❌ 로그인 실패:', error);
+        console.error('로그인 실패:', error);
         throw error;
     }
 };
