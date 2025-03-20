@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import { loginUser } from '../../services/APIService';
+import { login } from '../../services/APIService';
 import { useSetUserState } from '../../recoil/utils';
 
 const LoginForm = ({ onClose }) => {
@@ -13,22 +13,15 @@ const LoginForm = ({ onClose }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            const data = await loginUser(email, password);
-            if (data.exists) {
-                setUserState({
-                    isLoggedIn: true,
-                    userId: data.userId,
-                    userEmail: data.email,
-                    job: data.job,
-                    role: data.role,
-                });
-                navigate('/main', { replace: true });
+            const response = await login(email, password, setUserState);
+            if (response.success) {
+                navigate('/main');
             } else {
                 alert('로그인에 실패했습니다.');
             }
         } catch (error) {
-            console.error('로그인 에러:', error);
-            alert('로그인에 실패했습니다.');
+            console.error('Error:', error);
+            alert('로그인 중 오류가 발생했습니다.');
         }
     };
 

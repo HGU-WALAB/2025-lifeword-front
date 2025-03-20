@@ -17,6 +17,7 @@ import { useUserState } from '../../recoil/utils';
 import { useRecoilValue } from 'recoil';
 import { isNavExpandedState } from '../../recoil/atoms';
 import { getFilteredSermonList, deleteBookmark, getBookmarks } from '../../services/APIService';
+import LoadingSpinner from '../common/LoadingSpinner';
 
 const WORSHIP_TYPES = [
     '새벽예배',
@@ -848,12 +849,21 @@ const SermonListPage = () => {
                     </ControlBar>
 
                     <SermonList viewType={viewType} isNavExpanded={isNavExpanded}>
-                        {sermons.length > 0 ? (
+                        {loading ? (
+                            <LoadingSpinner text="설교 목록을 불러오는 중..." />
+                        ) : sermons.length > 0 ? (
                             sermons.map((sermon) => (
                                 <SermonCard
                                     key={sermon.sermonId}
                                     viewType={viewType}
-                                    onClick={() => navigate(`/main/sermon-list/detail/${sermon.sermonId}`)}
+                                    onClick={() =>
+                                        navigate(`/main/sermon-list/detail/${sermon.sermonId}`, {
+                                            state: {
+                                                contentTextId: sermon.contentTextId,
+                                                sermonData: sermon, // 기본 정보도 함께 전달
+                                            },
+                                        })
+                                    }
                                 >
                                     {sermon.bookmarked && (
                                         <BookmarkIcon onClick={(e) => onClickBookmark(e, sermon.sermonId)}>
@@ -1338,16 +1348,12 @@ const ToggleButton = styled.button`
 `;
 
 const SermonList = styled.div`
-    display: ${(props) => (props.viewType === 'grid' ? 'grid' : 'flex')};
-    flex-direction: ${(props) => (props.viewType === 'grid' ? 'unset' : 'column')};
-    grid-template-columns: ${(props) =>
-        props.viewType === 'grid'
-            ? props.isNavExpanded
-                ? 'repeat(auto-fill, minmax(280px, 1fr))'
-                : 'repeat(auto-fill, minmax(260px, 1fr))'
-            : '1fr'};
-    gap: 24px;
-    transition: all 0.3s ease;
+    display: grid;
+    grid-template-columns: ${(props) => (props.viewType === 'grid' ? 'repeat(auto-fill, minmax(300px, 1fr))' : '1fr')};
+    gap: 20px;
+    margin-top: 20px;
+    position: relative;
+    min-height: 400px;
     width: 100%;
 `;
 
@@ -1391,37 +1397,37 @@ const SermonCard = styled.div`
         }
     `
             : `
-        padding: 20px;
+        padding: 24px;
         background: white;
-        border-radius: 8px;
+        border-radius: 12px;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
         border: 1px solid #e5e7eb;
         cursor: pointer;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        display: grid;
-        grid-template-columns: 300px 1fr;
-        gap: 40px;
-        height: 167px;
         position: relative;
-
-        .sermon-meta {
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-start;
-            gap: 4px;
-        }
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        grid-column: 1 / -1;
 
         ${SermonDate} {
             font-size: 14px;
             color: #595c62;
-            font-weight: 500;
+            margin: 0;
+        }
+
+        ${AuthorName} {
+            font-size: 14px;
+            color: #595c62;
+            margin: 0;
         }
 
         ${SermonTitle} {
             font-size: 24px;
             font-weight: 800;
             color: #482895;
-            margin: 8px 0;
+            margin: 4px 0;
+            line-height: 1.3;
         }
 
         ${SermonInfo} {
@@ -1429,38 +1435,24 @@ const SermonCard = styled.div`
             flex-wrap: wrap;
             gap: 8px;
             align-items: center;
-            margin-top: auto;
-        }
-
-        ${Scripture} {
-            font-size: 12px;
-            font-weight: 500;
-            color: #212A3E;
-            padding: 4px 8px;
-            background: #f8f9fa;
-            border-radius: 4px;
-            border: 1px solid #e1e1e1;
-        }
-
-        ${WorshipType} {
-            font-size: 10px;
-            padding: 4px 12px;
-            background: #eee6ff;
-            border: 1px solid #d4c4ff;
-            border-radius: 4px;
-            color: #482895;
+            margin: 8px 0;
         }
 
         ${SermonSummary} {
             font-size: 14px;
-            line-height: 24px;
+            line-height: 1.6;
             color: #212A3E;
-            font-weight: 500;
             margin: 0;
             display: -webkit-box;
-            -webkit-line-clamp: 6;
+            -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
+        }
+
+        ${BookmarkIcon} {
+            position: absolute;
+            top: 24px;
+            right: 24px;
         }
     `}
 
@@ -1785,8 +1777,8 @@ const Ellipsis = styled.span`
 
 const BookmarkIcon = styled.div`
     position: absolute;
-    top: 16px;
-    right: 16px;
+    top: 24px;
+    right: 24px;
     color: #6b4ee6;
     background: rgba(255, 255, 255, 0.95);
     border-radius: 50%;

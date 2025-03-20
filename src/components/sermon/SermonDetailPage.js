@@ -263,11 +263,13 @@ const OriginalTag = styled.span`
     color: #482895;
 `;
 
-const fetchVersions = async (id, currentUserId, setVersions) => {
+const fetchVersions = async (id, currentUserId, setVersions, sermonData) => {
     try {
         const response = await getTextList(id, currentUserId);
         if (response && Array.isArray(response)) {
-            setVersions(response);
+            // 원본 버전을 제외한 버전들만 필터링
+            const filteredVersions = response.filter((version) => version.id !== sermonData?.contentTextId);
+            setVersions(filteredVersions);
         }
     } catch (error) {
         console.error('Error fetching versions:', error);
@@ -278,7 +280,15 @@ const SermonDetailPage = ({ isBookmarkView, onBookmarkToggle }) => {
     const { id } = useParams();
     const navigate = useNavigate();
     const location = useLocation();
-    const [sermon, setSermon] = useState(null);
+    const { contentTextId, sermonData } = location.state || {};
+    const [sermon, setSermon] = useState(
+        sermonData
+            ? {
+                  ...sermonData,
+                  contents: sermonData.contents || [{ contentText: '' }],
+              }
+            : null
+    );
     const [loading, setLoading] = useState(true);
     const { userId: currentUserId, isAdmin } = useUserState();
     const currentPath = window.location.pathname;
@@ -295,30 +305,78 @@ const SermonDetailPage = ({ isBookmarkView, onBookmarkToggle }) => {
     const [selectedVersionId, setSelectedVersionId] = useState(null);
     const [selectedVersion, setSelectedVersion] = useState(null);
 
+    console.log('=== User Info for Edit Button ===');
+    console.log('Current User ID:', currentUserId);
+    console.log('Sermon User ID:', sermon?.userId);
+    console.log('Is Same User:', sermon?.userId === currentUserId);
+    console.log('Is Admin:', isAdmin);
+    console.log('Is Admin Page:', isAdminPage);
+
     useEffect(() => {
-        const fetchSermonDetail = async () => {
+        const fetchData = async () => {
             try {
                 setLoading(true);
-                console.log('Fetching sermon detail for ID:', id);
-                const data = await getSermonDetail(id);
-                console.log('Received sermon data:', data);
-                setSermon(data);
-                if (data?.contents?.[0]?.contentText) {
-                    console.log('Setting original content:', data.contents[0].contentText);
-                    setOriginalContent(data.contents[0].contentText);
+
+                // 1. 버전 목록 가져오기
+                const versionsResponse = await getTextList(id, currentUserId);
+                console.log('=== Versions List ===');
+                console.log('Original Content ID:', sermonData?.contentTextId);
+                console.log(
+                    'All Versions:',
+                    versionsResponse?.map((v) => ({
+                        id: v.id,
+                        title: v.textTitle,
+                        author: v.userName,
+                        isOriginal: v.id === sermonData?.contentTextId,
+                        createdAt: v.textCreatedAt,
+                        updatedAt: v.textUpdatedAt,
+                        isDraft: v.draft,
+                    }))
+                );
+                setVersions(versionsResponse || []);
+
+                // 2. 본문 내용 가져오기
+                const textId = contentTextId || sermonData?.contentTextId;
+                console.log('=== Original Content Info ===');
+                console.log('Original Content ID (from sermonData):', sermonData?.contentTextId);
+                console.log('Selected TextId:', textId);
+                console.log('SermonData:', sermonData);
+
+                if (textId) {
+                    const textResponse = await getTextDetail(id, textId, currentUserId);
+                    console.log('=== Content Detail ===');
+                    console.log('Is Original:', textId === sermonData?.contentTextId);
+                    console.log('Text Detail Response:', textResponse);
+                    console.log('Text Content:', textResponse?.textContent);
+                    setSermon((prev) => ({
+                        ...prev,
+                        contents: [
+                            {
+                                contentText: textResponse?.textContent || '',
+                            },
+                        ],
+                    }));
+                    setOriginalContent(textResponse?.textContent || '');
+                    setSelectedVersionId(textId);
+                } else {
+                    console.log('No textId available, using empty content');
+                    setSermon((prev) => ({
+                        ...prev,
+                        contents: [{ contentText: '' }],
+                    }));
                 }
             } catch (error) {
-                console.error('Error fetching sermon detail:', error);
+                console.error('Error fetching data:', error);
                 setError(error);
             } finally {
                 setLoading(false);
             }
         };
 
-        if (id) {
-            fetchSermonDetail();
+        if (id && currentUserId) {
+            fetchData();
         }
-    }, [id]);
+    }, [id, contentTextId, currentUserId, sermonData]);
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -347,26 +405,15 @@ const SermonDetailPage = ({ isBookmarkView, onBookmarkToggle }) => {
         }
     }, [currentUserId, id]);
 
-    useEffect(() => {
-        if (id && currentUserId) {
-            fetchVersions(id, currentUserId, setVersions);
-        }
-    }, [id, currentUserId, location.key]);
-
     const handleDelete = async () => {
         if (window.confirm('정말로 이 설교를 삭제하시겠습니까?')) {
             try {
-                const targetUserId = isAdminPage ? sermon.userId : currentUserId;
                 if (isBookmarked) {
                     await deleteBookmark(currentUserId, bookmarkId);
                 }
-                const response = await deleteSermon(id, targetUserId);
-                if (response.success) {
-                    alert('설교가 삭제되었습니다.');
-                    navigate(-1);
-                } else {
-                    alert('설교 삭제에 실패했습니다.');
-                }
+                await deleteSermon(id, sermon.userId);
+                alert('설교가 삭제되었습니다.');
+                navigate(-1);
             } catch (error) {
                 console.error('Error deleting sermon:', error);
                 alert('설교 삭제 중 오류가 발생했습니다.');
@@ -375,13 +422,17 @@ const SermonDetailPage = ({ isBookmarkView, onBookmarkToggle }) => {
     };
 
     const handleSermonEdit = () => {
-        if (!selectedVersionId) {
+        const isOriginalVersion = selectedVersionId === sermonData?.contentTextId;
+
+        if (isOriginalVersion || !selectedVersionId) {
+            // 원본일 때
             if (currentPath.includes('/admin/sermons')) {
                 navigate(`/main/admin/sermons/edit/${id}`);
             } else {
                 navigate(`/main/sermon-list/edit/${id}`);
             }
         } else {
+            // 버전일 때
             if (currentPath.includes('/admin/sermons')) {
                 navigate(`/main/admin/sermons/${id}/versions/${selectedVersionId}/edit`);
             } else {
@@ -583,21 +634,28 @@ const SermonDetailPage = ({ isBookmarkView, onBookmarkToggle }) => {
     const handleVersionSelect = async (textId) => {
         try {
             if (textId === 'original') {
-                setSermon((prev) => ({
-                    ...prev,
-                    contents: [
-                        {
-                            contentText: originalContent,
-                        },
-                    ],
-                }));
-                setSelectedVersionId(null);
-                setSelectedVersion(null);
+                console.log('Selecting original version');
+                const originalTextId = sermonData?.contentTextId;
+                console.log('Original TextId:', originalTextId);
+                if (originalTextId) {
+                    const textResponse = await getTextDetail(id, originalTextId, currentUserId);
+                    console.log('Original Version Response:', textResponse);
+                    setSermon((prev) => ({
+                        ...prev,
+                        contents: [
+                            {
+                                contentText: textResponse.textContent,
+                            },
+                        ],
+                    }));
+                    setSelectedVersionId(originalTextId);
+                }
                 return;
             }
 
+            console.log('Selecting version:', textId);
             const response = await getTextDetail(id, textId, currentUserId);
-
+            console.log('Version Response:', response);
             if (response.textContent) {
                 setSermon((prev) => ({
                     ...prev,
@@ -622,9 +680,11 @@ const SermonDetailPage = ({ isBookmarkView, onBookmarkToggle }) => {
         e.stopPropagation();
         setIsVersionDropdownOpen(!isVersionDropdownOpen);
         if (!isVersionDropdownOpen) {
-            await fetchVersions(id, currentUserId, setVersions);
+            await fetchVersions(id, currentUserId, setVersions, sermonData);
         }
     };
+
+    const filteredVersions = versions.filter((version) => version.id !== sermonData?.contentTextId);
 
     if (loading) return <LoadingText>로딩 중...</LoadingText>;
     if (error) return <EmptyText>설교를 불러오는 중 오류가 발생했습니다.</EmptyText>;
@@ -684,11 +744,11 @@ const SermonDetailPage = ({ isBookmarkView, onBookmarkToggle }) => {
                                         }}
                                     >
                                         <VersionInfo>
-                                            <VersionTitle>{sermon.sermonTitle}</VersionTitle>
+                                            <VersionTitle>{sermon?.sermonTitle}</VersionTitle>
                                             <VersionMeta>
-                                                <VersionAuthor>{sermon.ownerName}</VersionAuthor>
+                                                <VersionAuthor>{sermon?.ownerName}</VersionAuthor>
                                                 <VersionDate>
-                                                    {new Date(sermon.createdAt).toLocaleDateString('ko-KR', {
+                                                    {new Date(sermon?.createdAt).toLocaleDateString('ko-KR', {
                                                         year: 'numeric',
                                                         month: 'long',
                                                         day: 'numeric',
@@ -698,7 +758,7 @@ const SermonDetailPage = ({ isBookmarkView, onBookmarkToggle }) => {
                                         </VersionInfo>
                                         <OriginalTag>원본</OriginalTag>
                                     </VersionItem>
-                                    <VersionDivider />
+                                    {versions.length > 0 && <VersionDivider />}
                                     {versions.map((version) => (
                                         <VersionItem
                                             key={version.id}
@@ -743,28 +803,15 @@ const SermonDetailPage = ({ isBookmarkView, onBookmarkToggle }) => {
                             >
                                 <Bookmark size={16} />
                             </ActionButton>
-                            {((selectedVersionId && selectedVersion?.userId === currentUserId) ||
-                                (!selectedVersionId && sermon?.userId === currentUserId) ||
-                                (isAdmin && isAdminPage)) && (
-                                <ActionButton
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleSermonEdit();
-                                    }}
-                                >
-                                    <Pencil size={16} />
-                                </ActionButton>
-                            )}
-                            {(sermon?.userId === currentUserId || (isAdmin && isAdminPage)) && (
-                                <ActionButton
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleDelete();
-                                    }}
-                                    isDelete
-                                >
-                                    <Trash2 size={16} />
-                                </ActionButton>
+                            {sermon?.userId === currentUserId && (
+                                <ActionButtons>
+                                    <ActionButton onClick={handleSermonEdit}>
+                                        <Pencil size={18} />
+                                    </ActionButton>
+                                    <ActionButton isDelete onClick={handleDelete}>
+                                        <Trash2 size={18} />
+                                    </ActionButton>
+                                </ActionButtons>
                             )}
                         </HeaderButtonGroup>
                     </TopBar>
@@ -827,7 +874,7 @@ const SermonDetailPage = ({ isBookmarkView, onBookmarkToggle }) => {
                         <Content
                             className="sermon-content"
                             dangerouslySetInnerHTML={{
-                                __html: sermon.contents[0]?.contentText || '',
+                                __html: sermon?.contents?.[0]?.contentText || '',
                             }}
                         />
                     </div>

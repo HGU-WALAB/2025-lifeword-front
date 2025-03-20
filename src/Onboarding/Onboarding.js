@@ -250,4 +250,3 @@ const handleGoogleLogin = () => {
     const googleURL = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=email profile&access_type=offline&prompt=consent&state=google`;
     window.location.href = googleURL;
 };
-
