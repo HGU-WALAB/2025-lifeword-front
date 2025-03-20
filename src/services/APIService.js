@@ -544,3 +544,17 @@ export const updateSermonText = async (sermonId, textId, userId, content) => {
         throw error;
     }
 };
+
+export const hideSermonsBatch = async (sermonIds) => {
+    try {
+        const response = await axios.patch(`${BASE_URL}/sermons/batch/hide`, sermonIds, {
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Error in hideSermonsBatch:', error);
+        throw error;
+    }
+};

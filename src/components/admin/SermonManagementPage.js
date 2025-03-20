@@ -16,7 +16,13 @@ import {
 import { useUserState } from '../../recoil/utils';
 import { useRecoilValue } from 'recoil';
 import { isNavExpandedState } from '../../recoil/atoms';
-import { getFilteredSermonListAdmin, deleteSermonAdmin, getBookmarks, deleteBookmark } from '../../services/APIService';
+import {
+    getFilteredSermonListAdmin,
+    deleteSermonAdmin,
+    getBookmarks,
+    deleteBookmark,
+    hideSermonsBatch,
+} from '../../services/APIService';
 import LoadingSpinner from '../common/LoadingSpinner';
 
 const WORSHIP_TYPES = [
@@ -149,6 +155,7 @@ const SermonManagementPage = () => {
     const [selectedSermonUserId, setSelectedSermonUserId] = useState(null);
     const [totalElements, setTotalElements] = useState(0);
     const [loading, setLoading] = useState(false);
+    const [selectedSermons, setSelectedSermons] = useState([]);
 
     const [filters, setFilters] = useState(() => {
         return {
@@ -556,6 +563,31 @@ const SermonManagementPage = () => {
         updateUrlParams,
     ]);
 
+    const handleBatchDelete = async () => {
+        if (selectedSermons.length === 0) return;
+
+        const confirmMessage =
+            selectedSermons.length === 1
+                ? '선택한 설교를 삭제하시겠습니까?'
+                : `선택한 ${selectedSermons.length}개의 설교를 삭제하시겠습니까?`;
+
+        if (window.confirm(confirmMessage)) {
+            try {
+                await hideSermonsBatch(selectedSermons);
+                setSelectedSermons([]); // 선택 초기화
+                fetchSermons(); // 목록 새로고침
+                alert(
+                    selectedSermons.length === 1
+                        ? '설교가 삭제되었습니다.'
+                        : `${selectedSermons.length}개의 설교가 삭제되었습니다.`
+                );
+            } catch (error) {
+                console.error('Error deleting sermons:', error);
+                alert('설교 삭제 중 오류가 발생했습니다.');
+            }
+        }
+    };
+
     return (
         <Container isNavExpanded={isNavExpanded}>
             <SearchSection isScrolled={isScrolled}>
@@ -732,6 +764,13 @@ const SermonManagementPage = () => {
                                     <option value="oldest">오래된순</option>
                                     <option value="recently-modified">최근 수정순</option>
                                 </Select>
+                                <DeleteSelectedButton
+                                    disabled={selectedSermons.length === 0}
+                                    onClick={handleBatchDelete}
+                                >
+                                    <Trash2 size={16} />
+                                    {selectedSermons.length > 0 ? `${selectedSermons.length}개 선택 삭제` : '선택 삭제'}
+                                </DeleteSelectedButton>
                             </SelectWrapper>
                             <ViewToggle>
                                 <ToggleButton active={viewType === 'grid'} onClick={() => setViewType('grid')}>
@@ -796,6 +835,13 @@ const SermonManagementPage = () => {
                                     <option value="oldest">오래된순</option>
                                     <option value="recently-modified">최근 수정순</option>
                                 </Select>
+                                <DeleteSelectedButton
+                                    disabled={selectedSermons.length === 0}
+                                    onClick={handleBatchDelete}
+                                >
+                                    <Trash2 size={16} />
+                                    {selectedSermons.length > 0 ? `${selectedSermons.length}개 선택 삭제` : '선택 삭제'}
+                                </DeleteSelectedButton>
                             </SelectWrapper>
                             <ViewToggle>
                                 <ToggleButton active={viewType === 'grid'} onClick={() => setViewType('grid')}>
@@ -815,51 +861,17 @@ const SermonManagementPage = () => {
                             sermons.map((sermon) => (
                                 <SermonCard
                                     key={sermon.sermonId}
+                                    sermon={sermon}
                                     viewType={viewType}
-                                    onClick={() => navigate(`/main/admin/sermons/detail/${sermon.sermonId}`)}
-                                >
-                                    <SermonDate>
-                                        {new Date(sermon.sermonDate).toLocaleDateString('ko-KR', {
-                                            year: 'numeric',
-                                            month: 'long',
-                                            day: 'numeric',
-                                        })}
-                                    </SermonDate>
-                                    <AuthorName>{sermon.ownerName}</AuthorName>
-                                    <SermonTitle>{sermon.sermonTitle}</SermonTitle>
-                                    <SermonInfo>
-                                        <Scripture>{sermon.mainScripture}</Scripture>
-                                        {sermon.additionalScripture && (
-                                            <Scripture>{sermon.additionalScripture}</Scripture>
-                                        )}
-                                        <WorshipType>{sermon.worshipType}</WorshipType>
-                                        <ReferenceCount>
-                                            <BookOpen size={14} />
-                                            {sermon.textCount || 0}개의 버전
-                                        </ReferenceCount>
-                                    </SermonInfo>
-                                    <SermonSummary>{sermon.summary}</SermonSummary>
-                                    <ActionButtons>
-                                        <ActionButton
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                navigate(`/main/admin/sermons/edit/${sermon.sermonId}`);
-                                            }}
-                                        >
-                                            <Edit2 size={16} />
-                                        </ActionButton>
-                                        <ActionButton
-                                            delete
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setSermonToDelete(sermon);
-                                                setShowDeleteModal(true);
-                                            }}
-                                        >
-                                            <Trash2 size={16} />
-                                        </ActionButton>
-                                    </ActionButtons>
-                                </SermonCard>
+                                    isSelected={selectedSermons.includes(sermon.sermonId)}
+                                    onSelect={(sermonId, isChecked) => {
+                                        setSelectedSermons((prev) =>
+                                            isChecked ? [...prev, sermonId] : prev.filter((id) => id !== sermonId)
+                                        );
+                                    }}
+                                    setSermonToDelete={setSermonToDelete}
+                                    setShowDeleteModal={setShowDeleteModal}
+                                />
                             ))
                         ) : (
                             <EmptyState>설교가 없습니다.</EmptyState>
@@ -1244,7 +1256,7 @@ const RemoveButton = styled.button`
 const Controls = styled.div`
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 12px;
     align-items: center;
     justify-content: space-between;
 
@@ -1263,7 +1275,8 @@ const Controls = styled.div`
 const SelectWrapper = styled.div`
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
+    gap: 12px;
+    align-items: center;
 `;
 
 const Select = styled.select`
@@ -1321,7 +1334,7 @@ const ToggleButton = styled.button`
 
 const SermonList = styled.div`
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    grid-template-columns: ${(props) => (props.viewType === 'grid' ? 'repeat(auto-fill, minmax(300px, 1fr))' : '1fr')};
     gap: 20px;
     margin-top: 20px;
     position: relative;
@@ -1329,12 +1342,76 @@ const SermonList = styled.div`
     width: 100%;
 `;
 
-const SermonCard = styled.div`
+const SermonCard = ({ sermon, viewType, isSelected, onSelect, setSermonToDelete, setShowDeleteModal }) => {
+    const navigate = useNavigate();
+
+    const handleClick = (e) => {
+        if (e.target.type === 'checkbox' || e.target.closest('.checkbox-area')) {
+            return;
+        }
+        navigate(`/main/admin/sermons/detail/${sermon.sermonId}`);
+    };
+
+    return (
+        <StyledSermonCard viewType={viewType} onClick={handleClick}>
+            <CheckboxArea className="checkbox-area" onClick={(e) => e.stopPropagation()}>
+                <StyledCheckbox
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={(e) => onSelect(sermon.sermonId, e.target.checked)}
+                />
+                <CheckboxControl isChecked={isSelected} />
+            </CheckboxArea>
+            <SermonDate>
+                {new Date(sermon.sermonDate).toLocaleDateString('ko-KR', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                })}
+            </SermonDate>
+            <AuthorName>{sermon.ownerName}</AuthorName>
+            <SermonTitle>{sermon.sermonTitle}</SermonTitle>
+            <SermonInfo>
+                <Scripture>{sermon.mainScripture}</Scripture>
+                {sermon.additionalScripture && <Scripture>{sermon.additionalScripture}</Scripture>}
+                <WorshipType>{sermon.worshipType}</WorshipType>
+                <ReferenceCount>
+                    <BookOpen size={14} />
+                    {sermon.textCount || 0}개의 버전
+                </ReferenceCount>
+            </SermonInfo>
+            <SermonSummary>{sermon.summary}</SermonSummary>
+            <ActionButtons>
+                <ActionButton
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/main/admin/sermons/edit/${sermon.sermonId}`);
+                    }}
+                >
+                    <Edit2 size={16} />
+                </ActionButton>
+                <ActionButton
+                    delete
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        setSermonToDelete(sermon);
+                        setShowDeleteModal(true);
+                    }}
+                >
+                    <Trash2 size={16} />
+                </ActionButton>
+            </ActionButtons>
+        </StyledSermonCard>
+    );
+};
+
+const StyledSermonCard = styled.div`
     ${(props) =>
         props.viewType === 'grid'
             ? `
-        min-height: 220px;
+        min-height: 240px;
         padding: 20px;
+        padding-top: 40px;
         background: white;
         border-radius: 12px;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
@@ -1345,16 +1422,6 @@ const SermonCard = styled.div`
         flex-direction: column;
         gap: 8px;
         position: relative;
-    `
-            : `
-        padding: 20px;
-        background: white;
-        border-radius: 8px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-        border: 1px solid #e5e7eb;
-        cursor: pointer;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        position: relative;
 
         ${SermonDate} {
             font-size: 14px;
@@ -1363,10 +1430,65 @@ const SermonCard = styled.div`
         }
 
         ${SermonTitle} {
+            font-size: 18px;
+            margin-bottom: 8px;
+            line-height: 1.3;
+        }
+
+        ${SermonInfo} {
+            margin-bottom: 12px;
+        }
+
+        ${SermonSummary} {
+            font-size: 13px;
+            -webkit-line-clamp: 3;
+            margin-top: 8px;
+        }
+
+        ${ActionButtons} {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            opacity: 0;
+        }
+
+        &:hover ${ActionButtons} {
+            opacity: 1;
+        }
+    `
+            : `
+        padding: 24px;
+        padding-top: 44px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        border: 1px solid #e5e7eb;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        grid-column: 1 / -1;
+
+        ${SermonDate} {
+            font-size: 14px;
+            color: #595c62;
+            margin: 0;
+        }
+
+        ${AuthorName} {
+            font-size: 14px;
+            color: #595c62;
+            margin: 0;
+        }
+
+        ${SermonTitle} {
             font-size: 24px;
             font-weight: 800;
             color: #482895;
-            margin: 8px 0;
+            margin: 4px 0;
+            line-height: 1.3;
         }
 
         ${SermonInfo} {
@@ -1374,38 +1496,29 @@ const SermonCard = styled.div`
             flex-wrap: wrap;
             gap: 8px;
             align-items: center;
-            margin-top: auto;
-        }
-
-        ${Scripture} {
-            font-size: 12px;
-            font-weight: 500;
-            color: #212A3E;
-            padding: 4px 8px;
-            background: #f8f9fa;
-            border-radius: 4px;
-            border: 1px solid #e1e1e1;
-        }
-
-        ${WorshipType} {
-            font-size: 10px;
-            padding: 4px 12px;
-            background: #eee6ff;
-            border: 1px solid #d4c4ff;
-            border-radius: 4px;
-            color: #482895;
+            margin: 8px 0;
         }
 
         ${SermonSummary} {
             font-size: 14px;
-            line-height: 24px;
+            line-height: 1.6;
             color: #212A3E;
-            font-weight: 500;
             margin: 0;
             display: -webkit-box;
-            -webkit-line-clamp: 6;
+            -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
+        }
+
+        ${ActionButtons} {
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            opacity: 0;
+        }
+
+        &:hover ${ActionButtons} {
+            opacity: 1;
         }
     `}
 
@@ -1413,11 +1526,53 @@ const SermonCard = styled.div`
         transform: translateY(-2px);
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         border-color: #d1d5db;
-
-        ${ActionButtons} {
-            opacity: 1;
-        }
     }
+`;
+
+const CheckboxArea = styled.div`
+    position: absolute;
+    top: ${(props) => (props.viewType === 'list' ? '12px' : '12px')};
+    left: ${(props) => (props.viewType === 'list' ? '24px' : '12px')};
+    z-index: 2;
+    cursor: pointer;
+`;
+
+const StyledCheckbox = styled.input`
+    position: absolute;
+    opacity: 0;
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    z-index: 2;
+`;
+
+const CheckboxControl = styled.div`
+    width: 18px;
+    height: 18px;
+    border: 2px solid ${(props) => (props.isChecked ? '#6b4ee6' : '#e1e1e1')};
+    border-radius: 4px;
+    background: ${(props) => (props.isChecked ? '#6b4ee6' : 'white')};
+    transition: all 0.2s ease;
+
+    &:after {
+        content: '';
+        position: absolute;
+        display: ${(props) => (props.isChecked ? 'block' : 'none')};
+        left: 5px;
+        top: 1px;
+        width: 4px;
+        height: 8px;
+        border: solid white;
+        border-width: 0 2px 2px 0;
+        transform: rotate(45deg);
+    }
+
+    ${(props) =>
+        props.viewType === 'list' &&
+        `
+        top: 24px;
+        left: 24px;
+    `}
 `;
 
 const SermonDate = styled.div`
@@ -1774,6 +1929,31 @@ const AuthorName = styled.div`
     font-size: 14px;
     color: #595c62;
     margin: -4px 0 0 0;
+`;
+
+const DeleteSelectedButton = styled.button`
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: ${(props) => (props.disabled ? '#f8f9fa' : '#fff2f2')};
+    color: ${(props) => (props.disabled ? '#999' : '#ff4444')};
+    border: 1px solid ${(props) => (props.disabled ? '#e1e1e1' : '#ffdddd')};
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: ${(props) => (props.disabled ? 'not-allowed' : 'pointer')};
+    transition: all 0.2s ease;
+
+    &:hover:not(:disabled) {
+        background: #ffe6e6;
+        border-color: #ff4444;
+    }
+
+    svg {
+        width: 16px;
+        height: 16px;
+    }
 `;
 
 export default SermonManagementPage;
