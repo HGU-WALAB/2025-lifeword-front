@@ -486,13 +486,9 @@ const SermonManagementPage = () => {
             }
 
             // 설교 삭제
-            const response = await deleteSermonAdmin(sermon.sermonId, sermon.userId);
-            if (response.success) {
-                alert('설교가 삭제되었습니다.');
-                fetchSermons();
-            } else {
-                alert('설교 삭제에 실패했습니다.');
-            }
+            await deleteSermonAdmin(sermon.sermonId, sermon.userId);
+            alert('설교가 삭제되었습니다.');
+            fetchSermons(); // 목록 새로고침
         } catch (error) {
             console.error('Error deleting sermon:', error);
             alert('설교 삭제 중 오류가 발생했습니다.');

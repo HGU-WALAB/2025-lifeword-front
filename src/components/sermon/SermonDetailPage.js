@@ -263,11 +263,13 @@ const OriginalTag = styled.span`
     color: #482895;
 `;
 
-const fetchVersions = async (id, currentUserId, setVersions) => {
+const fetchVersions = async (id, currentUserId, setVersions, sermonData) => {
     try {
         const response = await getTextList(id, currentUserId);
         if (response && Array.isArray(response)) {
-            setVersions(response);
+            // 원본 버전을 제외한 버전들만 필터링
+            const filteredVersions = response.filter((version) => version.id !== sermonData?.contentTextId);
+            setVersions(filteredVersions);
         }
     } catch (error) {
         console.error('Error fetching versions:', error);
@@ -406,17 +408,12 @@ const SermonDetailPage = ({ isBookmarkView, onBookmarkToggle }) => {
     const handleDelete = async () => {
         if (window.confirm('정말로 이 설교를 삭제하시겠습니까?')) {
             try {
-                const targetUserId = isAdminPage ? sermon.userId : currentUserId;
                 if (isBookmarked) {
                     await deleteBookmark(currentUserId, bookmarkId);
                 }
-                const response = await deleteSermon(id, targetUserId);
-                if (response.success) {
-                    alert('설교가 삭제되었습니다.');
-                    navigate(-1);
-                } else {
-                    alert('설교 삭제에 실패했습니다.');
-                }
+                await deleteSermon(id, sermon.userId);
+                alert('설교가 삭제되었습니다.');
+                navigate(-1);
             } catch (error) {
                 console.error('Error deleting sermon:', error);
                 alert('설교 삭제 중 오류가 발생했습니다.');
@@ -683,7 +680,7 @@ const SermonDetailPage = ({ isBookmarkView, onBookmarkToggle }) => {
         e.stopPropagation();
         setIsVersionDropdownOpen(!isVersionDropdownOpen);
         if (!isVersionDropdownOpen) {
-            await fetchVersions(id, currentUserId, setVersions);
+            await fetchVersions(id, currentUserId, setVersions, sermonData);
         }
     };
 
@@ -747,15 +744,22 @@ const SermonDetailPage = ({ isBookmarkView, onBookmarkToggle }) => {
                                         }}
                                     >
                                         <VersionInfo>
-                                            <VersionTitle>원본</VersionTitle>
+                                            <VersionTitle>{sermon?.sermonTitle}</VersionTitle>
                                             <VersionMeta>
                                                 <VersionAuthor>{sermon?.ownerName}</VersionAuthor>
+                                                <VersionDate>
+                                                    {new Date(sermon?.createdAt).toLocaleDateString('ko-KR', {
+                                                        year: 'numeric',
+                                                        month: 'long',
+                                                        day: 'numeric',
+                                                    })}
+                                                </VersionDate>
                                             </VersionMeta>
                                         </VersionInfo>
                                         <OriginalTag>원본</OriginalTag>
                                     </VersionItem>
-                                    {filteredVersions.length > 0 && <VersionDivider />}
-                                    {filteredVersions.map((version) => (
+                                    {versions.length > 0 && <VersionDivider />}
+                                    {versions.map((version) => (
                                         <VersionItem
                                             key={version.id}
                                             onClick={(e) => {
@@ -799,29 +803,15 @@ const SermonDetailPage = ({ isBookmarkView, onBookmarkToggle }) => {
                             >
                                 <Bookmark size={16} />
                             </ActionButton>
-                            {((selectedVersionId === sermonData?.contentTextId && sermon?.userId === currentUserId) || // 원본 수정
-                                (!selectedVersionId && sermon?.userId === currentUserId) || // 원본 수정
-                                selectedVersion?.userId === currentUserId || // 버전 수정
-                                (isAdmin && isAdminPage)) && ( // 관리자
-                                <ActionButton
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleSermonEdit();
-                                    }}
-                                >
-                                    <Pencil size={16} />
-                                </ActionButton>
-                            )}
-                            {(sermon?.userId === currentUserId || (isAdmin && isAdminPage)) && (
-                                <ActionButton
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleDelete();
-                                    }}
-                                    isDelete
-                                >
-                                    <Trash2 size={16} />
-                                </ActionButton>
+                            {sermon?.userId === currentUserId && (
+                                <ActionButtons>
+                                    <ActionButton onClick={handleSermonEdit}>
+                                        <Pencil size={18} />
+                                    </ActionButton>
+                                    <ActionButton isDelete onClick={handleDelete}>
+                                        <Trash2 size={18} />
+                                    </ActionButton>
+                                </ActionButtons>
                             )}
                         </HeaderButtonGroup>
                     </TopBar>

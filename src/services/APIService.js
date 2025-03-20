@@ -134,10 +134,8 @@ export const updateSermon = async (sermonId, userId, sermonData) => {
 
 export const deleteSermon = async (sermonId, userId) => {
     try {
-        const { data } = await axios.delete(`${BASE_URL}/sermons/${sermonId}`, {
-            params: { userId },
-        });
-        return data || { success: true };
+        const response = await axios.delete(`${BASE_URL}/sermons/${sermonId}?userId=${userId}`);
+        return response.data;
     } catch (error) {
         console.error('Error deleting sermon:', error);
         throw error;
@@ -426,10 +424,8 @@ export const getFilteredSermonListAdmin = async (params) => {
 // 관리자용 설교 삭제 API
 export const deleteSermonAdmin = async (sermonId, userId) => {
     try {
-        const { data } = await axios.delete(`${BASE_URL}/sermons/${sermonId}`, {
-            params: { userId },
-        });
-        return data || { success: true };
+        const response = await axios.delete(`${BASE_URL}/sermons/${sermonId}?userId=${userId}`);
+        return response.data;
     } catch (error) {
         console.error('Error deleting sermon:', error);
         throw error;
