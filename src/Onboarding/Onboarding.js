@@ -96,7 +96,7 @@ const FixedLogo = styled.img`
     position: fixed;
     top: 2rem;
     left: 2rem;
-    width: 100px;
+    width: 170px;
     height: auto;
     z-index: 1000;
     opacity: 0;
@@ -193,34 +193,29 @@ const LoginButtons = styled.div`
     margin-right: auto;
 `;
 
-const ButtonBase = styled.button`
-    flex: 1;
-    min-width: 180px;
+const KakaoLoginButton = styled.button`
+    width: 100%;
     padding: 1rem 2rem;
-    font-size: 1.6rem;
-    border-radius: 12px;
-    cursor: pointer;
-    transition: transform 0.2s ease;
-    white-space: nowrap;
-`;
-
-const KakaoLoginButton = styled(ButtonBase)`
+    font-size: 1.8rem;
     background-color: #fee500;
     color: #000000;
     border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: transform 0.2s ease;
 
     &:hover {
         transform: translateY(-2px);
     }
 `;
 
-const GoogleLoginButton = styled(ButtonBase)`
+const GoogleLoginButton = styled(KakaoLoginButton)`
     background-color: #ffffff;
     color: #000000;
     border: 1px solid #dddddd;
 `;
 
-const LoginButton = styled(ButtonBase)`
+const LoginButton = styled(GoogleLoginButton)`
     background-color: transparent;
     color: #ffffff;
     border: 1px solid #ffffff;
@@ -239,7 +234,7 @@ const handleKakaoLogin = () => {
         return;
     }
 
-    const kakaoURL = `https://kauth.kakao.com/oauth/authorize?client_id=${REST_API_KEY}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=account_email`;
+    const kakaoURL = `https://kauth.kakao.com/oauth/authorize?client_id=${REST_API_KEY}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=account_email&state=kakao`;
     window.location.href = kakaoURL;
 };
 
@@ -252,6 +247,6 @@ const handleGoogleLogin = () => {
         return;
     }
 
-    const googleURL = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=email profile&access_type=offline&prompt=consent`;
+    const googleURL = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=email profile&access_type=offline&prompt=consent&state=google`;
     window.location.href = googleURL;
 };

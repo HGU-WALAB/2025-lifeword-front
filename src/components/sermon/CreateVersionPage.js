@@ -2,15 +2,18 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import styled from 'styled-components';
 import { ArrowLeft } from 'lucide-react';
-import { createText } from '../../services/APIService';
+import { createText, getSermonDetail } from '../../services/APIService';
 import SermonEditor from '../Editor/SermonEditor';
 import { useUserState } from '../../recoil/utils';
+import SermonHeader from './SermonHeader';
 
 const CreateVersionPage = () => {
     const navigate = useNavigate();
     const { id } = useParams();
     const { userId } = useUserState();
     const editorRef = useRef(null);
+    const [sermon, setSermon] = useState(null);
+    const [headerHeight, setHeaderHeight] = useState(0);
 
     const [versionData, setVersionData] = useState({
         textTitle: '',
@@ -18,8 +21,37 @@ const CreateVersionPage = () => {
     });
 
     useEffect(() => {
+        const fetchSermonDetail = async () => {
+            try {
+                const data = await getSermonDetail(id);
+                setSermon(data);
+            } catch (error) {
+                console.error('Error fetching sermon detail:', error);
+            }
+        };
+
+        if (id) {
+            fetchSermonDetail();
+        }
+    }, [id]);
+
+    useEffect(() => {
         window.scrollTo(0, 0);
     }, []);
+
+    useEffect(() => {
+        const toolbar = document.querySelector('.ql-toolbar');
+        if (!toolbar) return;
+
+        const handleScroll = () => {
+            const toolbarRect = toolbar.getBoundingClientRect();
+            const isStuck = toolbarRect.top <= headerHeight;
+            toolbar.setAttribute('data-stuck', String(isStuck));
+        };
+
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, [headerHeight]);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -52,7 +84,6 @@ const CreateVersionPage = () => {
             const cleanContent = editorContent.replace(/<span class="ql-cursor">.*?<\/span>/g, '');
             const response = await createText(id, userId, false, versionData.textTitle, cleanContent);
 
-            // 응답이 문자열로 오는 경우 처리
             if (response === 'Added successfully' || response.success) {
                 alert('버전이 생성되었습니다.');
                 navigate(-1);
@@ -67,40 +98,48 @@ const CreateVersionPage = () => {
 
     return (
         <Container>
-            <Header>
-                <BackButton onClick={() => navigate(-1)}>
-                    <ArrowLeft />
-                    뒤로가기
-                </BackButton>
-                <SaveButton onClick={handleSubmit}>저장</SaveButton>
-            </Header>
-            <EditorContainer>
-                <TitleInput
-                    type="text"
-                    name="textTitle"
-                    value={versionData.textTitle}
-                    onChange={handleInputChange}
-                    placeholder="버전 제목을 입력하세요"
-                />
-                <EditorWrapper>
-                    <SermonEditor ref={editorRef} onChange={handleEditorChange} value={versionData.contentText} />
-                </EditorWrapper>
-            </EditorContainer>
+            {sermon && <SermonHeader sermon={sermon} onHeightChange={setHeaderHeight} />}
+            <ContentWrapper>
+                <Header>
+                    <BackButton onClick={() => navigate(-1)}>
+                        <ArrowLeft />
+                        뒤로가기
+                    </BackButton>
+                    <SaveButton onClick={handleSubmit}>생성 완료</SaveButton>
+                </Header>
+                <EditorContainer headerHeight={headerHeight}>
+                    <TitleInput
+                        type="text"
+                        name="textTitle"
+                        value={versionData.textTitle}
+                        onChange={handleInputChange}
+                        placeholder="버전 제목을 입력하세요"
+                    />
+                    <EditorWrapper>
+                        <SermonEditor ref={editorRef} onChange={handleEditorChange} value={versionData.contentText} />
+                    </EditorWrapper>
+                </EditorContainer>
+            </ContentWrapper>
         </Container>
     );
 };
 
 const Container = styled.div`
+    min-height: 100vh;
+    background: white;
+`;
+
+const ContentWrapper = styled.div`
     max-width: 1200px;
     margin: 0 auto;
-    padding: 40px 20px;
+    padding: 0 20px;
 `;
 
 const Header = styled.div`
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 24px;
+    padding: 12px 0;
 `;
 
 const BackButton = styled.button`
@@ -141,7 +180,52 @@ const SaveButton = styled.button`
 const EditorContainer = styled.div`
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: 0;
+    position: relative;
+
+    .ql-toolbar {
+        position: sticky;
+        top: ${({ headerHeight }) => headerHeight}px;
+        z-index: 100;
+        background: white;
+        border: 1px solid #e9ecef;
+        border-bottom: none;
+        padding: 12px;
+        border-radius: 8px 8px 0 0;
+        transition: border-radius 0.2s ease;
+
+        &:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: 8px 8px 0 0;
+            transition: border-radius 0.2s ease;
+        }
+
+        &[data-stuck='true'] {
+            border-radius: 0;
+            &:before {
+                border-radius: 0;
+            }
+        }
+    }
+
+    .ql-container {
+        border: 1px solid #e9ecef;
+        border-top: none;
+        border-radius: 0 0 8px 8px;
+        margin-top: 0;
+    }
+
+    .ql-editor {
+        min-height: 500px;
+        padding: 24px;
+        font-size: 16px;
+        line-height: 1.8;
+    }
 `;
 
 const TitleInput = styled.input`
@@ -163,9 +247,7 @@ const TitleInput = styled.input`
 `;
 
 const EditorWrapper = styled.div`
-    border: 1px solid #e9ecef;
-    border-radius: 8px;
-    overflow: hidden;
+    margin-top: 16px;
 `;
 
 export default CreateVersionPage;

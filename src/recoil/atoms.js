@@ -32,9 +32,9 @@ export const userJobState = atom({
     effects_UNSTABLE: [persistAtom],
 });
 
-export const isAdminState = atom({
-    key: 'isAdminState',
-    default: false,
+export const roleState = atom({
+    key: 'roleState',
+    default: 'USER',
     effects_UNSTABLE: [persistAtom],
 });
 
@@ -60,7 +60,7 @@ export const userState = atom({
         userEmail: '',
         userName: '',
         job: '',
-        admin: false,
+        role: 'USER',
     },
     effects_UNSTABLE: [persistAtom],
 });

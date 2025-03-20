@@ -5,17 +5,23 @@ const BASE_URL = 'https://walab.info:8443/lifeword/api/v1';
 // User 관련 API
 export const verifyUser = async (email, setUserState) => {
     try {
+        // 기존 세션 스토리지 클리어
+        sessionStorage.clear();
+
         const { data } = await axios.get(`${BASE_URL}/users/verify/kakao-google`, {
             params: { email },
         });
+
+        const userStateData = {
+            isLoggedIn: true,
+            userEmail: email,
+            userId: data.data.userId,
+            role: data.data.admin ? 'ADMIN' : 'USER',
+            job: data.data.job,
+        };
+
         if (data.success && setUserState) {
-            setUserState({
-                userId: data.data.userId,
-                userEmail: data.data.email,
-                job: data.data.job,
-                admin: data.data.admin,
-                isLoggedIn: true,
-            });
+            setUserState(userStateData);
         }
         return data;
     } catch (error) {
@@ -31,11 +37,11 @@ export const login = async (email, password, setUserState) => {
         });
         if (data.success && setUserState) {
             setUserState({
+                isLoggedIn: true,
                 userId: data.data.userId,
                 userEmail: email,
                 job: data.data.job,
-                admin: data.data.admin,
-                isLoggedIn: true,
+                role: data.data.admin ? 'ADMIN' : 'USER',
             });
         }
         return data;
@@ -83,9 +89,42 @@ export const createSermon = async (sermonData) => {
 
 export const updateSermon = async (sermonId, userId, sermonData) => {
     try {
-        const { data } = await axios.patch(`${BASE_URL}/sermons/update/${sermonId}`, sermonData, {
-            params: { userId },
-        });
+        console.log('=== Updating Sermon ===');
+        console.log('Sermon ID:', sermonId);
+        console.log('User ID:', userId);
+        console.log('Update Data:', sermonData);
+
+        // 1. 설교 기본 정보 업데이트
+        const { data } = await axios.patch(
+            `${BASE_URL}/sermons/update/${sermonId}`,
+            {
+                userId: userId,
+                sermonDate: sermonData.sermonDate,
+                worshipType: sermonData.worshipType,
+                mainScripture: sermonData.mainScripture,
+                additionalScripture: sermonData.additionalScripture,
+                sermonTitle: sermonData.sermonTitle,
+                summary: sermonData.summary,
+                notes: sermonData.notes,
+                recordInfo: sermonData.recordInfo || '',
+                public: sermonData.public,
+            },
+            {
+                params: { userId },
+            }
+        );
+
+        // 2. 본문 내용 업데이트
+        if (data.contentTextId && sermonData.contents?.[0]?.contentText) {
+            await updateText(
+                data.contentTextId,
+                userId,
+                sermonData.sermonTitle, // textTitle로 설교 제목 사용
+                false, // isDraft는 false
+                sermonData.contents[0].contentText
+            );
+        }
+
         return data;
     } catch (error) {
         console.error('Error updating sermon:', error);
@@ -95,10 +134,8 @@ export const updateSermon = async (sermonId, userId, sermonData) => {
 
 export const deleteSermon = async (sermonId, userId) => {
     try {
-        const { data } = await axios.delete(`${BASE_URL}/sermons/${sermonId}`, {
-            params: { userId },
-        });
-        return data || { success: true };
+        const response = await axios.delete(`${BASE_URL}/sermons/${sermonId}?userId=${userId}`);
+        return response.data;
     } catch (error) {
         console.error('Error deleting sermon:', error);
         throw error;
@@ -387,10 +424,8 @@ export const getFilteredSermonListAdmin = async (params) => {
 // 관리자용 설교 삭제 API
 export const deleteSermonAdmin = async (sermonId, userId) => {
     try {
-        const { data } = await axios.delete(`${BASE_URL}/sermons/${sermonId}`, {
-            params: { userId },
-        });
-        return data || { success: true };
+        const response = await axios.delete(`${BASE_URL}/sermons/${sermonId}?userId=${userId}`);
+        return response.data;
     } catch (error) {
         console.error('Error deleting sermon:', error);
         throw error;
@@ -482,6 +517,44 @@ export const deleteText = async (textId, userId) => {
         return data;
     } catch (error) {
         console.error('Error deleting text:', error);
+        throw error;
+    }
+};
+
+// 본문 내용 업데이트 함수 추가
+export const updateSermonText = async (sermonId, textId, userId, content) => {
+    try {
+        console.log('=== Updating Sermon Text ===');
+        console.log('Text ID:', textId);
+        console.log('Content:', content);
+
+        const { data } = await axios.patch(
+            `${BASE_URL}/sermons/${sermonId}/texts/${textId}`,
+            {
+                textContent: content,
+                userId: userId,
+            },
+            {
+                params: { userId },
+            }
+        );
+        return data;
+    } catch (error) {
+        console.error('Error updating sermon text:', error);
+        throw error;
+    }
+};
+
+export const hideSermonsBatch = async (sermonIds) => {
+    try {
+        const response = await axios.patch(`${BASE_URL}/sermons/batch/hide`, sermonIds, {
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Error in hideSermonsBatch:', error);
         throw error;
     }
 };

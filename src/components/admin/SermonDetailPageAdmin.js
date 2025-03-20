@@ -148,9 +148,11 @@ const SermonDetailPageAdmin = () => {
             try {
                 const data = await getSermonDetail(id);
                 setSermon(data);
-                if (data?.contents?.[0]?.contentText) {
-                    console.log('Setting original content:', data.contents[0].contentText);
-                    setOriginalContent(data.contents[0].contentText);
+
+                // 본문 내용 가져오기
+                if (data.contentTextId) {
+                    const textResponse = await getTextDetail(id, data.contentTextId, currentUserId);
+                    setOriginalContent(textResponse.textContent);
                 }
             } catch (error) {
                 console.error('Error fetching sermon detail:', error);
@@ -162,7 +164,7 @@ const SermonDetailPageAdmin = () => {
         if (id) {
             fetchSermonDetail();
         }
-    }, [id]);
+    }, [id, currentUserId]);
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -173,39 +175,30 @@ const SermonDetailPageAdmin = () => {
     }, []);
 
     useEffect(() => {
-        const fetchVersions = async () => {
+        const fetchVersions = async (id, currentUserId, setVersions, sermonData) => {
             try {
-                console.log('Fetching versions with:', { id, currentUserId });
                 const response = await getTextList(id, currentUserId);
-                console.log('Version list response:', response);
-
-                const mappedVersions = response.map((text) => ({
-                    textId: text.id,
-                    textTitle: text.textTitle,
-                }));
-                console.log('Mapped versions:', mappedVersions);
-                setVersions(mappedVersions);
+                if (response && Array.isArray(response)) {
+                    // 원본 버전을 제외한 버전들만 필터링
+                    const filteredVersions = response.filter((version) => version.id !== sermonData?.contentTextId);
+                    setVersions(filteredVersions);
+                }
             } catch (error) {
                 console.error('Error fetching versions:', error);
             }
         };
 
-        if (id && currentUserId) {
-            fetchVersions();
+        if (id && currentUserId && sermon?.contentTextId) {
+            fetchVersions(id, currentUserId, setVersions, sermon);
         }
-    }, [id, currentUserId, location.key]);
+    }, [id, currentUserId, sermon?.contentTextId]);
 
     const handleDelete = async () => {
         if (window.confirm('정말로 이 설교를 삭제하시겠습니까?')) {
             try {
-                // 설교 삭제
-                const response = await deleteSermonAdmin(id, currentUserId);
-                if (response.success) {
-                    alert('설교가 삭제되었습니다.');
-                    navigate(-1);
-                } else {
-                    alert('설교 삭제에 실패했습니다.');
-                }
+                await deleteSermonAdmin(id, sermon.userId);
+                alert('설교가 삭제되었습니다.');
+                navigate(-1);
             } catch (error) {
                 console.error('Error deleting sermon:', error);
                 alert('설교 삭제 중 오류가 발생했습니다.');
@@ -214,18 +207,13 @@ const SermonDetailPageAdmin = () => {
     };
 
     const handleSermonEdit = () => {
-        if (!selectedVersionId) {
-            if (currentPath.includes('/admin/sermons')) {
-                navigate(`/main/admin/sermons/edit/${id}`);
-            } else {
-                navigate(`/main/sermon-list/edit/${id}`);
-            }
-        } else {
-            if (currentPath.includes('/admin/sermons')) {
-                navigate(`/main/admin/sermons/${id}/versions/${selectedVersionId}/edit`);
-            } else {
-                navigate(`/main/sermons/${id}/versions/${selectedVersionId}/edit`);
-            }
+        // 버전 수정인 경우
+        if (selectedVersionId) {
+            navigate(`/main/admin/sermons/${id}/versions/${selectedVersionId}/edit`);
+        }
+        // 원본 수정인 경우
+        else {
+            navigate(`/main/admin/sermons/edit/${id}`);
         }
     };
 
@@ -286,6 +274,13 @@ const SermonDetailPageAdmin = () => {
                                     month: 'long',
                                     day: 'numeric',
                                 })}";
+                                font-family: 'Noto Sans KR', sans-serif;
+                                font-size: 10px;
+                                color: #666;
+                            }
+                            
+                            @bottom-center {
+                                content: "${sermon.worshipType}";
                                 font-family: 'Noto Sans KR', sans-serif;
                                 font-size: 10px;
                                 color: #666;
@@ -392,11 +387,7 @@ const SermonDetailPageAdmin = () => {
             if (textId === 'original') {
                 setSermon((prev) => ({
                     ...prev,
-                    contents: [
-                        {
-                            contentText: originalContent,
-                        },
-                    ],
+                    contents: [{ contentText: originalContent }],
                 }));
                 setSelectedVersionId(null);
                 setSelectedVersion(null);
@@ -404,31 +395,26 @@ const SermonDetailPageAdmin = () => {
             }
 
             const response = await getTextDetail(id, textId, currentUserId);
-
-            if (response.textContent) {
+            if (response) {
                 setSermon((prev) => ({
                     ...prev,
-                    contents: [
-                        {
-                            contentText: response.textContent,
-                        },
-                    ],
+                    contents: [{ contentText: response.textContent }],
                 }));
                 setSelectedVersionId(textId);
-                setSelectedVersion({
-                    textId: textId,
-                    userId: response.userId,
-                });
+                setSelectedVersion(response);
             }
         } catch (error) {
-            console.error('Error fetching version detail:', error);
+            console.error('Error fetching version:', error);
         }
     };
 
     const showEditButton =
-        isAdmin ||
-        (!selectedVersion && sermon?.userId === currentUserId) ||
-        (selectedVersion && selectedVersion.userId === currentUserId);
+        // 원본 수정 (버전 선택 안된 경우)
+        (!selectedVersionId && sermon?.userId === currentUserId) ||
+        // 버전 수정
+        selectedVersion?.userId === currentUserId ||
+        // 관리자
+        isAdmin;
 
     if (loading) {
         return <LoadingText>로딩 중...</LoadingText>;
@@ -458,13 +444,13 @@ const SermonDetailPageAdmin = () => {
                                 <div>
                                     <CompactMeta>
                                         <CompactDate>
-                                            설교일:{' '}
                                             {new Date(sermon.sermonDate).toLocaleDateString('ko-KR', {
                                                 year: 'numeric',
                                                 month: 'long',
                                                 day: 'numeric',
                                             })}
                                         </CompactDate>
+                                        <CompactDate>{sermon.worshipType}</CompactDate>
                                     </CompactMeta>
                                     <CompactTitle>{sermon.sermonTitle}</CompactTitle>
                                     <CompactScripture>
@@ -494,19 +480,44 @@ const SermonDetailPageAdmin = () => {
                                             setIsVersionDropdownOpen(false);
                                         }}
                                     >
-                                        원본
+                                        <VersionInfo>
+                                            <VersionTitle>{sermon?.sermonTitle}</VersionTitle>
+                                            <VersionMeta>
+                                                <VersionAuthor>{sermon?.ownerName}</VersionAuthor>
+                                                <VersionDate>
+                                                    {new Date(sermon?.createdAt).toLocaleDateString('ko-KR', {
+                                                        year: 'numeric',
+                                                        month: 'long',
+                                                        day: 'numeric',
+                                                    })}
+                                                </VersionDate>
+                                            </VersionMeta>
+                                        </VersionInfo>
+                                        <OriginalTag>원본</OriginalTag>
                                     </VersionItem>
-                                    <VersionDivider />
+                                    {versions.length > 0 && <VersionDivider />}
                                     {versions.map((version) => (
                                         <VersionItem
-                                            key={version.textId}
+                                            key={version.id}
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                handleVersionSelect(version.textId);
+                                                handleVersionSelect(version.id);
                                                 setIsVersionDropdownOpen(false);
                                             }}
                                         >
-                                            {version.textTitle}
+                                            <VersionInfo>
+                                                <VersionTitle>{version.textTitle || '제목 없음'}</VersionTitle>
+                                                <VersionMeta>
+                                                    <VersionAuthor>{version.userName}</VersionAuthor>
+                                                    <VersionDate>
+                                                        {new Date(version.textCreatedAt).toLocaleDateString('ko-KR', {
+                                                            year: 'numeric',
+                                                            month: 'long',
+                                                            day: 'numeric',
+                                                        })}
+                                                    </VersionDate>
+                                                </VersionMeta>
+                                            </VersionInfo>
                                         </VersionItem>
                                     ))}
                                     <CreateVersionButton
@@ -519,25 +530,16 @@ const SermonDetailPageAdmin = () => {
                                     </CreateVersionButton>
                                 </DropdownContent>
                             </VersionDropdown>
-                            {showEditButton && (
-                                <ActionButton
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleSermonEdit();
-                                    }}
-                                >
-                                    <Pencil size={16} />
+                            <ActionButtons>
+                                {showEditButton && (
+                                    <ActionButton onClick={handleSermonEdit}>
+                                        <Pencil size={18} />
+                                    </ActionButton>
+                                )}
+                                <ActionButton isDelete onClick={handleDelete}>
+                                    <Trash2 size={18} />
                                 </ActionButton>
-                            )}
-                            <ActionButton
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleDelete();
-                                }}
-                                isDelete
-                            >
-                                <Trash2 size={16} />
-                            </ActionButton>
+                            </ActionButtons>
                         </HeaderButtonGroup>
                         {showGuide && (
                             <GuideMessage>
@@ -559,6 +561,7 @@ const SermonDetailPageAdmin = () => {
                                                 day: 'numeric',
                                             })}
                                         </SermonDate>
+                                        <WorshipTag>{sermon.worshipType}</WorshipTag>
                                     </DateInfo>
                                 </FormSectionLong>
                                 <FormSection>
@@ -598,7 +601,9 @@ const SermonDetailPageAdmin = () => {
                         <Content
                             className="sermon-content"
                             dangerouslySetInnerHTML={{
-                                __html: sermon.contents[0]?.contentText || '',
+                                __html: selectedVersion
+                                    ? sermon?.contents?.[0]?.contentText || ''
+                                    : originalContent || '',
                             }}
                         />
                     </div>
@@ -766,7 +771,7 @@ const DropdownContent = styled.div`
     border: 1px solid #e1e1e1;
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    min-width: 200px;
+    min-width: 300px;
     z-index: 1000;
     display: ${(props) => (props.isOpen ? 'block' : 'none')};
 `;
@@ -799,6 +804,12 @@ const CreateVersionButton = styled(VersionItem)`
     svg {
         color: #4f3296;
     }
+`;
+
+const ActionButtons = styled.div`
+    display: flex;
+    gap: 8px;
+    align-items: center;
 `;
 
 const ActionButton = styled.button`
@@ -850,6 +861,16 @@ const SermonDate = styled.span`
     font-size: 14px;
     color: #595c62;
     font-weight: 500;
+`;
+
+const WorshipTag = styled.span`
+    font-size: 12px;
+    padding: 4px 12px;
+    background: #eee6ff;
+    border: 1px solid #d4c4ff;
+    border-radius: 4px;
+    color: #482895;
+    margin-left: 12px;
 `;
 
 const FormSection = styled.div`
@@ -1051,6 +1072,47 @@ const GuideMessage = styled.div`
             transform: translateY(4px);
         }
     }
+`;
+
+const VersionInfo = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+`;
+
+const VersionTitle = styled.span`
+    font-weight: 500;
+    color: #333;
+`;
+
+const VersionMeta = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: #666;
+`;
+
+const VersionAuthor = styled.span`
+    color: #4f3296;
+    font-weight: 500;
+`;
+
+const VersionDate = styled.span`
+    &::before {
+        content: '•';
+        margin-right: 8px;
+        color: #ccc;
+    }
+`;
+
+const OriginalTag = styled.span`
+    font-size: 11px;
+    padding: 2px 8px;
+    background: #eee6ff;
+    border: 1px solid #d4c4ff;
+    border-radius: 4px;
+    color: #482895;
 `;
 
 export default SermonDetailPageAdmin;
