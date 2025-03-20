@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import styled from 'styled-components';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { getBooks, getBibles } from '../../services/APIService';
 import VerseContextMenu from './VerseContextMenu';
+import LoadingSpinner from '../common/LoadingSpinner';
 
 const QuickReadingPage = () => {
     const [testament, setTestament] = useState('구');
@@ -12,8 +13,27 @@ const QuickReadingPage = () => {
     const [currentChapter, setCurrentChapter] = useState(1);
     const [verses, setVerses] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [hasMore, setHasMore] = useState(true);
+    const [page, setPage] = useState(1);
+    const [allVerses, setAllVerses] = useState([]);
+    const observer = useRef();
+    const VERSES_PER_PAGE = 20;
 
     const activeChapterRef = useRef(null);
+
+    const lastVerseElementRef = useCallback(
+        (node) => {
+            if (loading) return;
+            if (observer.current) observer.current.disconnect();
+            observer.current = new IntersectionObserver((entries) => {
+                if (entries[0].isIntersecting && hasMore) {
+                    setPage((prevPage) => prevPage + 1);
+                }
+            });
+            if (node) observer.current.observe(node);
+        },
+        [loading, hasMore]
+    );
 
     useEffect(() => {
         const fetchBooks = async () => {
@@ -47,7 +67,8 @@ const QuickReadingPage = () => {
                     setChapters(uniqueChapters);
 
                     const currentChapterVerses = response.data.filter((verse) => verse.chapter === currentChapter);
-                    setVerses(currentChapterVerses);
+                    setAllVerses(currentChapterVerses);
+                    setHasMore(currentChapterVerses.length > VERSES_PER_PAGE);
                 }
             } catch (error) {
                 console.error('Error fetching verses:', error);
@@ -57,6 +78,8 @@ const QuickReadingPage = () => {
         };
         fetchVerses();
     }, [testament, currentBook, currentChapter]);
+
+    const displayedVerses = allVerses.slice(0, page * VERSES_PER_PAGE);
 
     const handlePrevChapter = () => {
         if (currentChapter > Math.min(...chapters)) {
@@ -135,16 +158,21 @@ const QuickReadingPage = () => {
             </NavigationContainer>
 
             <ScrollView>
-                {loading ? (
-                    <LoadingText>성경 구절을 불러오는 중...</LoadingText>
+                {loading && page === 1 ? (
+                    <LoadingSpinner text="성경 구절을 불러오는 중..." />
                 ) : (
                     <ChapterSection>
                         <ChapterTitle>
                             {currentBook?.long_label} {currentChapter}장
                         </ChapterTitle>
-                        {verses.map((verse) => (
-                            <VerseItem key={verse.idx} verse={verse} />
-                        ))}
+                        {displayedVerses.map((verse, index) => {
+                            if (displayedVerses.length === index + 1) {
+                                return <VerseItem ref={lastVerseElementRef} key={verse.idx} verse={verse} />;
+                            } else {
+                                return <VerseItem key={verse.idx} verse={verse} />;
+                            }
+                        })}
+                        {loading && page > 1 && <LoadingSpinner text="더 불러오는 중..." />}
                     </ChapterSection>
                 )}
             </ScrollView>
@@ -152,14 +180,12 @@ const QuickReadingPage = () => {
     );
 };
 
-const VerseItem = ({ verse }) => {
+const VerseItem = React.forwardRef(({ verse }, ref) => {
     const verseRef = useRef(null);
-
-    // 문장을 \n을 기준으로 나누기
     const sentences = verse.sentence.split('\\n');
 
     return (
-        <VerseItemContainer ref={verseRef}>
+        <VerseItemContainer ref={ref || verseRef}>
             <VerseNumber>{verse.paragraph}</VerseNumber>
             <VerseSentence>
                 {sentences[0]}
@@ -167,10 +193,10 @@ const VerseItem = ({ verse }) => {
                     <ContinuedVerse key={index}>{sentence}</ContinuedVerse>
                 ))}
             </VerseSentence>
-            <VerseContextMenu targetRef={verseRef} verse={verse} />
+            <VerseContextMenu targetRef={ref || verseRef} verse={verse} />
         </VerseItemContainer>
     );
-};
+});
 
 const Container = styled.div`
     min-height: 100vh;
@@ -336,12 +362,6 @@ const VerseSentence = styled.p`
 
 const ContinuedVerse = styled.div`
     margin-top: 8px;
-`;
-
-const LoadingText = styled.div`
-    text-align: center;
-    padding: 20px;
-    color: #666666;
 `;
 
 export default QuickReadingPage;

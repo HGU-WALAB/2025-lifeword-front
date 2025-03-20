@@ -17,6 +17,7 @@ import { useUserState } from '../../recoil/utils';
 import { useRecoilValue } from 'recoil';
 import { isNavExpandedState } from '../../recoil/atoms';
 import { getFilteredSermonList, deleteBookmark, getBookmarks } from '../../services/APIService';
+import LoadingSpinner from '../common/LoadingSpinner';
 
 const WORSHIP_TYPES = [
     '새벽예배',
@@ -848,7 +849,9 @@ const SermonListPage = () => {
                     </ControlBar>
 
                     <SermonList viewType={viewType} isNavExpanded={isNavExpanded}>
-                        {sermons.length > 0 ? (
+                        {loading ? (
+                            <LoadingSpinner text="설교 목록을 불러오는 중..." />
+                        ) : sermons.length > 0 ? (
                             sermons.map((sermon) => (
                                 <SermonCard
                                     key={sermon.sermonId}
@@ -1345,16 +1348,12 @@ const ToggleButton = styled.button`
 `;
 
 const SermonList = styled.div`
-    display: ${(props) => (props.viewType === 'grid' ? 'grid' : 'flex')};
-    flex-direction: ${(props) => (props.viewType === 'grid' ? 'unset' : 'column')};
-    grid-template-columns: ${(props) =>
-        props.viewType === 'grid'
-            ? props.isNavExpanded
-                ? 'repeat(auto-fill, minmax(280px, 1fr))'
-                : 'repeat(auto-fill, minmax(260px, 1fr))'
-            : '1fr'};
-    gap: 24px;
-    transition: all 0.3s ease;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+    position: relative;
+    min-height: 400px;
     width: 100%;
 `;
 
