@@ -853,7 +853,14 @@ const SermonListPage = () => {
                                 <SermonCard
                                     key={sermon.sermonId}
                                     viewType={viewType}
-                                    onClick={() => navigate(`/main/sermon-list/detail/${sermon.sermonId}`)}
+                                    onClick={() =>
+                                        navigate(`/main/sermon-list/detail/${sermon.sermonId}`, {
+                                            state: {
+                                                contentTextId: sermon.contentTextId,
+                                                sermonData: sermon, // 기본 정보도 함께 전달
+                                            },
+                                        })
+                                    }
                                 >
                                     {sermon.bookmarked && (
                                         <BookmarkIcon onClick={(e) => onClickBookmark(e, sermon.sermonId)}>

@@ -35,7 +35,7 @@ export const useSetUserState = () => {
         setUserId(newState.userId);
         setUserEmail(newState.userEmail);
         setUserJob(newState.job);
-        setRole(newState.role);
+        setRole(newState.admin ? 'ADMIN' : 'USER');
         setUserName(newState.userName);
         setIsLoggedIn(newState.isLoggedIn);
     };

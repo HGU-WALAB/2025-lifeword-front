@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import styled from 'styled-components';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, X, Unlock, Lock, ChevronDown } from 'lucide-react';
-import { getSermonDetail, updateSermon } from '../../services/APIService';
+import { getSermonDetail, updateSermon, getTextDetail } from '../../services/APIService';
 import SermonEditor from '../Editor/SermonEditor';
 import { useUserState, useOriginalUserId } from '../../recoil/utils';
 
@@ -54,13 +54,30 @@ const EditSermonPage = () => {
         const fetchSermonData = async () => {
             try {
                 const data = await getSermonDetail(id);
-                setSermonData({
+                console.log('=== Sermon Data Fetching ===');
+                console.log('Raw sermon data:', data);
+
+                // contentTextId가 있으면 본문 내용 가져오기
+                let contentText = '';
+                if (data.contentTextId) {
+                    console.log('Fetching content text for ID:', data.contentTextId);
+                    const textResponse = await getTextDetail(id, data.contentTextId, userId);
+                    console.log('Text detail response:', textResponse);
+                    contentText = textResponse?.textContent || '';
+                }
+
+                const formattedData = {
                     ...data,
                     userId: data.userId,
                     sermonDate: new Date(data.sermonDate).toISOString().split('T')[0],
-                    contentText: data.contents && data.contents.length > 0 ? data.contents[0].contentText : '',
+                    contentText: contentText, // 가져온 본문 내용 설정
                     additionalScriptures: [],
-                });
+                };
+
+                console.log('=== Formatted Data ===');
+                console.log('Formatted sermon data:', formattedData);
+
+                setSermonData(formattedData);
                 if (data.additionalScripture) {
                     setSermonData((prev) => ({
                         ...prev,
@@ -77,7 +94,7 @@ const EditSermonPage = () => {
         };
 
         fetchSermonData();
-    }, [id, navigate]);
+    }, [id, navigate, userId]);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -103,6 +120,8 @@ const EditSermonPage = () => {
     };
 
     const handleEditorChange = (content) => {
+        console.log('=== Editor Content Changed ===');
+        console.log('New content:', content);
         setSermonData((prev) => ({
             ...prev,
             contentText: content,
@@ -133,6 +152,9 @@ const EditSermonPage = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
+        console.log('=== Submitting Sermon Update ===');
+        console.log('Current sermon data:', sermonData);
+
         if (!sermonData.sermonTitle || !sermonData.sermonDate || !sermonData.contentText) {
             alert('제목, 날짜, 내용은 필수 입력사항입니다.');
             return;
@@ -148,13 +170,21 @@ const EditSermonPage = () => {
                 sermonTitle: sermonData.sermonTitle,
                 summary: sermonData.summary,
                 notes: sermonData.notes,
-                contentText: cleanContent,
+                contents: [
+                    {
+                        contentText: cleanContent,
+                    },
+                ],
                 public: sermonData.public,
             };
 
-            // 관리자 페이지에서 수정할 때는 해당 설교의 원래 userId를 사용
+            console.log('Updated sermon data to send:', updatedSermon);
+
             const targetUserId = isAdminPage ? sermonData.userId : userId;
-            await updateSermon(id, targetUserId, updatedSermon);
+            console.log('Target user ID:', targetUserId);
+
+            const response = await updateSermon(id, targetUserId, updatedSermon);
+            console.log('Update response:', response);
 
             alert('설교가 성공적으로 수정되었습니다.');
 
