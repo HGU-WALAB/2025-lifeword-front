@@ -3,6 +3,13 @@ import axios from 'axios';
 const BASE_URL = 'https://walab.info:8443/lifeword';
 const API_PREFIX = '/api/v1';
 
+// JWT 쿠키 가져오는 함수 추가
+const getJwtFromCookie = () => {
+    const cookies = document.cookie.split('; ');
+    const jwtCookie = cookies.find((cookie) => cookie.startsWith('jwt='));
+    return jwtCookie ? jwtCookie.split('=')[1] : null;
+};
+
 // axios 인스턴스 생성 및 기본 설정
 const axiosInstance = axios.create({
     baseURL: `${BASE_URL}${API_PREFIX}`,
