@@ -109,7 +109,8 @@ export const login = async (email, password, setUserState) => {
                 userEmail: email,
                 userName: data.data.name,
                 job: data.data.job,
-                admin: data.data.admin,
+                role: data.data.role,
+                admin: data.data.role === 'ADMIN',
             });
         }
         return data;
