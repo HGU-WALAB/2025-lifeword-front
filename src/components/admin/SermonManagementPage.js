@@ -1420,6 +1420,13 @@ const StyledSermonCard = styled.div`
         border-radius: 12px;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
         border: 1px solid #e5e7eb;
+        position: relative;
+
+        &:hover {
+            ${ActionButtons} {
+                opacity: 1;
+            }
+        }
     `
             : `
         padding: 24px;
