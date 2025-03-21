@@ -1,6 +1,26 @@
 import axios from 'axios';
 
-const BASE_URL = 'https://walab.info:8443/lifeword/api/v1';
+const BASE_URL = 'https://walab.info:8443/lifeword';
+const API_PREFIX = '/api/v1';
+
+// axios 인스턴스 생성 및 기본 설정
+const axiosInstance = axios.create({
+    baseURL: `${BASE_URL}${API_PREFIX}`,
+    withCredentials: true,
+    headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+    },
+});
+
+// JWT 인터셉터 추가
+axiosInstance.interceptors.request.use((config) => {
+    const token = getJwtFromCookie();
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+});
 
 // User 관련 API
 export const verifyUser = async (email, setUserState) => {
@@ -8,7 +28,7 @@ export const verifyUser = async (email, setUserState) => {
         // 기존 세션 스토리지 클리어
         sessionStorage.clear();
 
-        const { data } = await axios.get(`${BASE_URL}/users/verify/kakao-google`, {
+        const { data } = await axiosInstance.get('/users/verify/kakao-google', {
             params: { email },
         });
 
@@ -32,7 +52,7 @@ export const verifyUser = async (email, setUserState) => {
 
 export const login = async (email, password, setUserState) => {
     try {
-        const { data } = await axios.get(`${BASE_URL}/users/verify/bibly`, {
+        const { data } = await axiosInstance.get('/users/verify/bibly', {
             params: { email, password },
         });
         if (data.success && setUserState) {
@@ -53,7 +73,7 @@ export const login = async (email, password, setUserState) => {
 
 export const createUser = async (userData) => {
     try {
-        const { data } = await axios.post(`${BASE_URL}/users`, userData);
+        const { data } = await axiosInstance.post('/users', userData);
         return data;
     } catch (error) {
         console.error('Error creating user:', error);
@@ -63,7 +83,7 @@ export const createUser = async (userData) => {
 
 export const verifyEmail = async (email) => {
     try {
-        const { data } = await axios.get(`${BASE_URL}/users/verify/emailCheck`, {
+        const { data } = await axiosInstance.get('/users/verify/emailCheck', {
             params: { email },
         });
         return {
@@ -79,7 +99,7 @@ export const verifyEmail = async (email) => {
 // Sermon 관련 API
 export const createSermon = async (sermonData) => {
     try {
-        const { data } = await axios.post(`${BASE_URL}/sermons`, sermonData);
+        const { data } = await axiosInstance.post('/sermons', sermonData);
         return data;
     } catch (error) {
         console.error('Error creating sermon:', error);
@@ -95,8 +115,8 @@ export const updateSermon = async (sermonId, userId, sermonData) => {
         console.log('Update Data:', sermonData);
 
         // 1. 설교 기본 정보 업데이트
-        const { data } = await axios.patch(
-            `${BASE_URL}/sermons/update/${sermonId}`,
+        const { data } = await axiosInstance.patch(
+            `/sermons/update/${sermonId}`,
             {
                 userId: userId,
                 sermonDate: sermonData.sermonDate,
@@ -134,7 +154,7 @@ export const updateSermon = async (sermonId, userId, sermonData) => {
 
 export const deleteSermon = async (sermonId, userId) => {
     try {
-        const response = await axios.delete(`${BASE_URL}/sermons/${sermonId}?userId=${userId}`);
+        const response = await axiosInstance.delete(`/sermons/${sermonId}?userId=${userId}`);
         return response.data;
     } catch (error) {
         console.error('Error deleting sermon:', error);
@@ -144,7 +164,7 @@ export const deleteSermon = async (sermonId, userId) => {
 
 export const getSermonDetail = async (sermonId) => {
     try {
-        const { data } = await axios.get(`${BASE_URL}/sermons/details/${sermonId}`);
+        const { data } = await axiosInstance.get(`/sermons/details/${sermonId}`);
         return data;
     } catch (error) {
         console.error('Error getting sermon detail:', error);
@@ -156,8 +176,8 @@ export const getSermonDetail = async (sermonId) => {
 export const getBookmarks = async (userID) => {
     try {
         const [verseResponse, sermonResponse] = await Promise.all([
-            axios.get(`${BASE_URL}/bookmarks/verse`, { params: { userID } }),
-            axios.get(`${BASE_URL}/bookmarks/sermon`, { params: { userID } }),
+            axiosInstance.get('/bookmarks/verse', { params: { userID } }),
+            axiosInstance.get('/bookmarks/sermon', { params: { userID } }),
         ]);
         return {
             success: true,
@@ -172,8 +192,8 @@ export const getBookmarks = async (userID) => {
 
 export const createBookmark = async (userID, verseId, sermonId, isSermon) => {
     try {
-        const { data } = await axios.post(
-            `${BASE_URL}/bookmarks`,
+        const { data } = await axiosInstance.post(
+            '/bookmarks',
             { verseId, sermonId, isSermon },
             { params: { userID } }
         );
@@ -186,7 +206,7 @@ export const createBookmark = async (userID, verseId, sermonId, isSermon) => {
 
 export const deleteBookmark = async (userID, bookmarkId) => {
     try {
-        const { data } = await axios.delete(`${BASE_URL}/bookmarks/${bookmarkId}`, {
+        const { data } = await axiosInstance.delete(`/bookmarks/${bookmarkId}`, {
             params: { userID },
         });
         return data;
@@ -199,7 +219,7 @@ export const deleteBookmark = async (userID, bookmarkId) => {
 // Bible 관련 API
 export const getBooks = async (testament) => {
     try {
-        const { data } = await axios.get(`${BASE_URL}/books`, {
+        const { data } = await axiosInstance.get('/books', {
             params: { testament },
         });
         return data;
@@ -211,7 +231,7 @@ export const getBooks = async (testament) => {
 
 export const getBibles = async (testament, book, chapter) => {
     try {
-        const { data } = await axios.get(`${BASE_URL}/bibles`, {
+        const { data } = await axiosInstance.get('/bibles', {
             params: { testament, ...(book && { book }), ...(chapter && { chapter }) },
         });
         return data;
@@ -223,7 +243,7 @@ export const getBibles = async (testament, book, chapter) => {
 
 export const searchBibles = async (keyword) => {
     try {
-        const { data } = await axios.get(`${BASE_URL}/bibles/search`, {
+        const { data } = await axiosInstance.get('/bibles/search', {
             params: { keyword1: keyword },
         });
         return data;
@@ -236,7 +256,7 @@ export const searchBibles = async (keyword) => {
 // 카카오 로그인 관련
 export const getKakaoToken = async (code) => {
     try {
-        const { data } = await axios.post('https://kauth.kakao.com/oauth/token', null, {
+        const { data } = await axiosInstance.post('https://kauth.kakao.com/oauth/token', null, {
             params: {
                 grant_type: 'authorization_code',
                 client_id: process.env.REACT_APP_KAKAO_REST_API_KEY,
@@ -256,7 +276,7 @@ export const getKakaoToken = async (code) => {
 
 export const getKakaoUserInfo = async (access_token) => {
     try {
-        const { data } = await axios.get('https://kapi.kakao.com/v2/user/me', {
+        const { data } = await axiosInstance.get('https://kapi.kakao.com/v2/user/me', {
             headers: {
                 Authorization: `Bearer ${access_token}`,
             },
@@ -271,7 +291,7 @@ export const getKakaoUserInfo = async (access_token) => {
 // 구글 로그인 관련
 export const getGoogleToken = async (code) => {
     try {
-        const { data } = await axios.post('https://oauth2.googleapis.com/token', null, {
+        const { data } = await axiosInstance.post('https://oauth2.googleapis.com/token', null, {
             params: {
                 code,
                 client_id: process.env.REACT_APP_GOOGLE_CLIENT_ID,
@@ -292,7 +312,7 @@ export const getGoogleToken = async (code) => {
 
 export const getGoogleUserInfo = async (access_token) => {
     try {
-        const { data } = await axios.get('https://www.googleapis.com/oauth2/v2/userinfo', {
+        const { data } = await axiosInstance.get('https://www.googleapis.com/oauth2/v2/userinfo', {
             headers: {
                 Authorization: `Bearer ${access_token}`,
             },
@@ -306,7 +326,7 @@ export const getGoogleUserInfo = async (access_token) => {
 
 export const updateUserProvider = async (email, provider, uid) => {
     try {
-        const { data } = await axios.patch(`${BASE_URL}/users/provider`, null, {
+        const { data } = await axiosInstance.patch('/users/provider', null, {
             params: {
                 email,
                 oauthProvider: provider,
@@ -322,7 +342,7 @@ export const updateUserProvider = async (email, provider, uid) => {
 
 export const setUserPassword = async (email, password) => {
     try {
-        const { data } = await axios.patch(`${BASE_URL}/users/setUserPassword`, null, {
+        const { data } = await axiosInstance.patch('/users/setUserPassword', null, {
             params: { email, password },
         });
         return data;
@@ -335,7 +355,7 @@ export const setUserPassword = async (email, password) => {
 // 관리자 user 관련 API
 export const getAdminUsers = async () => {
     try {
-        const { data } = await axios.get(`${BASE_URL}/admin/users`);
+        const { data } = await axiosInstance.get('/admin/users');
         return data;
     } catch (error) {
         console.error('Error getting admin users:', error);
@@ -345,7 +365,7 @@ export const getAdminUsers = async () => {
 
 export const searchAdminUsers = async (type, value) => {
     try {
-        const { data } = await axios.get(`${BASE_URL}/admin/users/search`, {
+        const { data } = await axiosInstance.get('/admin/users/search', {
             params: { type, value },
         });
         return data;
@@ -357,7 +377,7 @@ export const searchAdminUsers = async (type, value) => {
 
 export const updateAdminUser = async (userId, userData) => {
     try {
-        const { data } = await axios.patch(`${BASE_URL}/admin/users/${userId}`, userData);
+        const { data } = await axiosInstance.patch(`/admin/users/${userId}`, userData);
         return data;
     } catch (error) {
         console.error('Error updating admin user:', error);
@@ -367,7 +387,7 @@ export const updateAdminUser = async (userId, userData) => {
 
 export const deleteAdminUser = async (userId) => {
     try {
-        const { data } = await axios.delete(`${BASE_URL}/admin/users/${userId}`);
+        const { data } = await axiosInstance.delete(`/admin/users/${userId}`);
         return data || { success: true };
     } catch (error) {
         console.error('Error deleting admin user:', error);
@@ -377,7 +397,7 @@ export const deleteAdminUser = async (userId) => {
 
 export const getFilteredSermonList = async (params) => {
     try {
-        const { data } = await axios.get(`${BASE_URL}/sermons/filtered-list-user`, {
+        const { data } = await axiosInstance.get('/sermons/filtered-list-user', {
             params: {
                 user_id: params.userId,
                 keyword: params.keyword || null,
@@ -401,7 +421,7 @@ export const getFilteredSermonList = async (params) => {
 
 export const getFilteredSermonListAdmin = async (params) => {
     try {
-        const { data } = await axios.get(`${BASE_URL}/sermons/filtered-list-admin`, {
+        const { data } = await axiosInstance.get('/sermons/filtered-list-admin', {
             params: {
                 keyword: params.keyword || null,
                 searchType: params.searchType || null,
@@ -424,7 +444,7 @@ export const getFilteredSermonListAdmin = async (params) => {
 // 관리자용 설교 삭제 API
 export const deleteSermonAdmin = async (sermonId, userId) => {
     try {
-        const response = await axios.delete(`${BASE_URL}/sermons/${sermonId}?userId=${userId}`);
+        const response = await axiosInstance.delete(`/sermons/${sermonId}?userId=${userId}`);
         return response.data;
     } catch (error) {
         console.error('Error deleting sermon:', error);
@@ -435,7 +455,7 @@ export const deleteSermonAdmin = async (sermonId, userId) => {
 // 관리자용 설교 수정 API
 export const updateSermonAdmin = async (sermonId, sermonData) => {
     try {
-        const { data } = await axios.patch(`${BASE_URL}/admin/sermons/${sermonId}`, sermonData);
+        const { data } = await axiosInstance.patch(`/admin/sermons/${sermonId}`, sermonData);
         return data;
     } catch (error) {
         console.error('Error updating sermon:', error);
@@ -446,8 +466,8 @@ export const updateSermonAdmin = async (sermonId, sermonData) => {
 // Text 관련 API
 export const createText = async (sermonId, userId, isDraft, textTitle, textContent) => {
     try {
-        const { data } = await axios.post(
-            `${BASE_URL}/text/create`,
+        const { data } = await axiosInstance.post(
+            '/text/create',
             { textContent },
             {
                 params: {
@@ -467,8 +487,8 @@ export const createText = async (sermonId, userId, isDraft, textTitle, textConte
 
 export const updateText = async (textId, userId, textTitle, isDraft, textContent) => {
     try {
-        const { data } = await axios.patch(
-            `${BASE_URL}/text/update/${textId}`,
+        const { data } = await axiosInstance.patch(
+            `/text/update/${textId}`,
             { textContent },
             {
                 params: {
@@ -487,7 +507,7 @@ export const updateText = async (textId, userId, textTitle, isDraft, textContent
 
 export const getTextList = async (sermonId, userId) => {
     try {
-        const { data } = await axios.get(`${BASE_URL}/text/list/${sermonId}`, {
+        const { data } = await axiosInstance.get(`/text/list/${sermonId}`, {
             params: { userId },
         });
         return data;
@@ -499,7 +519,7 @@ export const getTextList = async (sermonId, userId) => {
 
 export const getTextDetail = async (sermonId, textId, userId) => {
     try {
-        const { data } = await axios.get(`${BASE_URL}/text/${sermonId}/${textId}`, {
+        const { data } = await axiosInstance.get(`/text/${sermonId}/${textId}`, {
             params: { userId },
         });
         return data;
@@ -511,7 +531,7 @@ export const getTextDetail = async (sermonId, textId, userId) => {
 
 export const deleteText = async (textId, userId) => {
     try {
-        const { data } = await axios.delete(`${BASE_URL}/text/delete/${textId}`, {
+        const { data } = await axiosInstance.delete(`/text/delete/${textId}`, {
             params: { userId },
         });
         return data;
@@ -528,8 +548,8 @@ export const updateSermonText = async (sermonId, textId, userId, content) => {
         console.log('Text ID:', textId);
         console.log('Content:', content);
 
-        const { data } = await axios.patch(
-            `${BASE_URL}/sermons/${sermonId}/texts/${textId}`,
+        const { data } = await axiosInstance.patch(
+            `/sermons/${sermonId}/texts/${textId}`,
             {
                 textContent: content,
                 userId: userId,
@@ -547,7 +567,7 @@ export const updateSermonText = async (sermonId, textId, userId, content) => {
 
 export const hideSermonsBatch = async (sermonIds) => {
     try {
-        const response = await axios.patch(`${BASE_URL}/sermons/batch/hide`, sermonIds, {
+        const response = await axiosInstance.patch('/sermons/batch/hide', sermonIds, {
             headers: {
                 'Content-Type': 'application/json',
             },
