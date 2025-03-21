@@ -21,13 +21,93 @@ const axiosInstance = axios.create({
 });
 
 // JWT 인터셉터 추가
-axiosInstance.interceptors.request.use((config) => {
-    const token = getJwtFromCookie();
-    if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+axiosInstance.interceptors.request.use(
+    (config) => {
+        const token = getJwtFromCookie();
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+    },
+    (error) => {
+        return Promise.reject(error);
     }
-    return config;
-});
+);
+
+// auth 관련 요청을 위한 별도 함수
+const authRequest = async (endpoint, options) => {
+    return fetch(`${BASE_URL}/auth${endpoint}`, {
+        ...options,
+        credentials: 'include',
+    });
+};
+
+// 카카오 로그인
+export const authenticateKakaoUser = async (code) => {
+    try {
+        const response = await authRequest('/login/kakao', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Accept: 'application/json',
+            },
+            body: JSON.stringify({ code }),
+            mode: 'cors',
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`카카오 인증 중 오류 발생: ${errorText}`);
+        }
+
+        const data = await response.json();
+        console.log('카카오 로그인 성공! 받은 데이터:', data);
+        return data;
+    } catch (error) {
+        console.error('카카오 로그인 실패:', error);
+        throw error;
+    }
+};
+
+// 구글 로그인
+export const authenticateGoogleUser = async (code) => {
+    try {
+        const response = await authRequest('/login/google', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Accept: 'application/json',
+            },
+            body: JSON.stringify({ code }),
+            mode: 'cors',
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`구글 인증 중 오류 발생: ${errorText}`);
+        }
+
+        const data = await response.json();
+        console.log('구글 로그인 성공! 받은 데이터:', data);
+        return data;
+    } catch (error) {
+        console.error('구글 로그인 실패:', error);
+        throw error;
+    }
+};
+
+// 로그아웃
+export const logout = async () => {
+    try {
+        await authRequest('/logout', {
+            method: 'POST',
+        });
+        console.log('로그아웃 시도중!!');
+    } catch (error) {
+        console.error('로그아웃 실패:', error);
+        throw error;
+    }
+};
 
 // User 관련 API
 export const verifyUser = async (email, setUserState) => {
@@ -256,105 +336,6 @@ export const searchBibles = async (keyword) => {
         return data;
     } catch (error) {
         console.error('Error searching bibles:', error);
-        throw error;
-    }
-};
-
-// 카카오 로그인 관련
-export const getKakaoToken = async (code) => {
-    try {
-        const { data } = await axiosInstance.post('https://kauth.kakao.com/oauth/token', null, {
-            params: {
-                grant_type: 'authorization_code',
-                client_id: process.env.REACT_APP_KAKAO_REST_API_KEY,
-                redirect_uri: process.env.REACT_APP_KAKAO_REDIRECT_URI,
-                code: code,
-            },
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8',
-            },
-        });
-        return data;
-    } catch (error) {
-        console.error('Error getting Kakao token:', error);
-        throw error;
-    }
-};
-
-export const getKakaoUserInfo = async (access_token) => {
-    try {
-        const { data } = await axiosInstance.get('https://kapi.kakao.com/v2/user/me', {
-            headers: {
-                Authorization: `Bearer ${access_token}`,
-            },
-        });
-        return data;
-    } catch (error) {
-        console.error('Error getting Kakao user info:', error);
-        throw error;
-    }
-};
-
-// 구글 로그인 관련
-export const getGoogleToken = async (code) => {
-    try {
-        const { data } = await axiosInstance.post('https://oauth2.googleapis.com/token', null, {
-            params: {
-                code,
-                client_id: process.env.REACT_APP_GOOGLE_CLIENT_ID,
-                client_secret: process.env.REACT_APP_GOOGLE_CLIENT_SECRET,
-                redirect_uri: process.env.REACT_APP_GOOGLE_REDIRECT_URI,
-                grant_type: 'authorization_code',
-            },
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-        });
-        return data;
-    } catch (error) {
-        console.error('Error getting Google token:', error);
-        throw error;
-    }
-};
-
-export const getGoogleUserInfo = async (access_token) => {
-    try {
-        const { data } = await axiosInstance.get('https://www.googleapis.com/oauth2/v2/userinfo', {
-            headers: {
-                Authorization: `Bearer ${access_token}`,
-            },
-        });
-        return data;
-    } catch (error) {
-        console.error('Error getting Google user info:', error);
-        throw error;
-    }
-};
-
-export const updateUserProvider = async (email, provider, uid) => {
-    try {
-        const { data } = await axiosInstance.patch('/users/provider', null, {
-            params: {
-                email,
-                oauthProvider: provider,
-                oauthUid: uid,
-            },
-        });
-        return data;
-    } catch (error) {
-        console.error('Error updating user provider:', error);
-        throw error;
-    }
-};
-
-export const setUserPassword = async (email, password) => {
-    try {
-        const { data } = await axiosInstance.patch('/users/setUserPassword', null, {
-            params: { email, password },
-        });
-        return data;
-    } catch (error) {
-        console.error('Error setting user password:', error);
         throw error;
     }
 };
