@@ -136,6 +136,47 @@ const ActionButton = styled.button`
     }
 `;
 
+const CheckboxArea = styled.div`
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    z-index: 1;
+    opacity: 1;
+    transition: opacity 0.2s ease;
+`;
+
+const StyledSermonCard = styled.div`
+    position: relative;
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem 1.5rem 1.5rem 3rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    border: 1px solid #eee;
+
+    &:hover {
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        transform: translateY(-2px);
+
+        ${CheckboxArea} {
+            opacity: 1;
+        }
+    }
+
+    ${(props) =>
+        props.viewType === 'list' &&
+        `
+        flex-direction: row;
+        align-items: center;
+        gap: 2rem;
+        padding: 1rem 1.5rem 1rem 3rem;
+    `}
+`;
+
 const SermonManagementPage = () => {
     const navigate = useNavigate();
     const location = useLocation();
@@ -1410,83 +1451,73 @@ const SermonCard = ({ sermon, viewType, isSelected, onSelect, setSermonToDelete,
 };
 
 const StyledSermonCard = styled.div`
-    ${(props) =>
-        props.viewType === 'grid'
-            ? `
-        min-height: 240px;
-        padding: 20px;
-        padding-top: 40px;
-        background: white;
-        border-radius: 12px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-        border: 1px solid #e5e7eb;
-    `
-            : `
-        padding: 24px;
-        padding-top: 44px;
-        background: white;
-        border-radius: 12px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-        border: 1px solid #e5e7eb;
-        cursor: pointer;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        position: relative;
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-        grid-column: 1 / -1;
-    `}
+    position: relative;
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem 1.5rem 1.5rem 3rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    border: 1px solid #eee;
 
     &:hover {
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        border-color: #d1d5db;
-    }
-`;
 
-const CheckboxArea = styled.div`
-    position: absolute;
-    top: ${(props) => (props.viewType === 'list' ? '12px' : '12px')};
-    left: ${(props) => (props.viewType === 'list' ? '24px' : '12px')};
-    z-index: 2;
-    cursor: pointer;
-`;
-
-const StyledCheckbox = styled.input`
-    position: absolute;
-    opacity: 0;
-    width: 18px;
-    height: 18px;
-    cursor: pointer;
-    z-index: 2;
-`;
-
-const CheckboxControl = styled.div`
-    width: 18px;
-    height: 18px;
-    border: 2px solid ${(props) => (props.isChecked ? '#6b4ee6' : '#e1e1e1')};
-    border-radius: 4px;
-    background: ${(props) => (props.isChecked ? '#6b4ee6' : 'white')};
-    transition: all 0.2s ease;
-
-    &:after {
-        content: '';
-        position: absolute;
-        display: ${(props) => (props.isChecked ? 'block' : 'none')};
-        left: 5px;
-        top: 1px;
-        width: 4px;
-        height: 8px;
-        border: solid white;
-        border-width: 0 2px 2px 0;
-        transform: rotate(45deg);
+        ${CheckboxArea} {
+            opacity: 1;
+        }
     }
 
     ${(props) =>
         props.viewType === 'list' &&
         `
-        top: 24px;
-        left: 24px;
+        flex-direction: row;
+        align-items: center;
+        gap: 2rem;
+        padding: 1rem 1.5rem 1rem 3rem;
+    `}
+`;
+
+const StyledCheckbox = styled.input`
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+`;
+
+const CheckboxControl = styled.div`
+    position: relative;
+    height: 20px;
+    width: 20px;
+    background-color: ${(props) => (props.isChecked ? '#4F3296' : '#fff')};
+    border: 2px solid ${(props) => (props.isChecked ? '#4F3296' : '#ddd')};
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+        border-color: #4f3296;
+    }
+
+    ${(props) =>
+        props.isChecked &&
+        `
+        &:after {
+            content: '';
+            position: absolute;
+            left: 6px;
+            top: 2px;
+            width: 4px;
+            height: 8px;
+            border: solid white;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
     `}
 `;
 
