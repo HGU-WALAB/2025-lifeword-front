@@ -36,27 +36,33 @@ axiosInstance.interceptors.request.use(
 
 // auth 관련 요청을 위한 별도 함수
 const authRequest = async (endpoint, options) => {
-    return fetch(`${BASE_URL}/auth${endpoint}`, {
+    const response = await fetch(`${BASE_URL}/auth${endpoint}`, {
         ...options,
         credentials: 'include',
+        headers: {
+            ...options.headers,
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+        },
     });
+    return response;
 };
 
 // 카카오 로그인
 export const authenticateKakaoUser = async (code) => {
     try {
+        console.log('Using Redirect URI:', process.env.REACT_APP_KAKAO_REDIRECT_URI); // 디버깅용
         const response = await authRequest('/login/kakao', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                Accept: 'application/json',
-            },
-            body: JSON.stringify({ code }),
-            mode: 'cors',
+            body: JSON.stringify({
+                code,
+                redirectUri: process.env.REACT_APP_KAKAO_REDIRECT_URI, // /login/kakao가 자동으로 추가되지 않도록
+            }),
         });
 
         if (!response.ok) {
             const errorText = await response.text();
+            console.error('카카오 로그인 응답:', errorText); // 디버깅용 로그 추가
             throw new Error(`카카오 인증 중 오류 발생: ${errorText}`);
         }
 
@@ -74,12 +80,7 @@ export const authenticateGoogleUser = async (code) => {
     try {
         const response = await authRequest('/login/google', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                Accept: 'application/json',
-            },
             body: JSON.stringify({ code }),
-            mode: 'cors',
         });
 
         if (!response.ok) {
@@ -563,6 +564,34 @@ export const hideSermonsBatch = async (sermonIds) => {
         return response.data;
     } catch (error) {
         console.error('Error in hideSermonsBatch:', error);
+        throw error;
+    }
+};
+
+export const updateUserProvider = async (email, provider, uid) => {
+    try {
+        const { data } = await axiosInstance.patch('/users/provider', null, {
+            params: {
+                email,
+                oauthProvider: provider,
+                oauthUid: uid,
+            },
+        });
+        return data;
+    } catch (error) {
+        console.error('Error updating user provider:', error);
+        throw error;
+    }
+};
+
+export const setUserPassword = async (email, password) => {
+    try {
+        const { data } = await axiosInstance.patch('/users/setUserPassword', null, {
+            params: { email, password },
+        });
+        return data;
+    } catch (error) {
+        console.error('Error setting user password:', error);
         throw error;
     }
 };
