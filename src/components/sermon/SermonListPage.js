@@ -1349,7 +1349,11 @@ const ToggleButton = styled.button`
 
 const SermonList = styled.div`
     display: grid;
-    grid-template-columns: ${(props) => (props.viewType === 'grid' ? 'repeat(auto-fill, minmax(300px, 1fr))' : '1fr')};
+    grid-template-columns: ${(props) => {
+        if (props.viewType === 'list') return '1fr';
+        // 네비게이션 바가 접혔을 때는 4컬럼, 펼쳐졌을 때는 3컬럼
+        return props.isNavExpanded ? 'repeat(auto-fill, minmax(300px, 1fr))' : 'repeat(4, 1fr)';
+    }};
     gap: 20px;
     margin-top: 20px;
     position: relative;
@@ -1361,7 +1365,7 @@ const SermonCard = styled.div`
     ${(props) =>
         props.viewType === 'grid'
             ? `
-        min-height: 220px;
+        min-height: 240px;
         padding: 20px;
         background: white;
         border-radius: 12px;
