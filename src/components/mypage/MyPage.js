@@ -11,7 +11,8 @@ const MyPage = () => {
     const [newPasswordConfirm, setNewPasswordConfirm] = useState('');
     const [passwordMatchMessage, setPasswordMatchMessage] = useState('');
     const [showPasswordModal, setShowPasswordModal] = useState(false);
-    const { userEmail, job, isAdmin, userName } = useUserState();
+    const { userEmail, job, role, userName } = useUserState();
+    const isAdmin = role === 'ADMIN';
 
     const handlePasswordChange = async () => {
         if (!newPassword) {

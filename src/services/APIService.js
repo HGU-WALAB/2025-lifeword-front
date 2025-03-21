@@ -3,13 +3,6 @@ import axios from 'axios';
 const BASE_URL = 'https://walab.info:8443/lifeword';
 const API_PREFIX = '/api/v1';
 
-// JWT 쿠키 가져오는 함수 추가
-const getJwtFromCookie = () => {
-    const cookies = document.cookie.split('; ');
-    const jwtCookie = cookies.find((cookie) => cookie.startsWith('jwt='));
-    return jwtCookie ? jwtCookie.split('=')[1] : null;
-};
-
 // axios 인스턴스 생성 및 기본 설정
 const axiosInstance = axios.create({
     baseURL: `${BASE_URL}${API_PREFIX}`,
@@ -20,7 +13,7 @@ const axiosInstance = axios.create({
     },
 });
 
-// JWT 인터셉터 추가
+// JWT 토큰 인터셉터 설정
 axiosInstance.interceptors.request.use(
     (config) => {
         const token = getJwtFromCookie();
@@ -34,88 +27,24 @@ axiosInstance.interceptors.request.use(
     }
 );
 
+// 쿠키에서 JWT 토큰 가져오기
+const getJwtFromCookie = () => {
+    const cookies = document.cookie.split('; ');
+    const jwtCookie = cookies.find((cookie) => cookie.startsWith('jwt='));
+    return jwtCookie ? jwtCookie.split('=')[1] : null;
+};
+
 // auth 관련 요청을 위한 별도 함수
 const authRequest = async (endpoint, options) => {
-    const response = await fetch(`${BASE_URL}/auth${endpoint}`, {
+    return fetch(`${BASE_URL}/auth${endpoint}`, {
         ...options,
         credentials: 'include',
-        headers: {
-            ...options.headers,
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
-        },
     });
-    return response;
-};
-
-// 카카오 로그인
-export const authenticateKakaoUser = async (code) => {
-    try {
-        console.log('Using Redirect URI:', process.env.REACT_APP_KAKAO_REDIRECT_URI); // 디버깅용
-        const response = await authRequest('/login/kakao', {
-            method: 'POST',
-            body: JSON.stringify({
-                code,
-                redirectUri: process.env.REACT_APP_KAKAO_REDIRECT_URI, // /login/kakao가 자동으로 추가되지 않도록
-            }),
-        });
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error('카카오 로그인 응답:', errorText); // 디버깅용 로그 추가
-            throw new Error(`카카오 인증 중 오류 발생: ${errorText}`);
-        }
-
-        const data = await response.json();
-        console.log('카카오 로그인 성공! 받은 데이터:', data);
-        return data;
-    } catch (error) {
-        console.error('카카오 로그인 실패:', error);
-        throw error;
-    }
-};
-
-// 구글 로그인
-export const authenticateGoogleUser = async (code) => {
-    try {
-        const response = await authRequest('/login/google', {
-            method: 'POST',
-            body: JSON.stringify({ code }),
-        });
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`구글 인증 중 오류 발생: ${errorText}`);
-        }
-
-        const data = await response.json();
-        console.log('구글 로그인 성공! 받은 데이터:', data);
-        return data;
-    } catch (error) {
-        console.error('구글 로그인 실패:', error);
-        throw error;
-    }
-};
-
-// 로그아웃
-export const logout = async () => {
-    try {
-        await authRequest('/logout', {
-            method: 'POST',
-        });
-        console.log('로그아웃 시도중!!');
-    } catch (error) {
-        console.error('로그아웃 실패:', error);
-        throw error;
-    }
 };
 
 // User 관련 API
 export const verifyUser = async (email, setUserState) => {
     try {
-        // 기존 세션 스토리지 클리어
-        sessionStorage.clear();
-
         const { data } = await axiosInstance.get('/users/verify/kakao-google', {
             params: { email },
         });
@@ -124,8 +53,9 @@ export const verifyUser = async (email, setUserState) => {
             isLoggedIn: true,
             userEmail: email,
             userId: data.data.userId,
-            role: data.data.admin ? 'ADMIN' : 'USER',
+            userName: data.data.name,
             job: data.data.job,
+            admin: data.data.admin,
         };
 
         if (data.success && setUserState) {
@@ -138,6 +68,35 @@ export const verifyUser = async (email, setUserState) => {
     }
 };
 
+// 일반 로그인 (JWT 방식)
+export const loginUser = async (email, password) => {
+    try {
+        const response = await authRequest(
+            `/login?email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`,
+            {
+                method: 'POST',
+                headers: {
+                    Accept: 'application/json',
+                },
+                mode: 'cors',
+            }
+        );
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`로그인 실패: ${errorText}`);
+        }
+
+        const data = await response.json();
+        console.log('로그인 성공! 받은 데이터:', data);
+        return data;
+    } catch (error) {
+        console.error('로그인 실패:', error);
+        throw error;
+    }
+};
+
+// 기존 로그인 (호환성 유지)
 export const login = async (email, password, setUserState) => {
     try {
         const { data } = await axiosInstance.get('/users/verify/bibly', {
@@ -148,8 +107,9 @@ export const login = async (email, password, setUserState) => {
                 isLoggedIn: true,
                 userId: data.data.userId,
                 userEmail: email,
+                userName: data.data.name,
                 job: data.data.job,
-                role: data.data.admin ? 'ADMIN' : 'USER',
+                admin: data.data.admin,
             });
         }
         return data;
@@ -181,6 +141,197 @@ export const verifyEmail = async (email) => {
     } catch (error) {
         console.error('Error verifying email:', error);
         throw error;
+    }
+};
+
+// 카카오 로그인 관련
+export const authenticateKakaoUser = async (code) => {
+    try {
+        const response = await authRequest('/login/kakao', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Accept: 'application/json',
+            },
+            body: JSON.stringify({ code }),
+            mode: 'cors',
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`카카오 인증 중 오류 발생: ${errorText}`);
+        }
+
+        const data = await response.json();
+        console.log('카카오 로그인 성공! 받은 데이터:', data);
+        return data;
+    } catch (error) {
+        console.error('카카오 로그인 실패:', error);
+        throw error;
+    }
+};
+
+export const getKakaoToken = async (code) => {
+    try {
+        const { data } = await axios.post('https://kauth.kakao.com/oauth/token', null, {
+            params: {
+                grant_type: 'authorization_code',
+                client_id: process.env.REACT_APP_KAKAO_REST_API_KEY,
+                redirect_uri: process.env.REACT_APP_KAKAO_REDIRECT_URI,
+                code: code,
+            },
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8',
+            },
+        });
+        return data;
+    } catch (error) {
+        console.error('Error getting Kakao token:', error);
+        throw error;
+    }
+};
+
+export const getKakaoUserInfo = async (access_token) => {
+    try {
+        const { data } = await axios.get('https://kapi.kakao.com/v2/user/me', {
+            headers: {
+                Authorization: `Bearer ${access_token}`,
+            },
+        });
+        return data;
+    } catch (error) {
+        console.error('Error getting Kakao user info:', error);
+        throw error;
+    }
+};
+
+// 구글 로그인 관련
+export const authenticateGoogleUser = async (code) => {
+    try {
+        const response = await authRequest('/login/google', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Accept: 'application/json',
+            },
+            body: JSON.stringify({ code }),
+            mode: 'cors',
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`구글 인증 중 오류 발생: ${errorText}`);
+        }
+
+        console.log('Response headers:', response.headers);
+        console.log('Cookies after login:', document.cookie);
+
+        const data = await response.json();
+        console.log('구글 로그인 성공! 받은 데이터:', data);
+        return data;
+    } catch (error) {
+        console.error('구글 로그인 실패:', error);
+        throw error;
+    }
+};
+
+export const getGoogleToken = async (code) => {
+    try {
+        const { data } = await axios.post('https://oauth2.googleapis.com/token', null, {
+            params: {
+                code,
+                client_id: process.env.REACT_APP_GOOGLE_CLIENT_ID,
+                client_secret: process.env.REACT_APP_GOOGLE_CLIENT_SECRET,
+                redirect_uri: process.env.REACT_APP_GOOGLE_REDIRECT_URI,
+                grant_type: 'authorization_code',
+            },
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+        });
+        return data;
+    } catch (error) {
+        console.error('Error getting Google token:', error);
+        throw error;
+    }
+};
+
+export const getGoogleUserInfo = async (access_token) => {
+    try {
+        const { data } = await axios.get('https://www.googleapis.com/oauth2/v2/userinfo', {
+            headers: {
+                Authorization: `Bearer ${access_token}`,
+            },
+        });
+        return data;
+    } catch (error) {
+        console.error('Error getting Google user info:', error);
+        throw error;
+    }
+};
+
+export const updateUserProvider = async (email, provider, uid) => {
+    try {
+        const { data } = await axiosInstance.patch('/users/provider', null, {
+            params: {
+                email,
+                oauthProvider: provider,
+                oauthUid: uid,
+            },
+        });
+        return data;
+    } catch (error) {
+        console.error('Error updating user provider:', error);
+        throw error;
+    }
+};
+
+export const setUserPassword = async (email, password) => {
+    try {
+        const { data } = await axiosInstance.patch('/users/setUserPassword', null, {
+            params: { email, password },
+        });
+        return data;
+    } catch (error) {
+        console.error('Error setting user password:', error);
+        throw error;
+    }
+};
+
+// 로그아웃
+export const logout = async () => {
+    try {
+        await authRequest('/logout', {
+            method: 'POST',
+        });
+
+        console.log('로그아웃 시도중!!');
+        // 로그아웃 후 필요한 추가 작업 (예: 상태 초기화)
+    } catch (error) {
+        console.error('로그아웃 실패:', error);
+        throw error;
+    }
+};
+
+// 인증 상태 확인
+export const checkAuth = async () => {
+    try {
+        const response = await fetch(`${BASE_URL}/auth/check`, {
+            method: 'GET',
+            credentials: 'include',
+            headers: {
+                accept: '*/*',
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error('Unauthorized');
+        }
+
+        return true;
+    } catch (error) {
+        console.error('Auth check failed:', error);
+        return false;
     }
 };
 
@@ -242,8 +393,10 @@ export const updateSermon = async (sermonId, userId, sermonData) => {
 
 export const deleteSermon = async (sermonId, userId) => {
     try {
-        const response = await axiosInstance.delete(`/sermons/${sermonId}?userId=${userId}`);
-        return response.data;
+        const { data } = await axiosInstance.delete(`/sermons/${sermonId}`, {
+            params: { userId },
+        });
+        return data || { success: true };
     } catch (error) {
         console.error('Error deleting sermon:', error);
         throw error;
@@ -433,8 +586,10 @@ export const getFilteredSermonListAdmin = async (params) => {
 // 관리자용 설교 삭제 API
 export const deleteSermonAdmin = async (sermonId, userId) => {
     try {
-        const response = await axiosInstance.delete(`/sermons/${sermonId}?userId=${userId}`);
-        return response.data;
+        const { data } = await axiosInstance.delete(`/sermons/${sermonId}`, {
+            params: { userId },
+        });
+        return data || { success: true };
     } catch (error) {
         console.error('Error deleting sermon:', error);
         throw error;
@@ -456,7 +611,7 @@ export const updateSermonAdmin = async (sermonId, sermonData) => {
 export const createText = async (sermonId, userId, isDraft, textTitle, textContent) => {
     try {
         const { data } = await axiosInstance.post(
-            '/text/create',
+            `/text/create`,
             { textContent },
             {
                 params: {
@@ -530,7 +685,7 @@ export const deleteText = async (textId, userId) => {
     }
 };
 
-// 본문 내용 업데이트 함수 추가
+// 본문 내용 업데이트 함수
 export const updateSermonText = async (sermonId, textId, userId, content) => {
     try {
         console.log('=== Updating Sermon Text ===');
@@ -556,7 +711,7 @@ export const updateSermonText = async (sermonId, textId, userId, content) => {
 
 export const hideSermonsBatch = async (sermonIds) => {
     try {
-        const response = await axiosInstance.patch('/sermons/batch/hide', sermonIds, {
+        const response = await axiosInstance.patch(`/sermons/batch/hide`, sermonIds, {
             headers: {
                 'Content-Type': 'application/json',
             },
@@ -568,30 +723,4 @@ export const hideSermonsBatch = async (sermonIds) => {
     }
 };
 
-export const updateUserProvider = async (email, provider, uid) => {
-    try {
-        const { data } = await axiosInstance.patch('/users/provider', null, {
-            params: {
-                email,
-                oauthProvider: provider,
-                oauthUid: uid,
-            },
-        });
-        return data;
-    } catch (error) {
-        console.error('Error updating user provider:', error);
-        throw error;
-    }
-};
-
-export const setUserPassword = async (email, password) => {
-    try {
-        const { data } = await axiosInstance.patch('/users/setUserPassword', null, {
-            params: { email, password },
-        });
-        return data;
-    } catch (error) {
-        console.error('Error setting user password:', error);
-        throw error;
-    }
-};
+export default axiosInstance;

@@ -34,6 +34,7 @@ const AuthCallback = () => {
                         userEmail: data.email,
                         job: data.job,
                         role: data.role,
+                        admin: data.role === 'ADMIN',
                     });
 
                     navigate('/main', { replace: true });
