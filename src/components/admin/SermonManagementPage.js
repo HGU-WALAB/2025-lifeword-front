@@ -1334,7 +1334,11 @@ const ToggleButton = styled.button`
 
 const SermonList = styled.div`
     display: grid;
-    grid-template-columns: ${(props) => (props.viewType === 'grid' ? 'repeat(auto-fill, minmax(300px, 1fr))' : '1fr')};
+    grid-template-columns: ${(props) => {
+        if (props.viewType === 'list') return '1fr';
+        // 네비게이션 바가 접혔을 때는 4컬럼, 펼쳐졌을 때는 3컬럼
+        return props.isNavExpanded ? 'repeat(auto-fill, minmax(300px, 1fr))' : 'repeat(4, 1fr)';
+    }};
     gap: 20px;
     margin-top: 20px;
     position: relative;
@@ -1416,45 +1420,6 @@ const StyledSermonCard = styled.div`
         border-radius: 12px;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
         border: 1px solid #e5e7eb;
-        cursor: pointer;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        position: relative;
-
-        ${SermonDate} {
-            font-size: 14px;
-            color: #595c62;
-            margin-bottom: 8px;
-        }
-
-        ${SermonTitle} {
-            font-size: 18px;
-            margin-bottom: 8px;
-            line-height: 1.3;
-        }
-
-        ${SermonInfo} {
-            margin-bottom: 12px;
-        }
-
-        ${SermonSummary} {
-            font-size: 13px;
-            -webkit-line-clamp: 3;
-            margin-top: 8px;
-        }
-
-        ${ActionButtons} {
-            position: absolute;
-            top: 12px;
-            right: 12px;
-            opacity: 0;
-        }
-
-        &:hover ${ActionButtons} {
-            opacity: 1;
-        }
     `
             : `
         padding: 24px;
@@ -1470,56 +1435,6 @@ const StyledSermonCard = styled.div`
         flex-direction: column;
         gap: 12px;
         grid-column: 1 / -1;
-
-        ${SermonDate} {
-            font-size: 14px;
-            color: #595c62;
-            margin: 0;
-        }
-
-        ${AuthorName} {
-            font-size: 14px;
-            color: #595c62;
-            margin: 0;
-        }
-
-        ${SermonTitle} {
-            font-size: 24px;
-            font-weight: 800;
-            color: #482895;
-            margin: 4px 0;
-            line-height: 1.3;
-        }
-
-        ${SermonInfo} {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            align-items: center;
-            margin: 8px 0;
-        }
-
-        ${SermonSummary} {
-            font-size: 14px;
-            line-height: 1.6;
-            color: #212A3E;
-            margin: 0;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-
-        ${ActionButtons} {
-            position: absolute;
-            top: 24px;
-            right: 24px;
-            opacity: 0;
-        }
-
-        &:hover ${ActionButtons} {
-            opacity: 1;
-        }
     `}
 
     &:hover {
