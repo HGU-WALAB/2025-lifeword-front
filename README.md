@@ -30,8 +30,7 @@
 
 |설교 관리 페이지|
 |:---:|
-|<img width="1912" alt="스크린샷 2025-04-04 오후 3 36 27" src="https://github.com/user-attachments/assets/af50c709-ba15-40b6-9924-a1a2052ec355" /><img width="1912" alt="스크린샷 2025-04-04 오후 3 36 23" src="https://github.com/user-attachments/assets/367ee064-517a-420c-8fc6-7f3106504ce2" />
-|
+|<img width="1912" alt="스크린샷 2025-04-04 오후 3 36 27" src="https://github.com/user-attachments/assets/af50c709-ba15-40b6-9924-a1a2052ec355" /><img width="1912" alt="스크린샷 2025-04-04 오후 3 36 23" src="https://github.com/user-attachments/assets/367ee064-517a-420c-8fc6-7f3106504ce2" />|
 |설교를 작성하고 버전을 관리할 수 있습니다.|
 
 |마이페이지/북마크|
