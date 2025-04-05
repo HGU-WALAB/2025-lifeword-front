@@ -558,3 +558,14 @@ export const hideSermonsBatch = async (sermonIds) => {
         throw error;
     }
 };
+
+export const getWorshipTypes = async () => {
+    try{
+        const response = await axios.get(`${BASE_URL}/sermons/worship_types`);
+        return response.data;
+    }catch(error){
+        console.error('Error in getWorshipTypes', error);
+        throw error;
+    }
+
+};
