@@ -5,6 +5,6 @@ export const useLogout = () => {
 
     return () => {
         clearUserState();
-        window.location.href = '/eax9952';
+        window.location.href = '/lifeword';
     };
 };

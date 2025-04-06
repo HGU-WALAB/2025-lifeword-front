@@ -1,15 +1,51 @@
 import axios from 'axios';
 
-//const BASE_URL = 'https://walab.info:8443/lifeword/api/v1';
-const BASE_URL = 'http://localhost:8080/api/v1';
+const BASE_URL = 'https://walab.info:8443/lifeword';
+const API_PREFIX = '/api/v1';
+
+// axios 인스턴스 생성 및 기본 설정
+const axiosInstance = axios.create({
+    baseURL: `${BASE_URL}${API_PREFIX}`,
+    withCredentials: true,
+    headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+    },
+});
+
+// JWT 토큰 인터셉터 설정
+axiosInstance.interceptors.request.use(
+    (config) => {
+        const token = getJwtFromCookie();
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+    },
+    (error) => {
+        return Promise.reject(error);
+    }
+);
+
+// 쿠키에서 JWT 토큰 가져오기
+const getJwtFromCookie = () => {
+    const cookies = document.cookie.split('; ');
+    const jwtCookie = cookies.find((cookie) => cookie.startsWith('jwt='));
+    return jwtCookie ? jwtCookie.split('=')[1] : null;
+};
+
+// auth 관련 요청을 위한 별도 함수
+const authRequest = async (endpoint, options) => {
+    return fetch(`${BASE_URL}/auth${endpoint}`, {
+        ...options,
+        credentials: 'include',
+    });
+};
 
 // User 관련 API
 export const verifyUser = async (email, setUserState) => {
     try {
-        // 기존 세션 스토리지 클리어
-        sessionStorage.clear();
-
-        const { data } = await axios.get(`${BASE_URL}/users/verify/kakao-google`, {
+        const { data } = await axiosInstance.get('/users/verify/kakao-google', {
             params: { email },
         });
 
@@ -17,8 +53,9 @@ export const verifyUser = async (email, setUserState) => {
             isLoggedIn: true,
             userEmail: email,
             userId: data.data.userId,
-            role: data.data.admin ? 'ADMIN' : 'USER',
+            userName: data.data.name,
             job: data.data.job,
+            admin: data.data.admin,
         };
 
         if (data.success && setUserState) {
@@ -31,9 +68,38 @@ export const verifyUser = async (email, setUserState) => {
     }
 };
 
+// 일반 로그인 (JWT 방식)
+export const loginUser = async (email, password) => {
+    try {
+        const response = await authRequest(
+            `/login?email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`,
+            {
+                method: 'POST',
+                headers: {
+                    Accept: 'application/json',
+                },
+                mode: 'cors',
+            }
+        );
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`로그인 실패: ${errorText}`);
+        }
+
+        const data = await response.json();
+        console.log('로그인 성공! 받은 데이터:', data);
+        return data;
+    } catch (error) {
+        console.error('로그인 실패:', error);
+        throw error;
+    }
+};
+
+// 기존 로그인 (호환성 유지)
 export const login = async (email, password, setUserState) => {
     try {
-        const { data } = await axios.get(`${BASE_URL}/users/verify/bibly`, {
+        const { data } = await axiosInstance.get('/users/verify/bibly', {
             params: { email, password },
         });
         if (data.success && setUserState) {
@@ -41,8 +107,10 @@ export const login = async (email, password, setUserState) => {
                 isLoggedIn: true,
                 userId: data.data.userId,
                 userEmail: email,
+                userName: data.data.name,
                 job: data.data.job,
-                role: data.data.admin ? 'ADMIN' : 'USER',
+                role: data.data.role,
+                admin: data.data.role === 'ADMIN',
             });
         }
         return data;
@@ -54,7 +122,7 @@ export const login = async (email, password, setUserState) => {
 
 export const createUser = async (userData) => {
     try {
-        const { data } = await axios.post(`${BASE_URL}/users`, userData);
+        const { data } = await axiosInstance.post('/users', userData);
         return data;
     } catch (error) {
         console.error('Error creating user:', error);
@@ -64,7 +132,7 @@ export const createUser = async (userData) => {
 
 export const verifyEmail = async (email) => {
     try {
-        const { data } = await axios.get(`${BASE_URL}/users/verify/emailCheck`, {
+        const { data } = await axiosInstance.get('/users/verify/emailCheck', {
             params: { email },
         });
         return {
@@ -77,164 +145,33 @@ export const verifyEmail = async (email) => {
     }
 };
 
-// Sermon 관련 API
-export const createSermon = async (sermonData) => {
+// 카카오 로그인 관련
+export const authenticateKakaoUser = async (code) => {
     try {
-        const { data } = await axios.post(`${BASE_URL}/sermons`, sermonData);
-        return data;
-    } catch (error) {
-        console.error('Error creating sermon:', error);
-        throw error;
-    }
-};
-
-export const updateSermon = async (sermonId, userId, sermonData) => {
-    try {
-        console.log('=== Updating Sermon ===');
-        console.log('Sermon ID:', sermonId);
-        console.log('User ID:', userId);
-        console.log('Update Data:', sermonData);
-
-        // 1. 설교 기본 정보 업데이트
-        const { data } = await axios.patch(
-            `${BASE_URL}/sermons/update/${sermonId}`,
-            {
-                userId: userId,
-                sermonDate: sermonData.sermonDate,
-                worshipType: sermonData.worshipType,
-                mainScripture: sermonData.mainScripture,
-                additionalScripture: sermonData.additionalScripture,
-                sermonTitle: sermonData.sermonTitle,
-                summary: sermonData.summary,
-                notes: sermonData.notes,
-                recordInfo: sermonData.recordInfo || '',
-                public: sermonData.public,
+        const response = await authRequest('/login/kakao', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Accept: 'application/json',
             },
-            {
-                params: { userId },
-            }
-        );
+            body: JSON.stringify({ code }),
+            mode: 'cors',
+        });
 
-        // 2. 본문 내용 업데이트
-        if (data.contentTextId && sermonData.contents?.[0]?.contentText) {
-            await updateText(
-                data.contentTextId,
-                userId,
-                sermonData.sermonTitle, // textTitle로 설교 제목 사용
-                false, // isDraft는 false
-                sermonData.contents[0].contentText
-            );
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`카카오 인증 중 오류 발생: ${errorText}`);
         }
 
+        const data = await response.json();
+        console.log('카카오 로그인 성공! 받은 데이터:', data);
         return data;
     } catch (error) {
-        console.error('Error updating sermon:', error);
+        console.error('카카오 로그인 실패:', error);
         throw error;
     }
 };
 
-export const deleteSermon = async (sermonId, userId) => {
-    try {
-        const response = await axios.delete(`${BASE_URL}/sermons/${sermonId}?userId=${userId}`);
-        return response.data;
-    } catch (error) {
-        console.error('Error deleting sermon:', error);
-        throw error;
-    }
-};
-
-export const getSermonDetail = async (sermonId) => {
-    try {
-        const { data } = await axios.get(`${BASE_URL}/sermons/details/${sermonId}`);
-        return data;
-    } catch (error) {
-        console.error('Error getting sermon detail:', error);
-        throw error;
-    }
-};
-
-// Bookmark 관련 API
-export const getBookmarks = async (userID) => {
-    try {
-        const [verseResponse, sermonResponse] = await Promise.all([
-            axios.get(`${BASE_URL}/bookmarks/verse`, { params: { userID } }),
-            axios.get(`${BASE_URL}/bookmarks/sermon`, { params: { userID } }),
-        ]);
-        return {
-            success: true,
-            verses: verseResponse.data.data || [],
-            sermons: sermonResponse.data.data || [],
-        };
-    } catch (error) {
-        console.error('Error getting bookmarks:', error);
-        throw error;
-    }
-};
-
-export const createBookmark = async (userID, verseId, sermonId, isSermon) => {
-    try {
-        const { data } = await axios.post(
-            `${BASE_URL}/bookmarks`,
-            { verseId, sermonId, isSermon },
-            { params: { userID } }
-        );
-        return data;
-    } catch (error) {
-        console.error('Error creating bookmark:', error);
-        throw error;
-    }
-};
-
-export const deleteBookmark = async (userID, bookmarkId) => {
-    try {
-        const { data } = await axios.delete(`${BASE_URL}/bookmarks/${bookmarkId}`, {
-            params: { userID },
-        });
-        return data;
-    } catch (error) {
-        console.error('Error deleting bookmark:', error);
-        throw error;
-    }
-};
-
-// Bible 관련 API
-export const getBooks = async (testament) => {
-    try {
-        const { data } = await axios.get(`${BASE_URL}/books`, {
-            params: { testament },
-        });
-        return data;
-    } catch (error) {
-        console.error('Error getting books:', error);
-        throw error;
-    }
-};
-
-export const getBibles = async (testament, book, chapter) => {
-    try {
-        const { data } = await axios.get(`${BASE_URL}/bibles`, {
-            params: { testament, ...(book && { book }), ...(chapter && { chapter }) },
-        });
-        return data;
-    } catch (error) {
-        console.error('Error getting bibles:', error);
-        throw error;
-    }
-};
-
-export const searchBibles = async (keyword) => {
-    try {
-        const { data } = await axios.get(`${BASE_URL}/bibles/search`, {
-            params: { keyword1: keyword },
-        });
-        return data;
-    } catch (error) {
-        console.error('Error searching bibles:', error);
-        throw error;
-    }
-};
-
-// 카카오 로그인 관련
 export const getKakaoToken = async (code) => {
     try {
         const { data } = await axios.post('https://kauth.kakao.com/oauth/token', null, {
@@ -270,6 +207,35 @@ export const getKakaoUserInfo = async (access_token) => {
 };
 
 // 구글 로그인 관련
+export const authenticateGoogleUser = async (code) => {
+    try {
+        const response = await authRequest('/login/google', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Accept: 'application/json',
+            },
+            body: JSON.stringify({ code }),
+            mode: 'cors',
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`구글 인증 중 오류 발생: ${errorText}`);
+        }
+
+        console.log('Response headers:', response.headers);
+        console.log('Cookies after login:', document.cookie);
+
+        const data = await response.json();
+        console.log('구글 로그인 성공! 받은 데이터:', data);
+        return data;
+    } catch (error) {
+        console.error('구글 로그인 실패:', error);
+        throw error;
+    }
+};
+
 export const getGoogleToken = async (code) => {
     try {
         const { data } = await axios.post('https://oauth2.googleapis.com/token', null, {
@@ -307,7 +273,7 @@ export const getGoogleUserInfo = async (access_token) => {
 
 export const updateUserProvider = async (email, provider, uid) => {
     try {
-        const { data } = await axios.patch(`${BASE_URL}/users/provider`, null, {
+        const { data } = await axiosInstance.patch('/users/provider', null, {
             params: {
                 email,
                 oauthProvider: provider,
@@ -323,7 +289,7 @@ export const updateUserProvider = async (email, provider, uid) => {
 
 export const setUserPassword = async (email, password) => {
     try {
-        const { data } = await axios.patch(`${BASE_URL}/users/setUserPassword`, null, {
+        const { data } = await axiosInstance.patch('/users/setUserPassword', null, {
             params: { email, password },
         });
         return data;
@@ -333,10 +299,206 @@ export const setUserPassword = async (email, password) => {
     }
 };
 
+// 로그아웃
+export const logout = async () => {
+    try {
+        await authRequest('/logout', {
+            method: 'POST',
+        });
+
+        console.log('로그아웃 시도중!!');
+        // 로그아웃 후 필요한 추가 작업 (예: 상태 초기화)
+    } catch (error) {
+        console.error('로그아웃 실패:', error);
+        throw error;
+    }
+};
+
+// 인증 상태 확인
+export const checkAuth = async () => {
+    try {
+        const response = await fetch(`${BASE_URL}/auth/check`, {
+            method: 'GET',
+            credentials: 'include',
+            headers: {
+                accept: '*/*',
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error('Unauthorized');
+        }
+
+        return true;
+    } catch (error) {
+        console.error('Auth check failed:', error);
+        return false;
+    }
+};
+
+// Sermon 관련 API
+export const createSermon = async (sermonData) => {
+    try {
+        const { data } = await axiosInstance.post('/sermons', sermonData);
+        return data;
+    } catch (error) {
+        console.error('Error creating sermon:', error);
+        throw error;
+    }
+};
+
+export const updateSermon = async (sermonId, userId, sermonData) => {
+    try {
+        console.log('=== Updating Sermon ===');
+        console.log('Sermon ID:', sermonId);
+        console.log('User ID:', userId);
+        console.log('Update Data:', sermonData);
+
+        // 1. 설교 기본 정보 업데이트
+        const { data } = await axiosInstance.patch(
+            `/sermons/update/${sermonId}`,
+            {
+                userId: userId,
+                sermonDate: sermonData.sermonDate,
+                worshipType: sermonData.worshipType,
+                mainScripture: sermonData.mainScripture,
+                additionalScripture: sermonData.additionalScripture,
+                sermonTitle: sermonData.sermonTitle,
+                summary: sermonData.summary,
+                notes: sermonData.notes,
+                recordInfo: sermonData.recordInfo || '',
+                public: sermonData.public,
+            },
+            {
+                params: { userId },
+            }
+        );
+
+        // 2. 본문 내용 업데이트
+        if (data.contentTextId && sermonData.contents?.[0]?.contentText) {
+            await updateText(
+                data.contentTextId,
+                userId,
+                sermonData.sermonTitle, // textTitle로 설교 제목 사용
+                false, // isDraft는 false
+                sermonData.contents[0].contentText
+            );
+        }
+
+        return data;
+    } catch (error) {
+        console.error('Error updating sermon:', error);
+        throw error;
+    }
+};
+
+export const deleteSermon = async (sermonId, userId) => {
+    try {
+        const { data } = await axiosInstance.delete(`/sermons/${sermonId}`, {
+            params: { userId },
+        });
+        return data || { success: true };
+    } catch (error) {
+        console.error('Error deleting sermon:', error);
+        throw error;
+    }
+};
+
+export const getSermonDetail = async (sermonId) => {
+    try {
+        const { data } = await axiosInstance.get(`/sermons/details/${sermonId}`);
+        return data;
+    } catch (error) {
+        console.error('Error getting sermon detail:', error);
+        throw error;
+    }
+};
+
+// Bookmark 관련 API
+export const getBookmarks = async (userID) => {
+    try {
+        const [verseResponse, sermonResponse] = await Promise.all([
+            axiosInstance.get('/bookmarks/verse', { params: { userID } }),
+            axiosInstance.get('/bookmarks/sermon', { params: { userID } }),
+        ]);
+        return {
+            success: true,
+            verses: verseResponse.data.data || [],
+            sermons: sermonResponse.data.data || [],
+        };
+    } catch (error) {
+        console.error('Error getting bookmarks:', error);
+        throw error;
+    }
+};
+
+export const createBookmark = async (userID, verseId, sermonId, isSermon) => {
+    try {
+        const { data } = await axiosInstance.post(
+            '/bookmarks',
+            { verseId, sermonId, isSermon },
+            { params: { userID } }
+        );
+        return data;
+    } catch (error) {
+        console.error('Error creating bookmark:', error);
+        throw error;
+    }
+};
+
+export const deleteBookmark = async (userID, bookmarkId) => {
+    try {
+        const { data } = await axiosInstance.delete(`/bookmarks/${bookmarkId}`, {
+            params: { userID },
+        });
+        return data;
+    } catch (error) {
+        console.error('Error deleting bookmark:', error);
+        throw error;
+    }
+};
+
+// Bible 관련 API
+export const getBooks = async (testament) => {
+    try {
+        const { data } = await axiosInstance.get('/books', {
+            params: { testament },
+        });
+        return data;
+    } catch (error) {
+        console.error('Error getting books:', error);
+        throw error;
+    }
+};
+
+export const getBibles = async (testament, book, chapter) => {
+    try {
+        const { data } = await axiosInstance.get('/bibles', {
+            params: { testament, ...(book && { book }), ...(chapter && { chapter }) },
+        });
+        return data;
+    } catch (error) {
+        console.error('Error getting bibles:', error);
+        throw error;
+    }
+};
+
+export const searchBibles = async (keyword) => {
+    try {
+        const { data } = await axiosInstance.get('/bibles/search', {
+            params: { keyword1: keyword },
+        });
+        return data;
+    } catch (error) {
+        console.error('Error searching bibles:', error);
+        throw error;
+    }
+};
+
 // 관리자 user 관련 API
 export const getAdminUsers = async () => {
     try {
-        const { data } = await axios.get(`${BASE_URL}/admin/users`);
+        const { data } = await axiosInstance.get('/admin/users');
         return data;
     } catch (error) {
         console.error('Error getting admin users:', error);
@@ -346,7 +508,7 @@ export const getAdminUsers = async () => {
 
 export const searchAdminUsers = async (type, value) => {
     try {
-        const { data } = await axios.get(`${BASE_URL}/admin/users/search`, {
+        const { data } = await axiosInstance.get('/admin/users/search', {
             params: { type, value },
         });
         return data;
@@ -358,7 +520,7 @@ export const searchAdminUsers = async (type, value) => {
 
 export const updateAdminUser = async (userId, userData) => {
     try {
-        const { data } = await axios.patch(`${BASE_URL}/admin/users/${userId}`, userData);
+        const { data } = await axiosInstance.patch(`/admin/users/${userId}`, userData);
         return data;
     } catch (error) {
         console.error('Error updating admin user:', error);
@@ -368,7 +530,7 @@ export const updateAdminUser = async (userId, userData) => {
 
 export const deleteAdminUser = async (userId) => {
     try {
-        const { data } = await axios.delete(`${BASE_URL}/admin/users/${userId}`);
+        const { data } = await axiosInstance.delete(`/admin/users/${userId}`);
         return data || { success: true };
     } catch (error) {
         console.error('Error deleting admin user:', error);
@@ -378,7 +540,7 @@ export const deleteAdminUser = async (userId) => {
 
 export const getFilteredSermonList = async (params) => {
     try {
-        const { data } = await axios.get(`${BASE_URL}/sermons/filtered-list-user`, {
+        const { data } = await axiosInstance.get('/sermons/filtered-list-user', {
             params: {
                 user_id: params.userId,
                 keyword: params.keyword || null,
@@ -402,7 +564,7 @@ export const getFilteredSermonList = async (params) => {
 
 export const getFilteredSermonListAdmin = async (params) => {
     try {
-        const { data } = await axios.get(`${BASE_URL}/sermons/filtered-list-admin`, {
+        const { data } = await axiosInstance.get('/sermons/filtered-list-admin', {
             params: {
                 keyword: params.keyword || null,
                 searchType: params.searchType || null,
@@ -425,8 +587,10 @@ export const getFilteredSermonListAdmin = async (params) => {
 // 관리자용 설교 삭제 API
 export const deleteSermonAdmin = async (sermonId, userId) => {
     try {
-        const response = await axios.delete(`${BASE_URL}/sermons/${sermonId}?userId=${userId}`);
-        return response.data;
+        const { data } = await axiosInstance.delete(`/sermons/${sermonId}`, {
+            params: { userId },
+        });
+        return data || { success: true };
     } catch (error) {
         console.error('Error deleting sermon:', error);
         throw error;
@@ -436,7 +600,7 @@ export const deleteSermonAdmin = async (sermonId, userId) => {
 // 관리자용 설교 수정 API
 export const updateSermonAdmin = async (sermonId, sermonData) => {
     try {
-        const { data } = await axios.patch(`${BASE_URL}/admin/sermons/${sermonId}`, sermonData);
+        const { data } = await axiosInstance.patch(`/admin/sermons/${sermonId}`, sermonData);
         return data;
     } catch (error) {
         console.error('Error updating sermon:', error);
@@ -447,8 +611,8 @@ export const updateSermonAdmin = async (sermonId, sermonData) => {
 // Text 관련 API
 export const createText = async (sermonId, userId, isDraft, textTitle, textContent) => {
     try {
-        const { data } = await axios.post(
-            `${BASE_URL}/text/create`,
+        const { data } = await axiosInstance.post(
+            `/text/create`,
             { textContent },
             {
                 params: {
@@ -468,8 +632,8 @@ export const createText = async (sermonId, userId, isDraft, textTitle, textConte
 
 export const updateText = async (textId, userId, textTitle, isDraft, textContent) => {
     try {
-        const { data } = await axios.patch(
-            `${BASE_URL}/text/update/${textId}`,
+        const { data } = await axiosInstance.patch(
+            `/text/update/${textId}`,
             { textContent },
             {
                 params: {
@@ -488,7 +652,7 @@ export const updateText = async (textId, userId, textTitle, isDraft, textContent
 
 export const getTextList = async (sermonId, userId) => {
     try {
-        const { data } = await axios.get(`${BASE_URL}/text/list/${sermonId}`, {
+        const { data } = await axiosInstance.get(`/text/list/${sermonId}`, {
             params: { userId },
         });
         return data;
@@ -500,7 +664,7 @@ export const getTextList = async (sermonId, userId) => {
 
 export const getTextDetail = async (sermonId, textId, userId) => {
     try {
-        const { data } = await axios.get(`${BASE_URL}/text/${sermonId}/${textId}`, {
+        const { data } = await axiosInstance.get(`/text/${sermonId}/${textId}`, {
             params: { userId },
         });
         return data;
@@ -512,7 +676,7 @@ export const getTextDetail = async (sermonId, textId, userId) => {
 
 export const deleteText = async (textId, userId) => {
     try {
-        const { data } = await axios.delete(`${BASE_URL}/text/delete/${textId}`, {
+        const { data } = await axiosInstance.delete(`/text/delete/${textId}`, {
             params: { userId },
         });
         return data;
@@ -522,15 +686,15 @@ export const deleteText = async (textId, userId) => {
     }
 };
 
-// 본문 내용 업데이트 함수 추가
+// 본문 내용 업데이트 함수
 export const updateSermonText = async (sermonId, textId, userId, content) => {
     try {
         console.log('=== Updating Sermon Text ===');
         console.log('Text ID:', textId);
         console.log('Content:', content);
 
-        const { data } = await axios.patch(
-            `${BASE_URL}/sermons/${sermonId}/texts/${textId}`,
+        const { data } = await axiosInstance.patch(
+            `/sermons/${sermonId}/texts/${textId}`,
             {
                 textContent: content,
                 userId: userId,
@@ -548,7 +712,7 @@ export const updateSermonText = async (sermonId, textId, userId, content) => {
 
 export const hideSermonsBatch = async (sermonIds) => {
     try {
-        const response = await axios.patch(`${BASE_URL}/sermons/batch/hide`, sermonIds, {
+        const response = await axiosInstance.patch(`/sermons/batch/hide`, sermonIds, {
             headers: {
                 'Content-Type': 'application/json',
             },
@@ -560,13 +724,4 @@ export const hideSermonsBatch = async (sermonIds) => {
     }
 };
 
-export const getWorshipTypes = async () => {
-    try{
-        const response = await axios.get(`${BASE_URL}/sermons/worship_types`);
-        return response.data;
-    }catch(error){
-        console.error('Error in getWorshipTypes', error);
-        throw error;
-    }
-
-};
+export default axiosInstance;

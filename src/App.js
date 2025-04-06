@@ -41,7 +41,7 @@ function App() {
         <RecoilRoot>
             <GlobalStyle />
             <ParallaxProvider>
-                <Router basename="/eax9952">
+                <Router basename="/lifeword">
                     <Routes>
                         <Route path="/" element={<Onboarding />} />
                         <Route path="/auth" element={<AuthCallback />} />
