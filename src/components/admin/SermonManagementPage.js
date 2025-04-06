@@ -24,20 +24,8 @@ import {
     hideSermonsBatch,
 } from '../../services/APIService';
 import LoadingSpinner from '../common/LoadingSpinner';
+import {getWorshipTypes} from "../../services/APIService";
 
-const WORSHIP_TYPES = [
-    '새벽예배',
-    '수요예배',
-    '금요성령집회',
-    '주일1부예배',
-    '주일2부예배',
-    '주일3부예배',
-    '주일청년예배',
-    '주일오후예배',
-    '특별집회',
-    '부흥회',
-    '기타',
-];
 
 const BIBLE_BOOKS = [
     '창세기',
@@ -156,6 +144,23 @@ const SermonManagementPage = () => {
     const [totalElements, setTotalElements] = useState(0);
     const [loading, setLoading] = useState(false);
     const [selectedSermons, setSelectedSermons] = useState([]);
+
+    const [WORSHIP_TYPES ,setWorshipTypes] = useState([]);
+
+    useEffect(() => {
+        const fetchWorshipTypes = async () => {
+            try {
+                const types = await getWorshipTypes();
+                setWorshipTypes(types);
+            } catch (error) {
+                console.error("예배 종류를 가져오는데 실패했습니다");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchWorshipTypes();
+    }, []);
 
     const [filters, setFilters] = useState(() => {
         return {

@@ -224,7 +224,7 @@ const SermonListPage = () => {
                 const response = await getFilteredSermonList(params);
                 setSermons(response.content);
                 setTotalElements(response.totalElements);
-                setTotalPages(response.totalPages);
+                setTotalPages(response.totalPage);
             } catch (error) {
                 console.error('Error fetching sermons:', error);
                 setSermons([]);
@@ -878,27 +878,56 @@ const SermonListPage = () => {
                                             <Bookmark size={18} fill="#6b4ee6" strokeWidth={2.5} />
                                         </BookmarkIcon>
                                     )}
-                                    <SermonDate>
-                                        {new Date(sermon.sermonDate).toLocaleDateString('ko-KR', {
-                                            year: 'numeric',
-                                            month: 'long',
-                                            day: 'numeric',
-                                        })}
-                                    </SermonDate>
-                                    <AuthorName>{sermon.ownerName}</AuthorName>
-                                    <SermonTitle>{sermon.sermonTitle}</SermonTitle>
-                                    <SermonInfo>
-                                        <Scripture>{sermon.mainScripture}</Scripture>
-                                        {sermon.additionalScripture && (
-                                            <Scripture>{sermon.additionalScripture}</Scripture>
-                                        )}
-                                        <WorshipType>{sermon.worshipType}</WorshipType>
-                                        <ReferenceCount>
-                                            <BookOpen size={14} />
-                                            {sermon.textCount || 0}개의 버전
-                                        </ReferenceCount>
-                                    </SermonInfo>
-                                    <SermonSummary>{sermon.summary}</SermonSummary>
+                                    {/*// view type */}
+                                    {viewType === 'grid' ? (
+                                        <>
+                                            <SermonDate>
+                                                {new Date(sermon.sermonDate).toLocaleDateString('ko-KR', {
+                                                    year: 'numeric',
+                                                    month: 'long',
+                                                    day: 'numeric',
+                                                })}
+                                            </SermonDate>
+                                            <AuthorName>{sermon.ownerName}</AuthorName>
+                                            <SermonTitle>{sermon.sermonTitle}</SermonTitle>
+                                            <SermonInfo>
+                                                <Scripture>{sermon.mainScripture}</Scripture>
+                                                {sermon.additionalScripture && (
+                                                    <Scripture>{sermon.additionalScripture}</Scripture>
+                                                )}
+                                                <WorshipType>{sermon.worshipType}</WorshipType>
+                                                <ReferenceCount>
+                                                    <BookOpen size={14} />
+                                                    {sermon.textCount || 0}개의 버전
+                                                </ReferenceCount>
+                                            </SermonInfo>
+                                            <SermonSummary>{sermon.summary}</SermonSummary>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <SermonInfo>
+                                                <SermonDate>
+                                                    {new Date(sermon.sermonDate).toLocaleDateString('ko-KR', {
+                                                        year: 'numeric',
+                                                        month: 'long',
+                                                        day: 'numeric',
+                                                    })}
+                                                </SermonDate>
+                                                <AuthorName>{sermon.ownerName}</AuthorName>
+                                                <Scripture>{sermon.mainScripture}</Scripture>
+                                                {sermon.additionalScripture && (
+                                                    <Scripture>{sermon.additionalScripture}</Scripture>
+                                                )}
+                                                <WorshipType>{sermon.worshipType}</WorshipType>
+                                                <ReferenceCount>
+                                                    <BookOpen size={14} />
+                                                    {sermon.textCount || 0}개의 버전
+                                                </ReferenceCount>
+                                            </SermonInfo>
+                                            <SermonTitle>{sermon.sermonTitle}</SermonTitle>
+                                            <SermonSummary>{sermon.summary}</SermonSummary>
+                                        </>
+                                    )}
                                 </SermonCard>
                             ))
                         ) : (
