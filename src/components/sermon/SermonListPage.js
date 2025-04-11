@@ -898,7 +898,7 @@ const SermonListPage = () => {
                                                 <WorshipType>{sermon.worshipType}</WorshipType>
                                                 <ReferenceCount>
                                                     <BookOpen size={14} />
-                                                    {sermon.textCount || 0}개의 버전
+                                                    {sermon.textCount || 0}
                                                 </ReferenceCount>
                                             </SermonInfo>
                                             <SermonSummary>{sermon.summary}</SermonSummary>
@@ -921,11 +921,11 @@ const SermonListPage = () => {
                                                 <WorshipType>{sermon.worshipType}</WorshipType>
                                                 <ReferenceCount>
                                                     <BookOpen size={14} />
-                                                    {sermon.textCount || 0}개의 버전
+                                                    {sermon.textCount || 0}
                                                 </ReferenceCount>
                                             </SermonInfo>
                                             <SermonTitle>{sermon.sermonTitle}</SermonTitle>
-                                            <SermonSummary>{sermon.summary}</SermonSummary>
+                                            {/*<SermonSummary>{sermon.summary}</SermonSummary>*/}
                                         </>
                                     )}
                                 </SermonCard>
@@ -1438,7 +1438,8 @@ const SermonCard = styled.div`
         }
     `
             : `
-        padding: 24px;
+        //padding: 24px;
+        padding: 12px;
         background: white;
         border-radius: 12px;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
@@ -1448,7 +1449,8 @@ const SermonCard = styled.div`
         position: relative;
         display: flex;
         flex-direction: column;
-        gap: 12px;
+        //gap: 12px;
+        gap: 6px;
         grid-column: 1 / -1;
 
         ${SermonDate} {

@@ -724,4 +724,14 @@ export const hideSermonsBatch = async (sermonIds) => {
     }
 };
 
+export const getWorshipTypes = async () => {
+    try {
+        const response = await axiosInstance.get(`/sermons/worship_types`);
+        return response.data;
+    } catch (error) {
+        console.error('Error in getWorshipTypes', error);
+        throw error;
+    }
+
+};
 export default axiosInstance;
