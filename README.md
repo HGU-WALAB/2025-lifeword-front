@@ -1,70 +1,74 @@
-# Getting Started with Create React App
+<div align="center">
+<!-- logo -->
+<img src="https://user-images.githubusercontent.com/80824750/208554558-490845c9-959a-4823-9003-350ec4d221bf.png" width="400"/>
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+### 라이프워드 (LifeWord) 📖
 
-## Available Scripts
+[<img src="https://img.shields.io/badge/프로젝트 기간-2025.01~-fab2ac?style=flat&logo=&logoColor=white" />]()
 
-In the project directory, you can run:
+</div> 
 
-### `npm start`
+## 📝 소개
+'라이프워드'는 교회의 설교와 성경 말씀을 효율적으로 관리하고 공유할 수 있는 웹 서비스입니다. 목회자들은 설교를 작성하고 관리할 수 있으며, 성도들은 설교를 열람하고 성경을 쉽게 찾아볼 수 있습니다.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+### 주요 기능
+- 설교 작성 및 관리
+- 설교 버전 관리 시스템
+- 성경 구절 빠른 검색
+- 설교 북마크 기능
+- 관리자 페이지를 통한 사용자/설교 관리
+- 소셜 로그인 (카카오, 구글)
+- 자체 로그인 시스템
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+<br />
 
-### `npm test`
+### 화면 구성
+|성경 검색 페이지|
+|:---:|
+|<img width="1912" alt="스크린샷 2025-04-04 오후 3 36 11" src="https://github.com/user-attachments/assets/158b5377-c0ac-434a-befb-9f5a234a08b5" /><img width="1912" alt="스크린샷 2025-04-04 오후 3 36 20" src="https://github.com/user-attachments/assets/50c90413-c7fd-40ca-9e2c-2c140ba6b2d0" />|
+|성경 구절을 빠르게 검색하고 찾아볼 수 있습니다.|
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+|설교 관리 페이지|
+|:---:|
+|<img width="1912" alt="스크린샷 2025-04-04 오후 3 36 27" src="https://github.com/user-attachments/assets/af50c709-ba15-40b6-9924-a1a2052ec355" /><img width="1912" alt="스크린샷 2025-04-04 오후 3 36 23" src="https://github.com/user-attachments/assets/367ee064-517a-420c-8fc6-7f3106504ce2" />|
+|설교를 작성하고 버전을 관리할 수 있습니다.|
 
-### `npm run build`
+|마이페이지/북마크|
+|:---:|
+|<img width="1912" alt="스크린샷 2025-04-04 오후 3 36 52" src="https://github.com/user-attachments/assets/5c07d016-11e2-426e-af94-eaa14068d99a" />|
+|북마크한 설교를 관리하고 개인정보를 설정할 수 있습니다.|
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+<br />
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## ⚙ 기술 스택
+### Front-end
+<div>
+<img src="https://github.com/yewon-Noh/readme-template/blob/main/skills/JavaScript.png?raw=true" width="80">
+<img src="https://github.com/yewon-Noh/readme-template/blob/main/skills/React.png?raw=true" width="80">
+<img src="https://github.com/yewon-Noh/readme-template/blob/main/skills/Axios.png?raw=true" width="80">
+</div>
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### Tools
+<div>
+<img src="https://github.com/yewon-Noh/readme-template/blob/main/skills/Github.png?raw=true" width="80">
+<img src="https://github.com/yewon-Noh/readme-template/blob/main/skills/Notion.png?raw=true" width="80">
+</div>
 
-### `npm run eject`
+<br />
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+## 🤔 기술적 특징
+- Recoil을 활용한 전역 상태 관리
+- React-Quill을 이용한 리치 텍스트 에디터 구현
+- 설교 버전 관리 시스템 구현
+- 카카오/구글 소셜 로그인 연동
+- Styled-components를 활용한 컴포넌트 스타일링
+- RESTful API 통신 구현
+- 반응형 웹 디자인 적용
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+<br />
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+## 💁‍♂️ 프로젝트 팀원
+|Frontend|Backend|Backend|Backend|
+|:---:|:---:|:---:|:---:|
+|![](https://github.com/hjkim0905.png?size=120)|![](https://github.com/Diggydogg.png?size=120)|![](https://github.com/naim-kim.png?size=120)||
+|[김현중](https://github.com/hjkim0905)|[윤동혁](https://github.com/Diggydogg)|[김나임](https://github.com/naim-kim)|[곽서원](https://github.com/seowon1112)|

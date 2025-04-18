@@ -18,20 +18,8 @@ import { useRecoilValue } from 'recoil';
 import { isNavExpandedState } from '../../recoil/atoms';
 import { getFilteredSermonList, deleteBookmark, getBookmarks } from '../../services/APIService';
 import LoadingSpinner from '../common/LoadingSpinner';
+import {getWorshipTypes} from "../../services/APIService";
 
-const WORSHIP_TYPES = [
-    '새벽예배',
-    '수요예배',
-    '금요성령집회',
-    '주일1부예배',
-    '주일2부예배',
-    '주일3부예배',
-    '주일청년예배',
-    '주일오후예배',
-    '특별집회',
-    '부흥회',
-    '기타',
-];
 
 const BIBLE_BOOKS = [
     '창세기',
@@ -126,6 +114,26 @@ const SermonListPage = () => {
     const searchInputRef = useRef(null);
     const scrolledSearchInputRef = useRef(null);
 
+
+    const [WORSHIP_TYPES ,setWorshipTypes] = useState([]);
+
+    useEffect(() => {
+        const fetchWorshipTypes = async () => {
+            try {
+                const types = await getWorshipTypes();
+                setWorshipTypes(types);
+            } catch (error) {
+                console.error("예배 종류를 가져오는데 실패했습니다");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchWorshipTypes();
+    }, []);
+
+
+
     const [filters, setFilters] = useState(() => {
         return {
             worshipTypes: searchParams.get('worship')?.split(',').filter(Boolean) || [],
@@ -216,7 +224,7 @@ const SermonListPage = () => {
                 const response = await getFilteredSermonList(params);
                 setSermons(response.content);
                 setTotalElements(response.totalElements);
-                setTotalPages(response.totalPages);
+                setTotalPages(response.totalPage);
             } catch (error) {
                 console.error('Error fetching sermons:', error);
                 setSermons([]);
@@ -870,27 +878,56 @@ const SermonListPage = () => {
                                             <Bookmark size={18} fill="#6b4ee6" strokeWidth={2.5} />
                                         </BookmarkIcon>
                                     )}
-                                    <SermonDate>
-                                        {new Date(sermon.sermonDate).toLocaleDateString('ko-KR', {
-                                            year: 'numeric',
-                                            month: 'long',
-                                            day: 'numeric',
-                                        })}
-                                    </SermonDate>
-                                    <AuthorName>{sermon.ownerName}</AuthorName>
-                                    <SermonTitle>{sermon.sermonTitle}</SermonTitle>
-                                    <SermonInfo>
-                                        <Scripture>{sermon.mainScripture}</Scripture>
-                                        {sermon.additionalScripture && (
-                                            <Scripture>{sermon.additionalScripture}</Scripture>
-                                        )}
-                                        <WorshipType>{sermon.worshipType}</WorshipType>
-                                        <ReferenceCount>
-                                            <BookOpen size={14} />
-                                            {sermon.textCount || 0}개의 버전
-                                        </ReferenceCount>
-                                    </SermonInfo>
-                                    <SermonSummary>{sermon.summary}</SermonSummary>
+                                    {/*// view type */}
+                                    {viewType === 'grid' ? (
+                                        <>
+                                            <SermonDate>
+                                                {new Date(sermon.sermonDate).toLocaleDateString('ko-KR', {
+                                                    year: 'numeric',
+                                                    month: 'long',
+                                                    day: 'numeric',
+                                                })}
+                                            </SermonDate>
+                                            <AuthorName>{sermon.ownerName}</AuthorName>
+                                            <SermonTitle>{sermon.sermonTitle}</SermonTitle>
+                                            <SermonInfo>
+                                                <Scripture>{sermon.mainScripture}</Scripture>
+                                                {sermon.additionalScripture && (
+                                                    <Scripture>{sermon.additionalScripture}</Scripture>
+                                                )}
+                                                <WorshipType>{sermon.worshipType}</WorshipType>
+                                                <ReferenceCount>
+                                                    <BookOpen size={14} />
+                                                    {sermon.textCount || 0}
+                                                </ReferenceCount>
+                                            </SermonInfo>
+                                            <SermonSummary>{sermon.summary}</SermonSummary>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <SermonInfo>
+                                                <SermonDate>
+                                                    {new Date(sermon.sermonDate).toLocaleDateString('ko-KR', {
+                                                        year: 'numeric',
+                                                        month: 'long',
+                                                        day: 'numeric',
+                                                    })}
+                                                </SermonDate>
+                                                <AuthorName>{sermon.ownerName}</AuthorName>
+                                                <Scripture>{sermon.mainScripture}</Scripture>
+                                                {sermon.additionalScripture && (
+                                                    <Scripture>{sermon.additionalScripture}</Scripture>
+                                                )}
+                                                <WorshipType>{sermon.worshipType}</WorshipType>
+                                                <ReferenceCount>
+                                                    <BookOpen size={14} />
+                                                    {sermon.textCount || 0}
+                                                </ReferenceCount>
+                                            </SermonInfo>
+                                            <SermonTitle>{sermon.sermonTitle}</SermonTitle>
+                                            {/*<SermonSummary>{sermon.summary}</SermonSummary>*/}
+                                        </>
+                                    )}
                                 </SermonCard>
                             ))
                         ) : (
@@ -1401,7 +1438,8 @@ const SermonCard = styled.div`
         }
     `
             : `
-        padding: 24px;
+        //padding: 24px;
+        padding: 12px;
         background: white;
         border-radius: 12px;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
@@ -1411,7 +1449,8 @@ const SermonCard = styled.div`
         position: relative;
         display: flex;
         flex-direction: column;
-        gap: 12px;
+        //gap: 12px;
+        gap: 6px;
         grid-column: 1 / -1;
 
         ${SermonDate} {
